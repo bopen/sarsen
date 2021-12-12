@@ -1,0 +1,21 @@
+channels:
+  - defaults
+dependencies:
+  - attrs
+  - black
+  - dask
+  - flake8
+  - isort
+  - make
+  - nomkl
+  - mypy
+  - numpy
+  - pip
+  - python=3.9.7
+  - pytest
+  - pytest-cov
+  - xarray
+  - pip:
+    - mdformat-gfm
+    - rioxarray
+    - xarray-sentinel
