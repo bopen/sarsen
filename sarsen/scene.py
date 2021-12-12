@@ -6,7 +6,7 @@ from rasterio import warp
 
 
 def make_dem_3d(dem_da: xr.DataArray, dim: str = "axis") -> xr.DataArray:
-    _, dem_da_x = xr.broadcast(dem_da, dem_da.x)
+    _, dem_da_x = xr.broadcast(dem_da, dem_da.x)  # type: ignore
     dem_3d = xr.concat([dem_da_x, dem_da.y, dem_da], dim=dim, coords="minimal")
     dem_3d = dem_3d.assign_coords({dim: ["x", "y", "z"]})  # type: ignore
     return dem_3d.rename("dem_3d")
