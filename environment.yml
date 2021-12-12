@@ -1,5 +1,6 @@
 channels:
   - defaults
+  - conda-forge
 dependencies:
   - attrs
   - black
@@ -15,8 +16,8 @@ dependencies:
   - python=3.9.7
   - pytest
   - pytest-cov
+  - rioxarray
   - xarray
   - pip:
     - mdformat-gfm
-    - rioxarray
     - xarray-sentinel
