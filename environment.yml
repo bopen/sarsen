@@ -9,7 +9,7 @@ dependencies:
   - isort
   - make
   - nomkl
-  - mypy
+  - mypy=0.812
   - numpy
   - pip
   - python=3.9.7
