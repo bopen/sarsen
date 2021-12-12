@@ -1,6 +1,5 @@
 import os.path
 
-import numpy as np
 import pytest
 import rioxarray
 import xarray as xr
