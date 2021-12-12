@@ -3,6 +3,7 @@ channels:
 dependencies:
   - attrs
   - black
+  - click
   - dask
   - flake8
   - isort
