@@ -4,7 +4,6 @@ Algorithms and utilities for SAR sensors
 
 > **WARNING**: THIS CODE IS NOT READY FOR USE
 
-
 ## Objectives
 
 Be faster and simpler than ESA SNAP and cloud native.
