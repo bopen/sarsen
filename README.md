@@ -2,15 +2,8 @@
 
 Algorithms and utilities for SAR sensors
 
-<div class="panel panel-warning">
-**Warning**
-{: .panel-heading}
-<div class="panel-body">
+> **WARNING**: THIS CODE IS NOT READY FOR USE
 
-THIS CODE IS NOT READY FOR USE
-
-</div>
-</div>
 
 ## Objectives
 
