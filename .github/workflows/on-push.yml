@@ -36,7 +36,7 @@ jobs:
         use-only-tar-bz2: true
     - name: Install dependencies
       run: |
-        make conda-env-update ENVIRONMENT=ubuntu-latest-3.9
+        make conda-env-update CONDA=mamba ENVIRONMENT=ubuntu-latest-3.9
     - name: Install package
       run: |
         python -m pip install --no-deps -e .
@@ -71,7 +71,7 @@ jobs:
         use-only-tar-bz2: true
     - name: Install dependencies
       run: |
-        make conda-env-update ENVIRONMENT=ubuntu-latest-3.9
+        make conda-env-update CONDA=mamba ENVIRONMENT=ubuntu-latest-3.9
     - name: Install package
       run: |
         python -m pip install --no-deps -e .
