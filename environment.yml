@@ -10,8 +10,8 @@ dependencies:
   - isort
   - make
   - nomkl
-  - mypy=0.812
-  - numpy
+  - mypy = 0.812
+  - numpy >= 1.20.0
   - pip
   - python=3.9.7
   - pytest
