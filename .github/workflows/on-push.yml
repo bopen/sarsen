@@ -27,6 +27,9 @@ jobs:
           ubuntu-latest-3.9
     - uses: conda-incubator/setup-miniconda@v2
       with:
+        channels: conda-forge
+        channel-priority: strict
+        mamba-version: "*"
         activate-environment: ubuntu-latest-3.9
         auto-update-conda: false
         python-version: 3.9
@@ -59,6 +62,9 @@ jobs:
           ubuntu-latest-3.9
     - uses: conda-incubator/setup-miniconda@v2
       with:
+        channels: conda-forge
+        channel-priority: strict
+        mamba-version: "*"
         activate-environment: ubuntu-latest-3.9
         auto-update-conda: false
         python-version: 3.9
