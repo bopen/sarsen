@@ -18,10 +18,10 @@ Be faster and simpler than ESA SNAP and cloud native.
 - support Sentinel-1 SLC IW and GRD
 - support any DEM that GDAL / Proj can handle
 
-## Non-objectives
+## Non-objectives / Caveat emptor
 
 - No attempt is done to support UTC leap seconds. Observations that include a leap second may crash the code or
-  silently return wrong results. *Caveat emptor*
+  silently return wrong results.
 
 ## Usage
 

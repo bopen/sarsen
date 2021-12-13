@@ -6,6 +6,7 @@ import typing as T
 
 import numpy as np
 import numpy.typing as npt
+import xarray as xr
 
 SPEED_OF_LIGHT = 299_792_458  # m / s
 
@@ -49,3 +50,17 @@ def secant_method(
             break
 
     return t_curr, t_prev, f_curr, g_curr
+
+
+def zero_doppler_plane_distance(
+    dem_ecef: xr.DataArray,
+    position_ecef_sar: xr.DataArray,
+    direction_ecef_sar: xr.DataArray,
+    azimuth_time: TimedeltaArrayLike,
+    dim: str = "axis",
+) -> T.Tuple[xr.DataArray, xr.DataArray]:
+    distance = dem_ecef - position_ecef_sar.interp(azimuth_time=azimuth_time)
+    plane_distance = (
+        distance * direction_ecef_sar.interp(azimuth_time=azimuth_time)
+    ).sum(dim, skipna=False)
+    return plane_distance, distance
