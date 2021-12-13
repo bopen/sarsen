@@ -19,3 +19,6 @@ omit = ["setup.py"]
 
 [tool.isort]
 profile = "black"
+
+[mypy]
+plugins = "numpy.typing.mypy_plugin"
