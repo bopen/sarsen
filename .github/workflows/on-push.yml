@@ -27,7 +27,7 @@ jobs:
           ubuntu-latest-3.9
     - uses: conda-incubator/setup-miniconda@v2
       with:
-        channels: conda-forge
+        channels: default, conda-forge
         channel-priority: strict
         mamba-version: "*"
         activate-environment: ubuntu-latest-3.9
@@ -62,7 +62,7 @@ jobs:
           ubuntu-latest-3.9
     - uses: conda-incubator/setup-miniconda@v2
       with:
-        channels: conda-forge
+        channels: default, conda-forge
         channel-priority: strict
         mamba-version: "*"
         activate-environment: ubuntu-latest-3.9
