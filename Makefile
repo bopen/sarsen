@@ -1,7 +1,7 @@
 ENVIRONMENT := SARSEN
 COV_REPORT := html
 
-default: fix-code-style test
+default: fix-code-style test code-quality
 
 fix-code-style:
 	black .
@@ -32,4 +32,3 @@ conda-env-create:
 
 conda-env-update:
 	conda env update -n $(ENVIRONMENT) -f environment.yml
-
