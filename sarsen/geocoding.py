@@ -2,6 +2,7 @@
 Reference "Guide to Sentinel-1 Geocoding" UZH-S1-GC-AD 1.10 26.03.2019
 https://sentinel.esa.int/documents/247904/0/Guide-to-Sentinel-1-Geocoding.pdf/e0450150-b4e9-4b2d-9b32-dadf989d3bd3
 """
+import functools
 import typing as T
 
 import numpy as np
@@ -64,3 +65,39 @@ def zero_doppler_plane_distance(
         distance * direction_ecef_sar.interp(azimuth_time=azimuth_time)
     ).sum(dim, skipna=False)
     return plane_distance, distance
+
+
+def backward_geocode(
+    dem_ecef: xr.DataArray,
+    data_sar_time: xr.DataArray,
+    position_ecef_sar: xr.DataArray,
+    velocity_ecef_sar: xr.DataArray,
+    dim: str = "axis",
+    diff_ufunc: float = 1.0,
+) -> xr.Dataset:
+    direction_ecef_sar = velocity_ecef_sar / np.sqrt((velocity_ecef_sar ** 2).sum(dim))
+
+    zero_doppler = functools.partial(
+        zero_doppler_plane_distance, dem_ecef, position_ecef_sar, direction_ecef_sar
+    )
+
+    t_template = dem_ecef.isel(axis=0).drop_vars("axis").astype(data_sar_time.dtype)
+    t_prev = xr.full_like(t_template, data_sar_time.values[0])
+    t_curr = xr.full_like(t_template, data_sar_time.values[-1])
+
+    dem_time, _, _, dem_distance = secant_method(
+        zero_doppler, t_prev, t_curr, diff_ufunc
+    )
+    dem_slant_range = (dem_distance ** 2).sum(dim) ** 0.5
+    dem_slant_range = dem_slant_range.drop_vars(["azimuth_time", "line"])
+    if "azimuth_time" in dem_time.coords:
+        dem_time = dem_time.drop_vars("azimuth_time")
+    if "line" in dem_time.coords:
+        dem_time = dem_time.drop_vars("line")
+
+    return xr.merge(
+        [
+            dem_time.rename("azimuth_time"),
+            dem_slant_range.rename("slant_range_time") * 2 / SPEED_OF_LIGHT,
+        ]
+    )
