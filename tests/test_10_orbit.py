@@ -64,7 +64,8 @@ def test_OrbitPolyfitIterpolator_datetime64(orbit_ds: xr.Dataset) -> None:
 def test_OrbitPolyfitIterpolator_timedelta64(orbit_ds: xr.Dataset) -> None:
     position = orbit_ds.data_vars["position"]
     position = position.assign_coords(azimuth_time=position.azimuth_time - position.azimuth_time[0])  # type: ignore
-    orbit_interpolator = orbit.OrbitPolyfitIterpolator.from_position(position, deg=4)
+    epoch = position.azimuth_time.values[0]
+    orbit_interpolator = orbit.OrbitPolyfitIterpolator.from_position(position, epoch=epoch, deg=4)
 
     res = orbit_interpolator.position(position.azimuth_time)
 
