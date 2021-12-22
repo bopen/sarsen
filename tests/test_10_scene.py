@@ -30,7 +30,7 @@ def test_transform_dem_3d(dem_raster: xr.DataArray) -> None:
     dem_3d = scene.make_dem_3d(dem_raster)
 
     # from height over the geoid to height over the ellipsoid
-    res = scene.transform_dem_3d(dem_3d, "EPSG:4979")
+    res = scene.transform_dem_3d(dem_3d, "EPSG:4979", source_crs=dem_3d.rio.crs)
 
     assert res.dims == ("axis", "y", "x")
     # this assert fails if proj-data is not properly installed on the system
