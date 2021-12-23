@@ -18,6 +18,7 @@ dependencies:
   - pytest-cov
   - rioxarray
   - xarray
+  - xmlschema
   - pip:
     - mdformat-gfm
     - xarray-sentinel
