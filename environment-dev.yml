@@ -1,0 +1,8 @@
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - matplotlib
+  - mamba
+  - notebook
+  - proj-data

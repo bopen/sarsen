@@ -29,7 +29,8 @@ code-style:
 # deploy
 
 conda-env-create:
-	$(CONDA) env create -n $(ENVIRONMENT) -f environment.yml
+	$(CONDA) env create -n $(ENVIRONMENT) -f environment-ci.yml
 
 conda-env-update:
-	$(CONDA) env update -n $(ENVIRONMENT) -f environment.yml
+	$(CONDA) env update -n $(ENVIRONMENT) -f environment-ci.yml
+	$(CONDA) env update -n $(ENVIRONMENT) -f environment-dev.yml
