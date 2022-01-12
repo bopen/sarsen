@@ -11,10 +11,10 @@ def test_secant_method() -> None:
         t: npt.ArrayLike,
     ) -> T.Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         ft: npt.NDArray[np.float64] = np.asarray(t).astype("float64")
-        retval: npt.NDArray[np.float64] = 1.0 + 0.015 * ft - 0.0001 * ft ** 2 + 0.00003 * ft ** 3  # type: ignore
+        retval = 1.0 + 0.015 * ft - 0.0001 * ft ** 2 + 0.00003 * ft ** 3
         return retval, retval
 
-    t_start = np.array([np.timedelta64(-100, "ns")])
+    t_start: npt.NDArray[np.timedelta64] = np.array([np.timedelta64(-100, "ns")])
 
     # stop with df threshold
     res, _, _, _ = geocoding.secant_method(ufunc, -t_start, t_start, diff_ufunc=0.1)
@@ -28,9 +28,9 @@ def test_secant_method() -> None:
 
     assert res[0] == np.timedelta64(-27, "ns")
 
-    t_start = np.ones((2, 2)) * np.timedelta64(-100, "ns")
+    t_start = np.ones((2, 2)) * np.timedelta64(-100, "ns")  # type: ignore
 
-    res, _, _, _ = geocoding.secant_method(ufunc, -t_start, t_start, diff_ufunc=0.1)  # type: ignore
+    res, _, _, _ = geocoding.secant_method(ufunc, -t_start, t_start, diff_ufunc=0.1)
 
-    assert res.shape == t_start.shape  # type: ignore
+    assert res.shape == t_start.shape
     assert np.all(res == np.timedelta64(-27, "ns"))
