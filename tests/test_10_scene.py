@@ -2,7 +2,6 @@ import os.path
 
 import numpy as np
 import pytest
-import rioxarray
 import xarray as xr
 
 from sarsen import scene
@@ -14,7 +13,8 @@ DATA_PATH = os.path.join(os.path.dirname(__file__), "data")
 def dem_raster() -> xr.DataArray:
     dem_path = os.path.join(DATA_PATH, "Rome-30m-DEM.tif")
     dem_da: xr.DataArray
-    dem_da = rioxarray.open_rasterio(dem_path).sel(band=1).drop_vars("band")
+    dem_da = xr.open_dataarray(dem_path, engine="rasterio")  # type: ignore
+    dem_da = dem_da.squeeze(drop=True)
     return dem_da
 
 
