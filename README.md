@@ -35,6 +35,31 @@ Be faster and simpler than ESA SNAP and cloud native.
 [![on-push](https://github.com/bopen/sarsen/actions/workflows/on-push.yml/badge.svg)](https://github.com/bopen/sarsen/actions/workflows/on-push.yml)
 [![codecov](https://codecov.io/gh/bopen/sarsen/branch/main/graph/badge.svg?token=62S9EXDF0V)](https://codecov.io/gh/bopen/sarsen)
 
+## Contributing
+
+The main repository is hosted on GitHub,
+testing, bug reports and contributions are highly welcomed and appreciated:
+
+https://github.com/bopen/sarsen
+
+Lead developer:
+
+- [Alessandro Amici](https://github.com/alexamici) - [B-Open](https://bopen.eu)
+
+Main contributors:
+
+- [Aureliana Barghini](https://github.com/aurghs) - [B-Open](https://bopen.eu)
+
+See also the list of [contributors](https://github.com/bopen/sarsen/contributors) who participated in this project.
+
+## Sponsoring
+
+[B-Open](https://bopen.eu) commits to maintain the project long term and we are happy to accept sponsorships to develop new features.
+
+We wish to express our gratitude to the project sponsors:
+
+- [Microsoft](https://microsoft.com)
+
 ## License
 
 ```
