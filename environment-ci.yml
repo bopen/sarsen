@@ -1,25 +1,28 @@
 channels:
-  - defaults
   - conda-forge
 dependencies:
   - attrs
-  - black
+  - black = 21.12b0
   - click
   - dask
   - flake8
+  - fsspec
   - isort
   - make
   - mdformat
-  - mypy = 0.812
+  - mypy
   - nomkl
-  - numpy >= 1.20.0
+  - numpy >= 1.22.0
   - pip
-  - python=3.9.7
+  - python=3.9.9
   - pytest
   - pytest-cov
+  - rasterio >= 1.2.4
   - rioxarray
-  - xarray
+  - types-setuptools
+  - xarray >= 0.20.2
   - xmlschema
+  - zarr
   - pip:
     - mdformat-gfm
     - xarray-sentinel
