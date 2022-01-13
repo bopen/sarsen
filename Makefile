@@ -9,7 +9,7 @@ fix-code-style:
 	isort .
 	mdformat .
 
-test: unit-test doc-test
+test: unit-test  # doc-test
 
 unit-test:
 	python -m pytest -v --cov=. --cov-report=$(COV_REPORT) tests/
