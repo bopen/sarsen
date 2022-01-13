@@ -40,7 +40,7 @@ jobs:
     - name: Install package
       run: |
         python -m pip install --no-deps -e .
-    - name: Run unit tests
+    - name: Run tests
       run: |
         make test COV_REPORT=xml
     - name: Upload code coverage to Codecov
