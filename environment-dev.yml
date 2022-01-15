@@ -6,3 +6,6 @@ dependencies:
   - mamba
   - notebook
   - proj-data
+  - sentinalsat
+  - pip:
+      elevation
