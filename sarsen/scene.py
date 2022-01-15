@@ -5,6 +5,11 @@ import xarray as xr
 from rasterio import warp
 
 
+def open_dem_raster(dem_urlpath: str) -> xr.DataArray:
+    dem_raster = xr.open_dataarray(dem_urlpath, engine="rasterio")  # type: ignore
+    return dem_raster.squeeze(drop=True)
+
+
 def make_dem_3d(dem_raster: xr.DataArray, dim: str = "axis") -> xr.DataArray:
     _, dem_raster_x = xr.broadcast(dem_raster, dem_raster.x)  # type: ignore
     dem_3d = xr.concat(
