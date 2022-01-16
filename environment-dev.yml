@@ -2,6 +2,7 @@ channels:
   - conda-forge
 dependencies:
   - gcsfs
+  - gdal
   - matplotlib
   - mamba
   - notebook
