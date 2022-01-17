@@ -40,3 +40,8 @@ def transform_dem_3d(
     dem_3d_crs.loc[{dim: 1}] = np.reshape(y, shape)
     dem_3d_crs.loc[{dim: 2}] = np.reshape(z, shape)
     return dem_3d_crs
+
+
+def raster_to_ecef(dem_raster: xr.DataArray) -> xr.DataArray:
+    dem_3d = make_dem_3d(dem_raster)
+    return transform_dem_3d(dem_3d)
