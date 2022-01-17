@@ -7,9 +7,11 @@
     data/Rome-30m-DEM.tif data/Rome-10m-DEM.tif
 
 sentinelsat --path data -d --include-pattern "*iw3*vv*" \
+  --name S1A_IW_SLC__1SDV_20211229T051151_20211229T051218_041219_04E60D_F691
+sentinelsat --path data -d --include-pattern "*iw3*vv*" \
   --name S1B_IW_SLC__1SDV_20211223T051121_20211223T051148_030148_039993_BA4B
 sentinelsat --path data -d --include-pattern "*iw3*vv*" \
-  --name S1A_IW_SLC__1SDV_20211229T051151_20211229T051218_041219_04E60D_F691
+  --name S1A_IW_SLC__1SDV_20211217T051152_20211217T051219_041044_04E03C_75D1
 
 # Chicago SM EPSG:32616 5x5
 
