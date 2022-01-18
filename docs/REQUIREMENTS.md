@@ -34,28 +34,29 @@ Requirmente status:
 ## Functionalities
 
 11. :white_check_mark: _Geometric terrain correction_:
-    Shall apply geometric terrain corrections based on: "Guide to Sentinel-1 Geocoding" UZH-S1-GC-AD 1.10 26.03.2019
-    https://sentinel.esa.int/documents/247904/0/Guide-to-Sentinel-1-Geocoding.pdf/e0450150-b4e9-4b2d-9b32-dadf989d3bd3
+    Shall apply geometric terrain corrections based on
+    [D. Small et al, "Guide to Sentinel-1 Geocoding" UZH-S1-GC-AD 1.10 26.03.2019](https://sentinel.esa.int/documents/247904/1653442/Guide-to-Sentinel-1-Geocoding.pdf)
 
 01. :white_check_mark: _Internal geometric accuracy_:
     Interferometric accuracy (Can be tested on SLC products by comparing the coherence values with the ones obtained with SNAP)
 
 01. :construction: _Geometric accuracy:_
-    Comparable with Sentinel-1 RTC product on Azure Blob Storage (Acceptance criteria/process to be defined)
+    Comparable with the accuracy of Sentinel-1 RTC products on Azure Blob Storage (Acceptance criteria/process to be defined)
 
 01. :white_check_mark: _Radiometric terrain correction_:
-    Shall be based on: D. Small, "Flattening Gamma: Radiometric Terrain Correction for SAR Imagery," in IEEE Transactions on Geoscience and Remote Sensing, vol. 49, no. 8, pp. 3081-3093, Aug. 2011, doi: 10.1109/TGRS.2011.2120616 https://ieeexplore.ieee.org/document/5752845
+    Shall apply radiomentric terrain corrections based on
+    [D. Small, "Flattening Gamma: Radiometric Terrain Correction for SAR Imagery" in IEEE Transactions on Geoscience and Remote Sensing, vol. 49, no. 8, pp. 3081-3093, Aug. 2011, doi: 10.1109/TGRS.2011.2120616](https://www.doi.org/10.1109/TGRS.2011.2120616)
 
 01. :construction: _Radiometric accuracy_:
-    Comparable with Sentinel-1 RTC product on Azure Blob Storage (Acceptance criteria/process to be defined)
+    Comparable with the accuracy of Sentinel-1 RTC products on Azure Blob Storage (Acceptance criteria/process to be defined)
 
 ## Efficiency
 
-16. :construction: _Chunked data access_:
+16. :white_check_mark: _Chunked data access_:
     Data access shall use chunking for all potentially large input files, in particular: SAR imagery and DEM files
 
 01. :construction: _Chunked processing_:
-    Performance critical algorithms shall be optimised to perform processing on chunks of input data
+    Performance critical algorithms shall be able to perform processing on chunks of input data
 
 01. :construction: _Parallel processing_:
     Applying the terrain correction on a single image shall scale with the number of CPU cores assigned to the computation
