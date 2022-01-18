@@ -1,6 +1,7 @@
 channels:
   - conda-forge
 dependencies:
+  - build
   - gcsfs
   - gdal
   - matplotlib
