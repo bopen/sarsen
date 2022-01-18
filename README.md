@@ -1,12 +1,10 @@
-> **WARNING**: THIS CODE IS NOT READY FOR USE
-
 # Sarsen
 
 Algorithms and utilities for SAR sensors. Enables cloud-native SAR processing via *Xarray* and *Dask*.
 
 ## Target features
 
-Overall the software is in the **alpha** phase and the usual caveats apply.
+Overall the software is in early **alpha** phase and the usual caveats apply.
 
 - provides algorithms to terrain-correct satellite SAR data
   - geometric terrain correction (geocoding)
@@ -23,7 +21,6 @@ Overall the software is in the **alpha** phase and the usual caveats apply.
   - reads local and remote data in virtually any raster format via
     [*rasterio*](https://rasterio.readthedocs.io) / [*GDAL*](https://gdal.org)
 - supports larger-than-memory and distributed data access and processing via [*dask*](https://dask.org)
-
 
 ## Non-objectives / Caveat emptor
 
