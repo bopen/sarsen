@@ -2,21 +2,28 @@
 
 # Sarsen
 
-Algorithms and utilities for SAR sensors
+Algorithms and utilities for SAR sensors. Enables cloud-native SAR processing via *Xarray* and *Dask*.
 
-## Objectives
+## Target features
 
-Be faster and simpler than ESA SNAP and cloud native.
+Overall the software is in the **alpha** phase and the usual caveats apply.
 
-- enable SAR data geocoding
-  - *fast mode*: to terrain-correct images
-  - *accurate mode*: for interferometric processing
-- enable radiometric terrain correction / flattening gamma
-- support cloud-native processing
-  - enable parallel processing via *xarray* and *dask*
-  - enable object storage access via *fsspec*
-- support Sentinel-1 SLC IW and GRD
-- support any DEM that GDAL / Proj can handle
+- provides algorithms to terrain-correct satellite SAR data
+  - geometric terrain correction (geocoding)
+    - *fast mode*: to terrain-correct images
+    - *accurate mode*: for interferometric processing
+  - radiometric terrain correction (gamma flattening)
+- SAR data access via [*xarray-sentinel*](https://github.com/bopen/xarray-sentinel):
+  - supports all Sentinel-1 data products as [distributed by ESA](https://scihub.copernicus.eu/dhus/#/home):
+    - Sentinel-1 Single Look Complex (SLC) SM/IW/EW/WV
+    - Sentinel-1 Ground Range Detected (GRD) SM/IW/EW/WV
+  - reads uncompressed and compressed SAFE data products on the local computer or
+    on a network via [*fsspec*](https://filesystem-spec.readthedocs.io)
+- DEM data access via [*rioxarray*](https://corteva.github.io/rioxarray):
+  - reads local and remote data in virtually any raster format via
+    [*rasterio*](https://rasterio.readthedocs.io) / [*GDAL*](https://gdal.org)
+- supports larger-than-memory and distributed data access and processing via [*dask*](https://dask.org)
+
 
 ## Non-objectives / Caveat emptor
 
