@@ -1,9 +1,6 @@
 # Requirements
 
-Requirmente status:
-
-- :white_check_mark: for final
-- :construction: for draft
+Requirements status: :white_check_mark: for final and :construction: for draft
 
 ## General
 
@@ -11,7 +8,7 @@ Requirmente status:
 
 1. :white_check_mark: _License_: Apache v2
 
-1. :white_check_mark: _Techology foundation_:
+1. :white_check_mark: _Technology foundation_:
    Python, xarray / dask and rioxarray / rasterio / GDAL / libgeotiff / PROJ
 
 1. :white_check_mark: _Target platform_: Ubuntu 20.04 LTS (No additional limitation on top of the technology foundation)
@@ -27,9 +24,9 @@ Requirmente status:
 1. :white_check_mark: _Input SAR products_: Sentinel-1 L1 GRD
 
 1. :white_check_mark: _Input access_:
-   Shall be able to load scenes from filesystem or from the Sentinel-1 GRD archive on Azure Blob Storage
+   Shall be able to load scenes from the filesystem or from the Sentinel-1 GRD archive on Azure Blob Storage
 
-1. :white_check_mark: _Output_: Cloud Optimized GeoTIFF plus the associated STAC Item
+1. :white_check_mark: _Output format_: Cloud Optimized GeoTIFF plus the associated STAC Item
 
 ## Functionalities
 
@@ -44,7 +41,7 @@ Requirmente status:
     Comparable with the accuracy of Sentinel-1 RTC products on Azure Blob Storage (Acceptance criteria/process to be defined)
 
 01. :white_check_mark: _Radiometric terrain correction_:
-    Shall apply radiomentric terrain corrections based on
+    Shall apply radiometric terrain corrections based on
     [D. Small, "Flattening Gamma: Radiometric Terrain Correction for SAR Imagery" in IEEE Transactions on Geoscience and Remote Sensing, vol. 49, no. 8, pp. 3081-3093, Aug. 2011, doi: 10.1109/TGRS.2011.2120616](https://www.doi.org/10.1109/TGRS.2011.2120616)
 
 01. :construction: _Radiometric accuracy_:
