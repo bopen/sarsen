@@ -9,7 +9,7 @@ import numpy as np
 import numpy.typing as npt
 import xarray as xr
 
-SPEED_OF_LIGHT = 299_792_458  # m / s
+SPEED_OF_LIGHT = 299_792_458.0  # m / s
 
 TimedeltaArrayLike = T.TypeVar("TimedeltaArrayLike", bound=npt.ArrayLike)
 FloatArrayLike = T.TypeVar("FloatArrayLike", bound=npt.ArrayLike)
@@ -98,6 +98,6 @@ def backward_geocode(
     return xr.merge(
         [
             dem_time.rename("azimuth_time"),
-            dem_slant_range.rename("slant_range_time") * 2 / SPEED_OF_LIGHT,
+            (2. / SPEED_OF_LIGHT * dem_slant_range).rename("slant_range_time"),
         ]
     )
