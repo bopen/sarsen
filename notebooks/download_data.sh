@@ -16,8 +16,13 @@ mkdir -p data
     data/Chicago-30m-DEM.tif data/Chicago-10m-DEM.tif
 
 ## SLC
+### descending
 sentinelsat --path data -d --include-pattern "*vv*" \
   --name S1B_S6_SLC__1SDV_20211216T115438_20211216T115501_030050_03968A_4DCB
+
+### ascending
+sentinelsat --path data -d --include-pattern "*hh*" \
+  --name S1A_S4_SLC__1SDH_20211216T234911_20211216T234935_041041_04E01F_428D
 
 ## GRD
 ### descending
