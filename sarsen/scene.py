@@ -4,13 +4,18 @@ import numpy as np
 import xarray as xr
 from rasterio import warp
 
+# Earth-Centered, Earth-Fixed Coordinate Reference System used to express satellite orbit
+# https://en.wikipedia.org/wiki/Earth-centered,_Earth-fixed_coordinate_system
+# https://spatialreference.org/ref/epsg/wgs-84-2/
+ECEF_CRS = "EPSG:4978"
+
 
 def open_dem_raster(dem_urlpath: str, **kwargs: T.Any) -> xr.DataArray:
     dem_raster = xr.open_dataarray(dem_urlpath, engine="rasterio", **kwargs)  # type: ignore
     return dem_raster.squeeze(drop=True)  # type: ignore
 
 
-def make_dem_3d(dem_raster: xr.DataArray, dim: str = "axis") -> xr.DataArray:
+def convert_to_dem_3d(dem_raster: xr.DataArray, dim: str = "axis") -> xr.DataArray:
     _, dem_raster_x = xr.broadcast(dem_raster, dem_raster.x)  # type: ignore
     dem_3d = xr.concat(
         [dem_raster_x, dem_raster.y, dem_raster], dim=dim, coords="minimal"
@@ -21,7 +26,7 @@ def make_dem_3d(dem_raster: xr.DataArray, dim: str = "axis") -> xr.DataArray:
 
 def transform_dem_3d(
     dem_3d: xr.DataArray,
-    target_crs: str = "EPSG:4978",
+    target_crs: str = ECEF_CRS,
     source_crs: T.Optional[str] = None,
     dim: str = "axis",
 ) -> xr.DataArray:
@@ -42,6 +47,6 @@ def transform_dem_3d(
     return dem_3d_crs
 
 
-def raster_to_ecef(dem_raster: xr.DataArray) -> xr.DataArray:
-    dem_3d = make_dem_3d(dem_raster)
-    return transform_dem_3d(dem_3d)
+def convert_to_dem_ecef(dem_raster: xr.DataArray) -> xr.DataArray:
+    dem_3d = convert_to_dem_3d(dem_raster)
+    return transform_dem_3d(dem_3d, target_crs=ECEF_CRS)

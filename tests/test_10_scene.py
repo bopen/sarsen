@@ -18,8 +18,8 @@ def dem_raster() -> xr.DataArray:
     return dem_da
 
 
-def test_make_dem_3d(dem_raster: xr.DataArray) -> None:
-    res = scene.make_dem_3d(dem_raster)
+def test_convert_to_dem_3d(dem_raster: xr.DataArray) -> None:
+    res = scene.convert_to_dem_3d(dem_raster)
 
     assert res.dims == ("axis", "y", "x")
     assert res.name == "dem_3d"
@@ -27,7 +27,7 @@ def test_make_dem_3d(dem_raster: xr.DataArray) -> None:
 
 
 def test_transform_dem_3d(dem_raster: xr.DataArray) -> None:
-    dem_3d = scene.make_dem_3d(dem_raster)
+    dem_3d = scene.convert_to_dem_3d(dem_raster)
 
     # from height over the geoid to height over the ellipsoid
     res = scene.transform_dem_3d(dem_3d, "EPSG:4979", source_crs=dem_3d.rio.crs)
