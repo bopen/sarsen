@@ -4,7 +4,7 @@ import attr
 import numpy as np
 import xarray as xr
 
-M_OVER_NS_TO_M_OVER_S = 10 ** 9
+S_TO_NS = 10 ** 9
 
 
 def polyder(coefficients: xr.DataArray) -> xr.DataArray:
@@ -21,6 +21,7 @@ def polyder(coefficients: xr.DataArray) -> xr.DataArray:
 class OrbitPolyfitIterpolator:
     coefficients: xr.DataArray
     epoch: np.datetime64
+    interval: T.Tuple[np.datetime64, np.datetime64]
 
     @classmethod
     def from_position(
@@ -29,6 +30,7 @@ class OrbitPolyfitIterpolator:
         dim: str = "azimuth_time",
         deg: int = 5,
         epoch: T.Optional[np.datetime64] = None,
+        interval: T.Optional[T.Tuple[np.datetime64, np.datetime64]] = None,
     ) -> "OrbitPolyfitIterpolator":
         time = position.coords[dim]
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
@@ -38,11 +40,14 @@ class OrbitPolyfitIterpolator:
             #   `(time[0] + time[-1]) / 2` directly
             epoch = time.values[0] + (time.values[-1] - time.values[0]) / 2
 
+        if interval is None:
+            interval = (time.values[0], time.values[-1])
+
         data = position.assign_coords({dim: time - epoch})  # type: ignore
         polyfit_results = data.polyfit(dim=dim, deg=deg)
         # TODO: raise if the fit is not good enough
 
-        return cls(coefficients=polyfit_results.polyfit_coefficients, epoch=epoch)
+        return cls(polyfit_results.polyfit_coefficients, epoch, interval)
 
     def position(self, time: xr.DataArray) -> xr.DataArray:
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
@@ -57,7 +62,7 @@ class OrbitPolyfitIterpolator:
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
         epoch_time = time.assign_coords({time.name: time - self.epoch})  # type: ignore
 
-        velocity_coefficients = polyder(self.coefficients) * M_OVER_NS_TO_M_OVER_S
+        velocity_coefficients = polyder(self.coefficients) * S_TO_NS
 
         velocity: xr.DataArray
         velocity = xr.polyval(epoch_time, velocity_coefficients)  # type: ignore
