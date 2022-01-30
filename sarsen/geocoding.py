@@ -75,7 +75,9 @@ def backward_geocode(
     dim: str = "axis",
     diff_ufunc: float = 1.0,
 ) -> xr.Dataset:
-    direction_ecef_sar = velocity_ecef_sar / np.sqrt((velocity_ecef_sar ** 2).sum(dim))
+    assert velocity_ecef_sar.dims[1] == dim
+
+    direction_ecef_sar = velocity_ecef_sar / np.linalg.norm(velocity_ecef_sar)
 
     zero_doppler = functools.partial(
         zero_doppler_plane_distance, dem_ecef, position_ecef_sar, direction_ecef_sar
@@ -95,9 +97,8 @@ def backward_geocode(
     if "line" in dem_time.coords:
         dem_time = dem_time.drop_vars("line")
 
-    return xr.merge(
-        [
-            dem_time.rename("azimuth_time"),
-            (2. / SPEED_OF_LIGHT * dem_slant_range).rename("slant_range_time"),
-        ]
+    slant_range_time = (2.0 / SPEED_OF_LIGHT * dem_slant_range).rename(
+        "slant_range_time"
     )
+
+    return xr.merge([dem_time.rename("azimuth_time"), slant_range_time])
