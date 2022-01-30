@@ -20,8 +20,7 @@ def backward_geocode_sentinel1_slc_iw_burst(
 
     print("process DEM")
 
-    dem_3d = scene.make_dem_3d(dem_raster)
-    dem_ecef = scene.transform_dem_3d(dem_3d)
+    dem_ecef = scene.convert_to_dem_ecef(dem_raster)
 
     print("interpolate orbit")
 
@@ -33,9 +32,7 @@ def backward_geocode_sentinel1_slc_iw_burst(
 
     print("geocode")
 
-    dem_coords = geocoding.backward_geocode(
-        dem_ecef, position_sar.azimuth_time, position_sar, velocity_sar
-    )
+    dem_coords = geocoding.backward_geocode(dem_ecef, position_sar, velocity_sar)
 
     print("interpolate")
 

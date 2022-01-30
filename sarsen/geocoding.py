@@ -69,7 +69,6 @@ def zero_doppler_plane_distance(
 
 def backward_geocode(
     dem_ecef: xr.DataArray,
-    data_sar_time: xr.DataArray,
     position_ecef_sar: xr.DataArray,
     velocity_ecef_sar: xr.DataArray,
     dim: str = "axis",
@@ -83,6 +82,7 @@ def backward_geocode(
         zero_doppler_plane_distance, dem_ecef, position_ecef_sar, direction_ecef_sar
     )
 
+    data_sar_time = position_ecef_sar.azimuth_time
     t_template = dem_ecef.isel(axis=0).drop_vars("axis").astype(data_sar_time.dtype)
     t_prev = xr.full_like(t_template, data_sar_time.values[0])
     t_curr = xr.full_like(t_template, data_sar_time.values[-1])
