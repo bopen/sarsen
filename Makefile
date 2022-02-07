@@ -1,6 +1,7 @@
 ENVIRONMENT := SARSEN
 COV_REPORT := html
 CONDA := conda
+CONDAFLAGS := -n $(ENVIRONMENT)
 
 default: fix-code-style unit-test code-quality
 
@@ -29,10 +30,10 @@ code-style:
 # deploy
 
 conda-env-create:
-	$(CONDA) env create -n $(ENVIRONMENT) -f environment-ci.yml
+	$(CONDA) env create $(CONDAFLAGS) -f environment-ci.yml
 
 conda-env-update:
-	$(CONDA) env update -n $(ENVIRONMENT) -f environment-ci.yml
+	$(CONDA) env update $(CONDAFLAGS) -f environment-ci.yml
 
 conda-env-update-all: conda-env-update
-	$(CONDA) env update -n $(ENVIRONMENT) -f environment-dev.yml
+	$(CONDA) env update $(CONDAFLAGS) -f environment-dev.yml
