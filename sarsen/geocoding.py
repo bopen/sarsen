@@ -85,18 +85,12 @@ def backward_geocode(
     t_prev = xr.full_like(t_template, azimuth_time.values[0], dtype=azimuth_time.dtype)
     t_curr = xr.full_like(t_template, azimuth_time.values[-1], dtype=azimuth_time.dtype)
 
-    dem_time, _, _, dem_distance = secant_method(
+    # NOTE: dem_distance has the associated azimuth_time as a coordinate already
+    _, _, _, dem_distance = secant_method(
         zero_doppler, t_prev, t_curr, diff_ufunc
     )
     dem_slant_range = (dem_distance ** 2).sum(dim) ** 0.5
-    dem_slant_range = dem_slant_range.drop_vars(["azimuth_time", "line"])
-    if "azimuth_time" in dem_time.coords:
-        dem_time = dem_time.drop_vars("azimuth_time")
-    if "line" in dem_time.coords:
-        dem_time = dem_time.drop_vars("line")
-
     slant_range_time = (2.0 / SPEED_OF_LIGHT * dem_slant_range).rename(
         "slant_range_time"
     )
-
-    return xr.merge([dem_time.rename("azimuth_time"), slant_range_time])
+    return slant_range_time.reset_coords("azimuth_time")
