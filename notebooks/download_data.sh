@@ -1,19 +1,21 @@
 
 mkdir -p data
 
-# Chicago SM EPSG:32616 3.5x3.5
+# Chicago SM EPSG:32616 4x4
 
-[ ! -f data/Chicago-3.5m-DEM.tif ] && \
-  eio clip -o data/Chicago-30m-DEM.tif --bounds -88.5 41.66 -88.2 41.91 &&
-  gdalwarp -r bilinear -s_srs EPSG:4326+5773 -t_srs EPSG:32616 -tr 3.5 3.5 -ot Float32 \
-    data/Chicago-30m-DEM.tif data/Chicago-3.5m-DEM.tif
+[ ! -f data/Chicago-4m-DEM.tif ] && \
+  eio clip -o data/Chicago-30m-DEM.tif --bounds -88.55 41.75 -88.15 42.05 &&
+  gdalwarp -r bilinear -s_srs EPSG:4326+5773 -t_srs EPSG:32616 -tr 4 4 \
+      -overwrite -ot Float32 -te 375000 4625000 400000 4650000 \
+      -co COMPRESS=DEFLATE data/Chicago-30m-DEM.tif data/Chicago-4m-DEM.tif
 
 # Chicago SM EPSG:32616 10x10
 
 [ ! -f data/Chicago-10m-DEM.tif ] && \
-  eio clip -o data/Chicago-30m-DEM.tif --bounds -88.5 41.66 -88.2 41.91 &&
-  gdalwarp -r bilinear -s_srs EPSG:4326+5773 -t_srs EPSG:32616 -tr 10 10 -ot Float32 \
-    data/Chicago-30m-DEM.tif data/Chicago-10m-DEM.tif
+  eio clip -o data/Chicago-30m-DEM.tif --bounds -88.55 41.75 -88.15 42.05 &&
+  gdalwarp -r bilinear -s_srs EPSG:4326+5773 -t_srs EPSG:32616 -tr 10 10 \
+      -overwrite -ot Float32 -te 375000 4625000 400000 4650000 \
+      -co COMPRESS=DEFLATE data/Chicago-30m-DEM.tif data/Chicago-10m-DEM.tif
 
 ## SLC
 ### descending
