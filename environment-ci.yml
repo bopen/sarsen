@@ -14,7 +14,6 @@ dependencies:
   - nomkl
   - numpy >= 1.22.0
   - pip
-  - python=3.9.9
   - pytest
   - pytest-cov
   - rasterio >= 1.2.4
