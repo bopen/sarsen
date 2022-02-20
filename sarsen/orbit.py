@@ -2,6 +2,7 @@ import typing as T
 
 import attr
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 S_TO_NS = 10 ** 9
@@ -48,6 +49,18 @@ class OrbitPolyfitIterpolator:
         # TODO: raise if the fit is not good enough
 
         return cls(polyfit_results.polyfit_coefficients, epoch, interval)
+
+    def azimuth_time_range(self, freq_s: float = 0.02) -> xr.DataArray:
+        azimuth_time_values = pd.date_range(
+            start=self.interval[0],
+            end=self.interval[-1],
+            freq=pd.Timedelta(freq_s, "s"),
+        ).values
+        return xr.DataArray(
+            azimuth_time_values,
+            coords={"azimuth_time": azimuth_time_values},
+            name="azimuth_time",
+        )
 
     def position(self, time: xr.DataArray) -> xr.DataArray:
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
