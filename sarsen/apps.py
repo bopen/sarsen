@@ -1,3 +1,4 @@
+import numpy as np
 import xarray as xr
 
 from . import geocoding, orbit, scene
@@ -32,7 +33,8 @@ def backward_geocode_sentinel1_slc_iw_burst(
 
     print("geocode")
 
-    dem_coords = geocoding.backward_geocode(dem_ecef, position_sar, velocity_sar)
+    direction_sar = velocity_sar / np.linalg.norm(velocity_sar)
+    dem_coords = geocoding.backward_geocode(dem_ecef, position_sar, direction_sar)
 
     print("interpolate")
 
