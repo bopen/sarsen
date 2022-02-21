@@ -40,10 +40,7 @@ sentinelsat --path data -d --include-pattern "*hh*" \
 [ ! -f data/Rome-10m-DEM.tif ] && \
   eio clip -o data/Rome-30m-DEM.tif --bounds 12.2 41.7 12.95 42.25 &&
   gdalwarp -r bilinear -s_srs EPSG:4326+5773 -t_srs EPSG:32633 -tr 10 10 \
-      -overwrite -ot Float32 -te 275000 4650000 300000 4675000 \
-      -co COMPRESS=DEFLATE data/Rome-30m-DEM.tif data/Rome-Sacrofano-10m-DEM.tif &&
-  gdalwarp -r bilinear -s_srs EPSG:4326+5773 -t_srs EPSG:32633 -tr 10 10 \
-      -overwrite -ot Float32 -te 275000 4625000 300000 4650000 \
+      -overwrite -ot Float32 -te 275000 4625000 325000 4675000 \
       -co COMPRESS=DEFLATE data/Rome-30m-DEM.tif data/Rome-10m-DEM.tif
 
 ## SLC
