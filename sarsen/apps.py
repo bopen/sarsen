@@ -22,11 +22,10 @@ def backward_geocode_slc(
     orbit_interpolator = orbit.OrbitPolyfitIterpolator.from_position(position_ecef)
     position_ecef = orbit_interpolator.position()
     velocity_ecef = orbit_interpolator.velocity()
-    direction_ecef = velocity_ecef / (velocity_ecef ** 2).sum("axis") ** 0.5
 
     print("geocode")
 
-    dem_coords = geocoding.backward_geocode(dem_ecef, position_ecef, direction_ecef)
+    dem_coords = geocoding.backward_geocode(dem_ecef, position_ecef, velocity_ecef)
 
     print("interpolate")
 
