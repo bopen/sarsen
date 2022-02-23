@@ -19,7 +19,7 @@ def secant_method(
     ufunc: T.Callable[[TimedeltaArrayLike], T.Tuple[FloatArrayLike, FloatArrayLike]],
     t_prev: TimedeltaArrayLike,
     t_curr: TimedeltaArrayLike,
-    diff_ufunc: float = 1,
+    diff_ufunc: float = 1.0,
     diff_t: np.timedelta64 = np.timedelta64(0, "ns"),
 ) -> T.Tuple[TimedeltaArrayLike, TimedeltaArrayLike, FloatArrayLike, FloatArrayLike]:
     """Return the root of ufunc calculated using the secant method."""
