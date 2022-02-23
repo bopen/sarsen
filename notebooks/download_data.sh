@@ -44,8 +44,13 @@ sentinelsat --path data -d --include-pattern "*hh*" \
       -co COMPRESS=DEFLATE data/Rome-30m-DEM.tif data/Rome-10m-DEM.tif
 
 ## SLC
+### descending
 sentinelsat --path data -d --include-pattern "*iw3*vv*" \
   --name S1B_IW_SLC__1SDV_20211223T051121_20211223T051148_030148_039993_BA4B
+
+### ascending
+sentinelsat --path data -d --include-pattern "*iw2*vv*" \
+  --name S1A_IW_SLC__1SDV_20211223T170557_20211223T170624_041139_04E360_B8E2
 
 ## GRD
 sentinelsat --path data -d --include-pattern "*vv*" \
