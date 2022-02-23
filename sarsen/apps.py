@@ -1,6 +1,8 @@
 import typing as T
 
+import numpy as np
 import xarray as xr
+import xarray_sentinel
 
 from . import geocoding, orbit, scene
 
@@ -28,11 +30,42 @@ def backward_geocode_slc(
 
     print("interpolate")
 
-    geocoded = abs(measurement).interp(
-        azimuth_time=dem_coords.azimuth_time,
-        slant_range_time=dem_coords.slant_range_time,
-        method="nearest",
-    )
+    if "number_of_bursts" in measurement.attrs:
+        geocoded = xr.full_like(dem_raster, np.nan)
+
+        azimuth_time_min = dem_coords.azimuth_time.values.min()
+        azimuth_time_max = dem_coords.azimuth_time.values.max()
+        slant_range_time_min = dem_coords.slant_range_time.values.min()
+        slant_range_time_max = dem_coords.slant_range_time.values.max()
+
+        for burst_index in range(measurement.attrs["number_of_bursts"]):
+            burst = xarray_sentinel.crop_burst_dataset(
+                measurement, burst_index=burst_index
+            )
+            if (
+                burst.azimuth_time[-1] < azimuth_time_min
+                or burst.azimuth_time[0] > azimuth_time_max
+            ):
+                continue
+            if (
+                burst.slant_range_time[-1] < slant_range_time_min
+                or burst.slant_range_time[0] > slant_range_time_max
+            ):
+                continue
+            # the `isel` is very crude way to remove the black bands in azimuth
+            temp = abs(burst.isel(azimuth_time=slice(30, -30))).interp(
+                azimuth_time=dem_coords.azimuth_time,
+                slant_range_time=dem_coords.slant_range_time,
+                method="nearest",
+            )
+            geocoded = xr.where(np.isfinite(temp), temp, geocoded)  # type: ignore
+
+    else:
+        geocoded = abs(measurement).interp(
+            azimuth_time=dem_coords.azimuth_time,
+            slant_range_time=dem_coords.slant_range_time,
+            method="nearest",
+        )
 
     return geocoded
 
