@@ -62,7 +62,11 @@ class OrbitPolyfitIterpolator:
             name="azimuth_time",
         )
 
-    def position(self, time: xr.DataArray) -> xr.DataArray:
+    def position(
+        self, time: T.Optional[xr.DataArray] = None, **kwargs: T.Any
+    ) -> xr.DataArray:
+        if time is None:
+            time = self.azimuth_time_range(**kwargs)
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
         epoch_time = time.assign_coords({time.name: time - self.epoch})  # type: ignore
 
@@ -71,7 +75,11 @@ class OrbitPolyfitIterpolator:
         position = position.assign_coords({time.name: time})  # type: ignore
         return position.rename("position")
 
-    def velocity(self, time: xr.DataArray) -> xr.DataArray:
+    def velocity(
+        self, time: T.Optional[xr.DataArray] = None, **kwargs: T.Any
+    ) -> xr.DataArray:
+        if time is None:
+            time = self.azimuth_time_range(**kwargs)
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
         epoch_time = time.assign_coords({time.name: time - self.epoch})  # type: ignore
 
