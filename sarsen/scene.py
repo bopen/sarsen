@@ -12,6 +12,8 @@ ECEF_CRS = "EPSG:4978"
 
 def open_dem_raster(dem_urlpath: str, **kwargs: T.Any) -> xr.DataArray:
     dem_raster = xr.open_dataarray(dem_urlpath, engine="rasterio", **kwargs)  # type: ignore
+    if dem_raster.y.diff("y").values[0] < 0:
+        dem_raster = dem_raster.isel(y=slice(None, None, -1))
     return dem_raster.squeeze(drop=True)  # type: ignore
 
 
@@ -50,3 +52,15 @@ def transform_dem_3d(
 def convert_to_dem_ecef(dem_raster: xr.DataArray) -> xr.DataArray:
     dem_3d = convert_to_dem_3d(dem_raster)
     return transform_dem_3d(dem_3d, target_crs=ECEF_CRS)
+
+
+def compute_diff_normal(
+    dem_ecef: xr.DataArray,
+    spatial_dims: T.Tuple[str, str] = ("x", "y"),
+    axis_dim: str = "axis",
+) -> xr.DataArray:
+    x, y = spatial_dims
+    x_diff = dem_ecef.shift({x: -1}) - dem_ecef.shift({x: 1})
+    y_diff = dem_ecef.shift({y: -1}) - dem_ecef.shift({y: 1})
+    up = xr.cross(x_diff, y_diff, dim=axis_dim)
+    return up / xr.dot(up, up, dims=axis_dim) ** 0.5  # type: ignore
