@@ -8,9 +8,10 @@ from . import geocoding, orbit, scene
 
 
 def backward_geocode_slc(
-    measurement: xr.DataArray,
+    image: xr.DataArray,
     position_ecef: xr.DataArray,
     dem_raster: xr.DataArray,
+    correct_radiometry: bool = False,
 ) -> xr.DataArray:
 
     print("pre-process DEM")
@@ -29,7 +30,7 @@ def backward_geocode_slc(
 
     print("interpolate")
 
-    if "number_of_bursts" in measurement.attrs:
+    if "number_of_bursts" in image.attrs:
         geocoded = xr.full_like(dem_raster, np.nan)
 
         azimuth_time_min = dem_coords.azimuth_time.values.min()
@@ -37,10 +38,8 @@ def backward_geocode_slc(
         slant_range_time_min = dem_coords.slant_range_time.values.min()
         slant_range_time_max = dem_coords.slant_range_time.values.max()
 
-        for burst_index in range(measurement.attrs["number_of_bursts"]):
-            burst = xarray_sentinel.crop_burst_dataset(
-                measurement, burst_index=burst_index
-            )
+        for burst_index in range(image.attrs["number_of_bursts"]):
+            burst = xarray_sentinel.crop_burst_dataset(image, burst_index=burst_index)
             if (
                 burst.azimuth_time[-1] < azimuth_time_min
                 or burst.azimuth_time[0] > azimuth_time_max
@@ -52,7 +51,7 @@ def backward_geocode_slc(
             ):
                 continue
             # the `isel` is very crude way to remove the black bands in azimuth
-            temp = abs(burst.isel(azimuth_time=slice(30, -30))).interp(
+            temp = burst.isel(azimuth_time=slice(30, -30)).interp(
                 azimuth_time=dem_coords.azimuth_time,
                 slant_range_time=dem_coords.slant_range_time,
                 method="nearest",
@@ -60,11 +59,21 @@ def backward_geocode_slc(
             geocoded = xr.where(np.isfinite(temp), temp, geocoded)  # type: ignore
 
     else:
-        geocoded = abs(measurement).interp(
+        geocoded = image.interp(
             azimuth_time=dem_coords.azimuth_time,
             slant_range_time=dem_coords.slant_range_time,
             method="nearest",
         )
+
+    if correct_radiometry:
+        dem_normal_ecef = scene.compute_diff_normal(dem_ecef)
+        cos_incidence_angle = xr.dot(
+            dem_normal_ecef,
+            -dem_coords["dem_direction"],
+            dims="axis",
+        )  # type: ignore
+        sin_incidence_angle = np.sin(np.arccos(cos_incidence_angle))
+        geocoded *= sin_incidence_angle
 
     return geocoded
 
@@ -74,26 +83,36 @@ def backward_geocode_sentinel1_slc(
     measurement_group: str,
     dem_urlpath: str,
     orbit_group: T.Optional[str] = None,
+    calibration_group: T.Optional[str] = None,
     output_urlpath: str = "GRD.tif",
 ) -> None:
     orbit_group = orbit_group or f"{measurement_group}/orbit"
+    calibration_group = calibration_group or f"{measurement_group}/calibration"
 
     print("open data")
 
     measurement = xr.open_dataarray(product_urlpath, engine="sentinel-1", group=measurement_group)  # type: ignore
     orbit_ecef = xr.open_dataset(product_urlpath, engine="sentinel-1", group=orbit_group)  # type: ignore
     position_ecef = orbit_ecef.position
+    calibration = xr.open_dataset(product_urlpath, engine="sentinel-1", group=calibration_group)  # type: ignore
+    beta_nought_lut = calibration.beta_naught
     dem_raster = scene.open_dem_raster(dem_urlpath)
+
+    print("pre-process data / apply calibration")
+
+    beta_nought = xarray_sentinel.calibrate_amplitude(abs(measurement), beta_nought_lut)
+    beta_nought.attrs.update(measurement.attrs)
 
     print("process data")
 
-    geocoded = backward_geocode_slc(measurement, position_ecef, dem_raster)
+    geocoded = backward_geocode_slc(beta_nought, position_ecef, dem_raster)
 
     print("save data")
 
     geocoded.rio.set_crs(dem_raster.rio.crs)
     geocoded.rio.to_raster(
         output_urlpath,
+        dtype=np.float32,
         tiled=True,
         blockxsize=512,
         blockysize=512,
