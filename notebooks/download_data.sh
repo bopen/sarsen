@@ -43,13 +43,19 @@ sentinelsat --path data -d --include-pattern "*hh*" \
       -overwrite -ot Float32 -te 275000 4625000 325000 4675000 \
       -co COMPRESS=DEFLATE data/Rome-30m-DEM.tif data/Rome-10m-DEM.tif
 
+[ ! -f data/Gran-Sasso-10m-DEM.tif ] && \
+  eio clip -o data/Gran-Sasso-30m-DEM.tif --bounds 13.1 42. 13.95 42.75 &&
+  gdalwarp -r bilinear -s_srs EPSG:4326+5773 -t_srs EPSG:32633 -tr 10 10 \
+      -overwrite -ot Float32 -te 350000 4660000 400000 4710000 \
+      -co COMPRESS=DEFLATE data/Gran-Sasso-30m-DEM.tif data/Gran-Sasso-10m-DEM.tif
+
 ## SLC
 ### descending
-sentinelsat --path data -d --include-pattern "*iw3*vv*" \
+sentinelsat --path data -d --include-pattern "*iw[23]*vv*" \
   --name S1B_IW_SLC__1SDV_20211223T051121_20211223T051148_030148_039993_BA4B
 
 ### ascending
-sentinelsat --path data -d --include-pattern "*iw2*vv*" \
+sentinelsat --path data -d --include-pattern "*iw[23]*vv*" \
   --name S1A_IW_SLC__1SDV_20211223T170557_20211223T170624_041139_04E360_B8E2
 
 ## GRD
