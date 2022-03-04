@@ -1,3 +1,7 @@
+# project specific
+*.tif
+version.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -130,3 +134,4 @@ dmypy.json
 
 # others
 dask-worker-space
+.DS_Store
