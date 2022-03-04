@@ -74,7 +74,7 @@ def backward_geocode(
     azimuth_time: T.Optional[xr.DataArray] = None,
     dim: str = "axis",
     diff_ufunc: float = 1.0,
-) -> xr.Dataset:
+) -> T.Tuple[xr.DataArray, xr.DataArray]:
     direction_ecef = (
         velocity_ecef / xr.dot(velocity_ecef, velocity_ecef, dims=dim) ** 0.5  # type: ignore
     )
@@ -101,3 +101,133 @@ def backward_geocode(
         ]
     )
     return simulation.reset_coords("azimuth_time")
+
+
+def dem_area_gamma(
+        dem_ecef: xr.DataArray,
+        dem_direction: xr.DataArray,
+) -> xr.DataArray:
+
+    x_corners = np.concatenate([
+        [dem_ecef.x[0] + (dem_ecef.x[0] - dem_ecef.x[1]) / 2],
+        ((dem_ecef.x.shift(x=-1) + dem_ecef.x) / 2)[:-1].data,
+        [dem_ecef.x[-1] + (dem_ecef.x[-1] - dem_ecef.x[-2]) / 2]
+    ])
+    y_corners = np.concatenate([
+        [dem_ecef.y[0] + (dem_ecef.y[0] - dem_ecef.y[1]) / 2],
+        ((dem_ecef.y.shift(y=-1) + dem_ecef.y) / 2)[:-1].data,
+        [dem_ecef.y[-1] + (dem_ecef.y[-1] - dem_ecef.y[-2]) / 2]
+    ])
+    dem_ecef_corners = dem_ecef.interp(
+        {"x": x_corners, "y": y_corners},
+        method="linear",
+        kwargs={"fill_value": "extrapolate"}
+    )
+
+    dx = dem_ecef_corners.diff("x", 1)
+    dy = dem_ecef_corners.diff("y", 1)
+
+    dx1 = dx.isel(y=slice(1, None)).assign_coords(dem_ecef.coords)
+    dy1 = dy.isel(x=slice(1, None)).assign_coords(dem_ecef.coords)
+    dx2 = dx.isel(y=slice(None, -1)).assign_coords(dem_ecef.coords)
+    dy2 = dy.isel(x=slice(None, -1)).assign_coords(dem_ecef.coords)
+
+    cross_1 = xr.cross(dx1, dy1, dim="axis") / 2
+    sign = np.sign(xr.dot(cross_1, dem_ecef, dims="axis"))  # ensure direction out of DEM
+    area_t1 = xr.dot(sign * cross_1, dem_direction, dims="axis")
+    area_t1 = area_t1.where(area_t1 > 0, 0)
+
+    cross_2 = xr.cross(dx2, dy2, dim="axis") / 2
+    sign = np.sign(xr.dot(cross_2, dem_ecef, dims="axis"))  # ensure direction out of DEM
+    area_t2 = xr.dot(sign * cross_2, dem_direction, dims="axis")
+    area_t2 = area_t2.where(area_t2 > 0, 0)
+
+    area = (area_t1 + area_t2)
+
+    return area
+
+
+def sum_area_on_image_pixels(
+        dem_area: xr.DataArray,
+        azimuth_index: xr.DataArray,
+        slant_range_index: xr.DataArray,
+) -> xr.DataArray:
+    dem_area = dem_area.assign_coords({
+        "azimuth_index": azimuth_index,
+        "slant_range_index": slant_range_index,
+    })
+
+    dem_area = dem_area.stack(z=("x", "y")).reset_index("z")
+    dem_area = dem_area.set_index(z=("azimuth_index", "slant_range_index"))
+    print("dem_area")
+    print(dem_area)
+    print()
+    sum_area = dem_area.groupby("z").sum()
+    print("sum done")
+    print()
+    tot_area = sum_area.sel(z=dem_area.indexes["z"])
+    tot_area = tot_area.assign_coords(dem_area.coords)
+    tot_area = tot_area.reset_index("z").set_index(z=("x", "y")).unstack("z")
+    return tot_area
+
+
+def gamma_weights(
+    dem_ecef: xr.DataArray,
+    dem_coords: xr.Dataset,
+    slant_range_time0: np.timedelta64,
+    azimuth_time0: float,
+    delta_slant_range_time: float,
+    delta_azimuth_time: float,
+) -> xr.DataArray:
+    print("starting")
+    print()
+    area = dem_area_gamma(dem_ecef, dem_coords.dem_direction)
+    print("computed pixel area")
+    print(area)
+    print()
+
+    # compute dem image coordinates
+    slant_range_index = (dem_coords.slant_range_time - slant_range_time0) / delta_slant_range_time
+    azimuth_index = (dem_coords.azimuth_time - azimuth_time0) / delta_azimuth_time
+
+    slant_range_index_0 = np.floor(slant_range_index).astype(int)
+    slant_range_index_1 = np.ceil(slant_range_index).astype(int)
+    azimuth_index_0 = np.floor(azimuth_index).astype(int)
+    azimuth_index_1 = np.ceil(azimuth_index).astype(int)
+
+    print("computed indexes")
+    print(slant_range_index)
+    print(azimuth_index)
+    print()
+
+    # bilinear
+    w_00 = abs((azimuth_index_1 - azimuth_index) * (slant_range_index_1 - slant_range_index))
+    tot_area_00 = sum_area_on_image_pixels(
+        area * w_00,
+        azimuth_index=azimuth_index_0,
+        slant_range_index=slant_range_index_0,
+    )
+    print("done 1")
+    w_01 = abs((azimuth_index_1 - azimuth_index) * (slant_range_index_0 - slant_range_index))
+    tot_area_01 = sum_area_on_image_pixels(
+        area * w_01,
+        azimuth_index=azimuth_index_0,
+        slant_range_index=slant_range_index_1,
+    )
+
+    w_10 = abs((azimuth_index_0 - azimuth_index) * (slant_range_index_1 - slant_range_index))
+    tot_area_10 = sum_area_on_image_pixels(
+        area * w_10,
+        azimuth_index=azimuth_index_1,
+        slant_range_index=slant_range_index_0,
+    )
+
+    w_11 = abs((azimuth_index_0 - azimuth_index) * (slant_range_index_0 - slant_range_index))
+    tot_area_11 = sum_area_on_image_pixels(
+        area * w_11,
+        azimuth_index=azimuth_index_1,
+        slant_range_index=slant_range_index_1,
+    )
+
+    return tot_area_00 + tot_area_01 + tot_area_10 + tot_area_11
+
