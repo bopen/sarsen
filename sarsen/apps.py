@@ -67,7 +67,7 @@ def backward_geocode_slc(
         geocoded = image.interp(
             azimuth_time=dem_coords.azimuth_time,
             slant_range_time=dem_coords.slant_range_time,
-            method="nearest",
+            method="linear",
         )
 
     if correct_radiometry:
