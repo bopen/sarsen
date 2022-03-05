@@ -1,3 +1,4 @@
+from audioop import mul
 import typing as T
 
 import numpy as np
@@ -11,6 +12,7 @@ def backward_geocode_slc(
     image: xr.DataArray,
     position_ecef: xr.DataArray,
     dem_raster: xr.DataArray,
+    multilook: T.Optional[T.Tuple[int, int]] = (2, 8),
     correct_radiometry: bool = False,
 ) -> xr.DataArray:
 
@@ -40,6 +42,9 @@ def backward_geocode_slc(
 
         for burst_index in range(image.attrs["number_of_bursts"]):
             burst = xarray_sentinel.crop_burst_dataset(image, burst_index=burst_index)
+            if multilook:
+                roll = {"azimuth_time": multilook[0], "slant_range_time": multilook[1]}
+                burst = burst.rolling(roll).mean()
             if (
                 burst.azimuth_time[-1] < azimuth_time_min
                 or burst.azimuth_time[0] > azimuth_time_max
@@ -100,8 +105,7 @@ def backward_geocode_sentinel1_slc(
 
     print("pre-process data / apply calibration")
 
-    beta_nought = xarray_sentinel.calibrate_amplitude(abs(measurement), beta_nought_lut)
-    beta_nought.attrs.update(measurement.attrs)
+    beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
 
     print("process data")
 
