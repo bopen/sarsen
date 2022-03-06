@@ -7,6 +7,14 @@ import xarray_sentinel
 from . import geocoding, orbit, scene
 
 
+def mosaic_iw_slc(image: xr.DataArray, crop=90) -> xr.DataArray:
+    bursts = []
+    for i in range(image.attrs["number_of_bursts"]):
+        burst = xarray_sentinel.crop_burst_dataset(image, burst_index=i)
+        bursts.append(burst.isel(azimuth_time=slice(crop, -crop)))
+    return xr.concat(bursts, dim="azimuth_time")
+
+
 def simulate_acquisition(
     position_ecef: xr.DataArray,
     dem_raster: xr.DataArray,
@@ -31,50 +39,16 @@ def simulate_acquisition(
 
 def interpolate_measurement(
     image: xr.DataArray,
-    acquisition: xr.Dataset,
-    dem_raster: xr.DataArray,
-    multilook: T.Optional[T.Tuple[int, int]] = (2, 8),
+    multilook: T.Optional[T.Tuple[int, int]] = None,
     interp_method: str = "nearest",
     **interp_kwargs: T.Any,
 ) -> xr.DataArray:
-    if "number_of_bursts" in image.attrs:
-        geocoded = xr.full_like(dem_raster, np.nan)
+    if multilook:
+        image = image.rolling(
+            azimuth_time=multilook[0], slant_range_time=multilook[1]
+        ).mean()
 
-        azimuth_time_min = acquisition.azimuth_time.values.min()
-        azimuth_time_max = acquisition.azimuth_time.values.max()
-        slant_range_time_min = acquisition.slant_range_time.values.min()
-        slant_range_time_max = acquisition.slant_range_time.values.max()
-
-        for burst_index in range(image.attrs["number_of_bursts"]):
-            burst = xarray_sentinel.crop_burst_dataset(image, burst_index=burst_index)
-            if multilook:
-                burst = burst.rolling(
-                    azimuth_time=multilook[0],
-                    slant_range_time=multilook[1],
-                    center=True,
-                ).mean()
-            if (
-                burst.azimuth_time[-1] < azimuth_time_min
-                or burst.azimuth_time[0] > azimuth_time_max
-            ):
-                continue
-            if (
-                burst.slant_range_time[-1] < slant_range_time_min
-                or burst.slant_range_time[0] > slant_range_time_max
-            ):
-                continue
-            # the `isel` is very crude way to remove the black bands in azimuth
-            temp = burst.isel(azimuth_time=slice(30, -30)).interp(
-                azimuth_time=acquisition.azimuth_time,
-                slant_range_time=acquisition.slant_range_time,
-                method=interp_method,
-            )
-            geocoded = xr.where(np.isfinite(temp), temp, geocoded)  # type: ignore
-    else:
-        geocoded = image.interp(
-            method=interp_method,
-            **interp_kwargs,
-        )
+    geocoded = image.interp(method=interp_method, **interp_kwargs)
 
     return geocoded
 
@@ -96,7 +70,6 @@ def backward_geocode_sentinel1(
     print("open data")
 
     measurement_ds = xr.open_dataset(product_urlpath, engine="sentinel-1", group=measurement_group)  # type: ignore
-    product_type = measurement_ds.attrs["sar:product_type"]
     measurement = measurement_ds.measurement
 
     dem_raster = scene.open_dem_raster(dem_urlpath)
@@ -116,7 +89,7 @@ def backward_geocode_sentinel1(
 
     print("interpolate image")
 
-    if product_type == "GRD":
+    if measurement_ds.attrs["sar:product_type"] == "GRD":
         coordinate_conversion = xr.open_dataset(
             product_urlpath,
             engine="sentinel-1",
@@ -128,13 +101,17 @@ def backward_geocode_sentinel1(
             coordinate_conversion,
         )
         interp_kwargs = {"ground_range": ground_range}
-    else:
+    elif measurement_ds.attrs["sar:product_type"] == "SLC":
         interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
+        if measurement_ds.attrs["sar:instrument_mode"] == "IW":
+            beta_nought = mosaic_iw_slc(beta_nought)
+    else:
+        raise ValueError(
+            f"unsupported sar:product_type {measurement_ds.attrs['sar:product_type']}"
+        )
 
     geocoded = interpolate_measurement(
         beta_nought,
-        acquisition,
-        dem_raster,
         multilook=multilook,
         azimuth_time=acquisition.azimuth_time,
         method=interp_method,
