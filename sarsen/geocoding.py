@@ -134,12 +134,12 @@ def dem_area_gamma(
 
     cross_1 = xr.cross(dx1, dy1, dim="axis") / 2
     sign = np.sign(xr.dot(cross_1, dem_ecef, dims="axis"))  # ensure direction out of DEM
-    area_t1 = xr.dot(sign * cross_1, dem_direction, dims="axis")
+    area_t1 = xr.dot(sign * cross_1, -dem_direction, dims="axis")
     area_t1 = area_t1.where(area_t1 > 0, 0)
 
     cross_2 = xr.cross(dx2, dy2, dim="axis") / 2
     sign = np.sign(xr.dot(cross_2, dem_ecef, dims="axis"))  # ensure direction out of DEM
-    area_t2 = xr.dot(sign * cross_2, dem_direction, dims="axis")
+    area_t2 = xr.dot(sign * cross_2, -dem_direction, dims="axis")
     area_t2 = area_t2.where(area_t2 > 0, 0)
 
     area = (area_t1 + area_t2)
