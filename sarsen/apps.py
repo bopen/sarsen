@@ -7,7 +7,7 @@ import xarray_sentinel
 from . import geocoding, orbit, scene
 
 
-def mosaic_iw_slc(image: xr.DataArray, crop=90) -> xr.DataArray:
+def mosaic_slc_iw(image: xr.DataArray, crop=90) -> xr.DataArray:
     bursts = []
     for i in range(image.attrs["number_of_bursts"]):
         burst = xarray_sentinel.crop_burst_dataset(image, burst_index=i)
@@ -62,21 +62,22 @@ def backward_geocode_sentinel1(
     output_urlpath: str = "GRD.tif",
     correct_radiometry: bool = False,
     interp_method: str = "nearest",
-    multilook: T.Optional[T.Tuple[int, int]] = (2, 8),
+    multilook: T.Optional[T.Tuple[int, int]] = None,
+    **kwargs: T.Any,
 ) -> None:
     orbit_group = orbit_group or f"{measurement_group}/orbit"
     calibration_group = calibration_group or f"{measurement_group}/calibration"
 
     print("open data")
 
-    measurement_ds = xr.open_dataset(product_urlpath, engine="sentinel-1", group=measurement_group)  # type: ignore
+    measurement_ds = xr.open_dataset(product_urlpath, engine="sentinel-1", group=measurement_group, **kwargs)  # type: ignore
     measurement = measurement_ds.measurement
 
     dem_raster = scene.open_dem_raster(dem_urlpath)
 
-    orbit_ecef = xr.open_dataset(product_urlpath, engine="sentinel-1", group=orbit_group)  # type: ignore
+    orbit_ecef = xr.open_dataset(product_urlpath, engine="sentinel-1", group=orbit_group, **kwargs)  # type: ignore
     position_ecef = orbit_ecef.position
-    calibration = xr.open_dataset(product_urlpath, engine="sentinel-1", group=calibration_group)  # type: ignore
+    calibration = xr.open_dataset(product_urlpath, engine="sentinel-1", group=calibration_group, **kwargs)  # type: ignore
     beta_nought_lut = calibration.beta_naught
 
     print("simulate acquisition")
@@ -94,6 +95,7 @@ def backward_geocode_sentinel1(
             product_urlpath,
             engine="sentinel-1",
             group=f"{measurement_group}/coordinate_conversion",
+            **kwargs,
         )  # type: ignore
         ground_range = xarray_sentinel.slant_range_time_to_ground_range(
             acquisition.azimuth_time,
@@ -104,7 +106,7 @@ def backward_geocode_sentinel1(
     elif measurement_ds.attrs["sar:product_type"] == "SLC":
         interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
         if measurement_ds.attrs["sar:instrument_mode"] == "IW":
-            beta_nought = mosaic_iw_slc(beta_nought)
+            beta_nought = mosaic_slc_iw(beta_nought)
     else:
         raise ValueError(
             f"unsupported sar:product_type {measurement_ds.attrs['sar:product_type']}"
