@@ -7,12 +7,12 @@ import xarray_sentinel
 from . import geocoding, orbit, scene
 
 
-def mosaic_slc_iw(image: xr.DataArray, crop=90) -> xr.DataArray:
+def mosaic_slc_iw(image: xr.DataArray, crop: int = 90) -> xr.DataArray:
     bursts = []
     for i in range(image.attrs["number_of_bursts"]):
         burst = xarray_sentinel.crop_burst_dataset(image, burst_index=i)
         bursts.append(burst.isel(azimuth_time=slice(crop, -crop)))
-    return xr.concat(bursts, dim="azimuth_time")
+    return xr.concat(bursts, dim="azimuth_time")  # type: ignore
 
 
 def simulate_acquisition(
