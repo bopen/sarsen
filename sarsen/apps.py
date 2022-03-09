@@ -78,7 +78,7 @@ def backward_geocode_sentinel1(
     orbit_ecef = xr.open_dataset(product_urlpath, engine="sentinel-1", group=orbit_group, **kwargs)  # type: ignore
     position_ecef = orbit_ecef.position
     calibration = xr.open_dataset(product_urlpath, engine="sentinel-1", group=calibration_group, **kwargs)  # type: ignore
-    beta_nought_lut = calibration.beta_naught
+    beta_nought_lut = calibration.betaNought
 
     print("simulate acquisition")
 
@@ -99,7 +99,7 @@ def backward_geocode_sentinel1(
         )  # type: ignore
         ground_range = xarray_sentinel.slant_range_time_to_ground_range(
             acquisition.azimuth_time,
-            acquisition.aslant_range_time,
+            acquisition.salant_range_time,
             coordinate_conversion,
         )
         interp_kwargs = {"ground_range": ground_range}
@@ -116,7 +116,7 @@ def backward_geocode_sentinel1(
         beta_nought,
         multilook=multilook,
         azimuth_time=acquisition.azimuth_time,
-        method=interp_method,
+        interp_method=interp_method,
         **interp_kwargs,
     )
 
