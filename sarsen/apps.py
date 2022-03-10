@@ -146,4 +146,3 @@ def backward_geocode_sentinel1(
         compress="ZSTD",
         num_threads="ALL_CPUS",
     )
-    return geocoded
