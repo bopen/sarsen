@@ -21,7 +21,10 @@ def convert_to_dem_3d(dem_raster: xr.DataArray, dim: str = "axis") -> xr.DataArr
     _, dem_raster_x = xr.broadcast(dem_raster, dem_raster.x)  # type: ignore
     dem_3d = xr.concat(
         [dem_raster_x, dem_raster.y, dem_raster], dim=dim, coords="minimal"
-    ).chunk({dim: None})
+    )
+    if dem_3d.chunks is not None:
+        dem_3d = dem_3d.chunk({dim: None})
+
     dem_3d = dem_3d.assign_coords({dim: [0, 1, 2]})  # type: ignore
     return dem_3d.rename("dem_3d")
 
