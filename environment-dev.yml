@@ -9,7 +9,9 @@ dependencies:
   - mamba
   - notebook
   - pip
+  - planetary-computer
   - proj-data
   - sentinelsat
+  - stackstac
   - pip:
-    - elevation
+      - elevation
