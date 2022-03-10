@@ -99,7 +99,7 @@ def backward_geocode_sentinel1(
         )  # type: ignore
         ground_range = xarray_sentinel.slant_range_time_to_ground_range(
             acquisition.azimuth_time,
-            acquisition.salant_range_time,
+            acquisition.slant_range_time,
             coordinate_conversion,
         )
         interp_kwargs = {"ground_range": ground_range}
