@@ -74,7 +74,7 @@ def backward_geocode(
     azimuth_time: T.Optional[xr.DataArray] = None,
     dim: str = "axis",
     diff_ufunc: float = 1.0,
-) -> T.Tuple[xr.DataArray, xr.DataArray]:
+) -> xr.Dataset:
     direction_ecef = (
         velocity_ecef / xr.dot(velocity_ecef, velocity_ecef, dims=dim) ** 0.5  # type: ignore
     )
@@ -108,14 +108,14 @@ def dem_area_gamma(
     dem_direction: xr.DataArray,
 ) -> xr.DataArray:
 
-    x_corners = np.concatenate(
+    x_corners: npt.ArrayLike = np.concatenate(
         [
             [dem_ecef.x[0] + (dem_ecef.x[0] - dem_ecef.x[1]) / 2],
             ((dem_ecef.x.shift(x=-1) + dem_ecef.x) / 2)[:-1].data,
             [dem_ecef.x[-1] + (dem_ecef.x[-1] - dem_ecef.x[-2]) / 2],
         ]
     )
-    y_corners = np.concatenate(
+    y_corners: npt.ArrayLike = np.concatenate(
         [
             [dem_ecef.y[0] + (dem_ecef.y[0] - dem_ecef.y[1]) / 2],
             ((dem_ecef.y.shift(y=-1) + dem_ecef.y) / 2)[:-1].data,
@@ -131,26 +131,26 @@ def dem_area_gamma(
     dx = dem_ecef_corners.diff("x", 1)
     dy = dem_ecef_corners.diff("y", 1)
 
-    dx1 = dx.isel(y=slice(1, None)).assign_coords(dem_ecef.coords)
-    dy1 = dy.isel(x=slice(1, None)).assign_coords(dem_ecef.coords)
-    dx2 = dx.isel(y=slice(None, -1)).assign_coords(dem_ecef.coords)
-    dy2 = dy.isel(x=slice(None, -1)).assign_coords(dem_ecef.coords)
+    dx1 = dx.isel(y=slice(1, None)).assign_coords(dem_ecef.coords)  # type: ignore
+    dy1 = dy.isel(x=slice(1, None)).assign_coords(dem_ecef.coords)  # type: ignore
+    dx2 = dx.isel(y=slice(None, -1)).assign_coords(dem_ecef.coords)  # type: ignore
+    dy2 = dy.isel(x=slice(None, -1)).assign_coords(dem_ecef.coords)  # type: ignore
 
     cross_1 = xr.cross(dx1, dy1, dim="axis") / 2
     sign = np.sign(
-        xr.dot(cross_1, dem_ecef, dims="axis")
+        xr.dot(cross_1, dem_ecef, dims="axis")  # type: ignore
     )  # ensure direction out of DEM
-    area_t1 = xr.dot(sign * cross_1, -dem_direction, dims="axis")
+    area_t1 = xr.dot(sign * cross_1, -dem_direction, dims="axis")  # type: ignore
     area_t1 = area_t1.where(area_t1 > 0, 0)
 
     cross_2 = xr.cross(dx2, dy2, dim="axis") / 2
     sign = np.sign(
-        xr.dot(cross_2, dem_ecef, dims="axis")
+        xr.dot(cross_2, dem_ecef, dims="axis")  # type: ignore
     )  # ensure direction out of DEM
-    area_t2 = xr.dot(sign * cross_2, -dem_direction, dims="axis")
+    area_t2 = xr.dot(sign * cross_2, -dem_direction, dims="axis")  # type: ignore
     area_t2 = area_t2.where(area_t2 > 0, 0)
 
-    area = area_t1 + area_t2
+    area: xr.DataArray = area_t1 + area_t2
 
     return area
 
@@ -160,7 +160,7 @@ def sum_area_on_image_pixels(
     azimuth_index: xr.DataArray,
     slant_range_index: xr.DataArray,
 ) -> xr.DataArray:
-    dem_area = dem_area.assign_coords(
+    dem_area = dem_area.assign_coords(  # type: ignore
         {
             "azimuth_index": azimuth_index,
             "slant_range_index": slant_range_index,
@@ -170,10 +170,10 @@ def sum_area_on_image_pixels(
     dem_area = dem_area.stack(z=("x", "y")).reset_index("z")
     dem_area = dem_area.set_index(z=("azimuth_index", "slant_range_index"))
 
-    sum_area = dem_area.groupby("z").sum()
+    sum_area: xr.DataArray = dem_area.groupby("z").sum()
 
     tot_area = sum_area.sel(z=dem_area.indexes["z"])
-    tot_area = tot_area.assign_coords(dem_area.coords)
+    tot_area = tot_area.assign_coords(dem_area.coords)  # type: ignore
     tot_area = tot_area.reset_index("z").set_index(z=("x", "y")).unstack("z")
     return tot_area
 
