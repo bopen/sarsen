@@ -17,12 +17,8 @@ def mosaic_slc_iw(image: xr.DataArray, crop: int = 90) -> xr.DataArray:
 
 def simulate_acquisition(
     position_ecef: xr.DataArray,
-    dem_raster: xr.DataArray,
+    dem_ecef: xr.DataArray,
 ) -> xr.Dataset:
-
-    print("pre-process DEM")
-
-    dem_ecef = scene.convert_to_dem_ecef(dem_raster)
 
     print("interpolate orbit")
 
@@ -80,9 +76,13 @@ def backward_geocode_sentinel1(
     calibration = xr.open_dataset(product_urlpath, engine="sentinel-1", group=calibration_group, **kwargs)  # type: ignore
     beta_nought_lut = calibration.betaNought
 
+    print("pre-process DEM")
+
+    dem_ecef = scene.convert_to_dem_ecef(dem_raster)
+
     print("simulate acquisition")
 
-    acquisition = simulate_acquisition(position_ecef, dem_raster)
+    acquisition = simulate_acquisition(position_ecef, dem_ecef)
 
     print("calibrate radiometry")
 
@@ -120,6 +120,20 @@ def backward_geocode_sentinel1(
         **interp_kwargs,
     )
 
+    if correct_radiometry:
+        print(correct_radiometry)
+        weights = geocoding.gamma_weights(
+            dem_ecef,
+            acquisition,
+            slant_range_time0=measurement.slant_range_time[0],
+            azimuth_time0=measurement.azimuth_time[0],
+            azimuth_time_interval=measurement.attrs["azimuth_time_interval"],
+            slant_range_time_interval=measurement.attrs["slant_range_time_interval"],
+            pixel_spacing_azimuth=measurement.attrs["sar:pixel_spacing_azimuth"],
+            pixel_spacing_range=measurement.attrs["sar:pixel_spacing_range"],
+        )
+        geocoded = geocoded / weights
+
     print("save output")
 
     geocoded.rio.set_crs(dem_raster.rio.crs)
@@ -132,3 +146,4 @@ def backward_geocode_sentinel1(
         compress="ZSTD",
         num_threads="ALL_CPUS",
     )
+    return geocoded
