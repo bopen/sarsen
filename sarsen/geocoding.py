@@ -205,7 +205,7 @@ def gamma_weights(
     azimuth_index_0 = np.floor(azimuth_index).astype(int)
     azimuth_index_1 = np.ceil(azimuth_index).astype(int)
 
-    print("compute gamma areas 1")
+    print("compute gamma areas 1/4")
     w_00 = abs(
         (azimuth_index_1 - azimuth_index) * (slant_range_index_1 - slant_range_index)
     )
@@ -215,7 +215,7 @@ def gamma_weights(
         slant_range_index=slant_range_index_0,
     )
 
-    print("compute gamma areas 2")
+    print("compute gamma areas 2/4")
     w_01 = abs(
         (azimuth_index_1 - azimuth_index) * (slant_range_index_0 - slant_range_index)
     )
@@ -225,7 +225,7 @@ def gamma_weights(
         slant_range_index=slant_range_index_1,
     )
 
-    print("compute gamma areas 3")
+    print("compute gamma areas 3/4")
     w_10 = abs(
         (azimuth_index_0 - azimuth_index) * (slant_range_index_1 - slant_range_index)
     )
@@ -235,7 +235,7 @@ def gamma_weights(
         slant_range_index=slant_range_index_0,
     )
 
-    print("compute gamma areas 4")
+    print("compute gamma areas 4/4")
     w_11 = abs(
         (azimuth_index_0 - azimuth_index) * (slant_range_index_0 - slant_range_index)
     )
