@@ -121,11 +121,17 @@ def backward_geocode_sentinel1(
     )
 
     if correct_radiometry:
-        print(correct_radiometry)
+        print("correct radiometry")
+        if measurement_ds.attrs["sar:product_type"] == "GRD":
+            slant_range_time0 = coordinate_conversion.slant_range_time.item(0)
+        else:
+            slant_range_time0 = measurement.slant_range_time.item(0)
+
+        dem_ecef = dem_ecef.compute()
         weights = geocoding.gamma_weights(
             dem_ecef,
             acquisition,
-            slant_range_time0=measurement.slant_range_time[0],
+            slant_range_time0=slant_range_time0,
             azimuth_time0=measurement.azimuth_time[0],
             azimuth_time_interval=measurement.attrs["azimuth_time_interval"],
             slant_range_time_interval=measurement.attrs["slant_range_time_interval"],
