@@ -49,6 +49,12 @@ sentinelsat --path data -d --include-pattern "*hh*" \
       -overwrite -ot Float32 -te 350000 4660000 400000 4710000 \
       -co COMPRESS=DEFLATE data/Gran-Sasso-30m-DEM.tif data/Gran-Sasso-10m-DEM.tif
 
+[ ! -f data/Gran-Sasso-3m-DEM-small.tif ] && \
+  eio clip -o data/Gran-Sasso-30m-DEM.tif --bounds 13.1 42. 13.95 42.75 &&
+  gdalwarp -r bilinear -s_srs EPSG:4326+5773 -t_srs EPSG:32633 -tr 3 3 \
+      -overwrite -ot Float32 -te 378000 4700000 383000 4703000 \
+      -co COMPRESS=DEFLATE data/Gran-Sasso-30m-DEM.tif data/Gran-Sasso-3m-DEM-small.tif
+
 ## SLC
 ### descending
 sentinelsat --path data -d --include-pattern "*iw[23]*vv*" \
