@@ -10,6 +10,7 @@ import numpy.typing as npt
 import xarray as xr
 
 SPEED_OF_LIGHT = 299_792_458.0  # m / s
+ONE_SECOND = np.timedelta64(1, "s")
 
 TimedeltaArrayLike = T.TypeVar("TimedeltaArrayLike", bound=npt.ArrayLike)
 FloatArrayLike = T.TypeVar("FloatArrayLike", bound=npt.ArrayLike)
@@ -197,7 +198,7 @@ def gamma_weights(
     ) / slant_range_time_interval
 
     azimuth_index = (
-        (dem_coords.azimuth_time - azimuth_time0) / np.timedelta64(1, "s")
+        (dem_coords.azimuth_time - azimuth_time0) / ONE_SECOND
     ) / azimuth_time_interval
 
     slant_range_index_0 = np.floor(slant_range_index).astype(int)
@@ -248,3 +249,70 @@ def gamma_weights(
     tot_area = tot_area_00 + tot_area_01 + tot_area_10 + tot_area_11
 
     return tot_area / (pixel_spacing_azimuth * pixel_spacing_range)
+
+
+def count_dem_points(
+    acquisition: xr.DataArray,
+    dem_normal: xr.DataArray,
+    slant_range_time0: float,
+    azimuth_time0: np.datetime64,
+    slant_range_time_interval: float,
+    azimuth_time_interval: float,
+    slant_range_time_to_index: int = 5,
+    multilook: T.Tuple[int, int] = (3, 3),
+) -> xr.DataArray:
+    # compute dem image coordinates
+    slant_range_index = (
+        (acquisition.slant_range_time - slant_range_time0)
+        / slant_range_time_interval
+        / slant_range_time_to_index
+    )
+
+    azimuth_index = (
+        (acquisition.azimuth_time - azimuth_time0) / ONE_SECOND
+    ) / azimuth_time_interval
+
+    slant_range_index = np.round(slant_range_index).astype(int)
+    azimuth_index = np.round(azimuth_index).astype(int)
+
+    cos_incidence_angle = xr.dot(dem_normal, -acquisition.dem_direction, dims="axis")
+
+    geocoded = (
+        np.maximum(0, cos_incidence_angle)
+        .assign_coords(slant_range_index=slant_range_index, azimuth_index=azimuth_index)
+        .compute()
+    )
+
+    stacked_geocoded = (
+        geocoded.stack(z=("y", "x"))
+        .reset_index("z")
+        .set_index(z=("azimuth_index", "slant_range_index"))
+    )
+
+    print("  groupby")
+
+    grouped = stacked_geocoded.groupby("z")
+
+    print("  count")
+
+    flat_count = grouped.count()
+
+    flat_count_smooth = (
+        flat_count.unstack("z")
+        .fillna(0)
+        .rolling(z_level_0=multilook[0], z_level_1=multilook[1], center=True)
+        .mean()
+        .stack(z=("z_level_0", "z_level_1"))
+    )
+
+    print("  reformat")
+
+    stacked_count = flat_count_smooth.sel(
+        z=stacked_geocoded.indexes["z"]
+    ).assign_coords(stacked_geocoded.coords)
+
+    print("  unstack")
+
+    count = stacked_count.set_index(z=("y", "x")).unstack("z")
+
+    return count, flat_count, stacked_geocoded

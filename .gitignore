@@ -1,6 +1,7 @@
 # project specific
 *.tif
 version.py
+notebooks/GRD
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
