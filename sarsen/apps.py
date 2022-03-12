@@ -120,23 +120,40 @@ def backward_geocode_sentinel1(
         **interp_kwargs,
     )
 
-    if correct_radiometry:
+    if correct_radiometry == "gamma":
         print("correct radiometry")
         if measurement_ds.attrs["sar:product_type"] == "GRD":
-            slant_range_time0 = coordinate_conversion.slant_range_time.item(0)
+            slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
         else:
-            slant_range_time0 = measurement.slant_range_time.item(0)
+            slant_range_time0 = measurement.slant_range_time.values[0]
 
-        dem_ecef = dem_ecef.compute()
         weights = geocoding.gamma_weights(
-            dem_ecef,
-            acquisition,
+            dem_ecef.compute(),
+            acquisition.compute(),
             slant_range_time0=slant_range_time0,
-            azimuth_time0=measurement.azimuth_time[0],
+            azimuth_time0=measurement.azimuth_time.values[0],
             azimuth_time_interval=measurement.attrs["azimuth_time_interval"],
             slant_range_time_interval=measurement.attrs["slant_range_time_interval"],
             pixel_spacing_azimuth=measurement.attrs["sar:pixel_spacing_azimuth"],
             pixel_spacing_range=measurement.attrs["sar:pixel_spacing_range"],
+        )
+        geocoded = geocoded / weights
+
+    elif correct_radiometry:
+
+        print("correct radiometry")
+        if measurement_ds.attrs["sar:product_type"] == "GRD":
+            slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
+        else:
+            slant_range_time0 = measurement.slant_range_time.values[0]
+
+        weights = geocoding.count_dem_points(
+            acquisition.compute(),
+            geocoded.compute(),
+            slant_range_time0=slant_range_time0,
+            azimuth_time0=measurement.azimuth_time.values[0],
+            azimuth_time_interval=measurement.attrs["azimuth_time_interval"],
+            slant_range_time_interval=measurement.attrs["slant_range_time_interval"],
         )
         geocoded = geocoded / weights
 
