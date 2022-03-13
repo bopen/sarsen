@@ -252,7 +252,7 @@ def gamma_weights(
 
 
 def count_dem_points(
-    acquisition: xr.DataArray,
+    acquisition: xr.Dataset,
     dem_normal: xr.DataArray,
     slant_range_time0: float,
     azimuth_time0: np.datetime64,
@@ -275,7 +275,7 @@ def count_dem_points(
     slant_range_index = np.round(slant_range_index).astype(int)
     azimuth_index = np.round(azimuth_index).astype(int)
 
-    cos_incidence_angle = xr.dot(dem_normal, -acquisition.dem_direction, dims="axis")
+    cos_incidence_angle = xr.dot(dem_normal, -acquisition.dem_direction, dims="axis")  # type: ignore
 
     geocoded = (
         np.maximum(0, cos_incidence_angle)
@@ -313,6 +313,6 @@ def count_dem_points(
 
     print("  unstack")
 
-    count = stacked_count.set_index(z=("y", "x")).unstack("z")
+    count: xr.DataArray = stacked_count.set_index(z=("y", "x")).unstack("z")
 
-    return count, flat_count, stacked_geocoded
+    return count
