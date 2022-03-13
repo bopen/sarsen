@@ -172,6 +172,7 @@ def sum_area_on_image_pixels(
     dem_area = dem_area.set_index(z=("azimuth_index", "slant_range_index"))
 
     sum_area: xr.DataArray = dem_area.groupby("z").sum()
+    sum_area: xr.DataArray = dem_area.groupby("z").sum()
 
     tot_area = sum_area.sel(z=dem_area.indexes["z"])
     tot_area = tot_area.assign_coords(dem_area.coords)  # type: ignore
@@ -251,16 +252,16 @@ def gamma_weights(
     return tot_area / (pixel_spacing_azimuth * pixel_spacing_range)
 
 
-def count_dem_points(
+def sum_weights(
+    initial_weights: xr.DataArray,
     acquisition: xr.Dataset,
-    dem_normal: xr.DataArray,
     slant_range_time0: float,
     azimuth_time0: np.datetime64,
     slant_range_time_interval: float,
     azimuth_time_interval: float,
     slant_range_time_to_index: int = 5,
     multilook: T.Tuple[int, int] = (3, 3),
-) -> xr.DataArray:
+) -> T.Tuple[xr.DataArray, xr.DataArray]:
     # compute dem image coordinates
     slant_range_index = (
         (acquisition.slant_range_time - slant_range_time0)
@@ -275,12 +276,8 @@ def count_dem_points(
     slant_range_index = np.round(slant_range_index).astype(int)
     azimuth_index = np.round(azimuth_index).astype(int)
 
-    cos_incidence_angle = xr.dot(dem_normal, -acquisition.dem_direction, dims="axis")  # type: ignore
-
-    geocoded = (
-        np.maximum(0, cos_incidence_angle)
-        .assign_coords(slant_range_index=slant_range_index, azimuth_index=azimuth_index)
-        .compute()
+    geocoded = initial_weights.assign_coords(
+        slant_range_index=slant_range_index, azimuth_index=azimuth_index
     )
 
     stacked_geocoded = (
@@ -295,8 +292,16 @@ def count_dem_points(
 
     print("  count")
 
+    flat_sum = grouped.sum()
     flat_count = grouped.count()
 
+    flat_sum_smooth = (
+        flat_sum.unstack("z")
+        .fillna(0)
+        .rolling(z_level_0=multilook[0], z_level_1=multilook[1], center=True)
+        .mean()
+        .stack(z=("z_level_0", "z_level_1"))
+    )
     flat_count_smooth = (
         flat_count.unstack("z")
         .fillna(0)
@@ -307,12 +312,16 @@ def count_dem_points(
 
     print("  reformat")
 
+    stacked_sum = flat_sum_smooth.sel(z=stacked_geocoded.indexes["z"]).assign_coords(
+        stacked_geocoded.coords
+    )
     stacked_count = flat_count_smooth.sel(
         z=stacked_geocoded.indexes["z"]
     ).assign_coords(stacked_geocoded.coords)
 
     print("  unstack")
 
-    count: xr.DataArray = stacked_count.set_index(z=("y", "x")).unstack("z")
+    weights_sum: xr.DataArray = stacked_sum.set_index(z=("y", "x")).unstack("z")
+    weights_count: xr.DataArray = stacked_count.set_index(z=("y", "x")).unstack("z")
 
-    return count
+    return weights_sum, weights_count

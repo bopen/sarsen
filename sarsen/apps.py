@@ -1,4 +1,5 @@
 import typing as T
+from unittest.loader import VALID_MODULE_NAME
 
 import numpy as np
 import xarray as xr
@@ -56,7 +57,7 @@ def backward_geocode_sentinel1(
     orbit_group: T.Optional[str] = None,
     calibration_group: T.Optional[str] = None,
     output_urlpath: str = "GRD.tif",
-    correct_radiometry: bool = False,
+    correct_radiometry: T.Optional[str] = None,
     interp_method: str = "nearest",
     multilook: T.Optional[T.Tuple[int, int]] = None,
     **kwargs: T.Any,
@@ -139,7 +140,7 @@ def backward_geocode_sentinel1(
         )
         geocoded = geocoded / weights
 
-    elif correct_radiometry:
+    elif correct_radiometry == "cosine":
 
         print("correct radiometry")
         if measurement_ds.attrs["sar:product_type"] == "GRD":
@@ -147,15 +148,23 @@ def backward_geocode_sentinel1(
         else:
             slant_range_time0 = measurement.slant_range_time.values[0]
 
-        weights = geocoding.count_dem_points(
+        dem_normal = scene.compute_diff_normal(dem_ecef)
+
+        cos_incidence_angle = xr.dot(dem_normal, -acquisition.dem_direction, dims="axis")  # type: ignore
+        initial_weights = np.maximum(cos_incidence_angle, 0)
+
+        weights_cosine, weights_count = geocoding.sum_weights(
+            initial_weights.compute(),
             acquisition.compute(),
-            geocoded.compute(),
             slant_range_time0=slant_range_time0,
             azimuth_time0=measurement.azimuth_time.values[0],
             azimuth_time_interval=measurement.attrs["azimuth_time_interval"],
             slant_range_time_interval=measurement.attrs["slant_range_time_interval"],
         )
-        geocoded = geocoded / weights
+        # we don't really have an explanation for the `weights_count ** 0.5` term
+        geocoded = geocoded / weights_cosine / weights_count ** 0.5
+    elif correct_radiometry is not None:
+        raise ValueError(f"unkwon radiometry corrcetion method: {correct_radiometry!r}")
 
     print("save output")
 
