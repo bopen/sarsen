@@ -172,7 +172,6 @@ def sum_area_on_image_pixels(
     dem_area = dem_area.set_index(z=("azimuth_index", "slant_range_index"))
 
     sum_area: xr.DataArray = dem_area.groupby("z").sum()
-    sum_area: xr.DataArray = dem_area.groupby("z").sum()
 
     tot_area = sum_area.sel(z=dem_area.indexes["z"])
     tot_area = tot_area.assign_coords(dem_area.coords)  # type: ignore
