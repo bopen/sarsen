@@ -285,7 +285,7 @@ def sum_weights(
         .set_index(z=("azimuth_index", "slant_range_index"))
     )
 
-    min_preiods = multilook[0] * multilook[1] // 2
+    min_periods = multilook[0] * multilook[1] // 2 + 1
 
     print("  groupby")
 
