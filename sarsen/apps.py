@@ -151,7 +151,7 @@ def backward_geocode_sentinel1(
         dem_normal = scene.compute_diff_normal(dem_ecef)
 
         cos_incidence_angle = xr.dot(dem_normal, -acquisition.dem_direction, dims="axis")  # type: ignore
-        initial_weights = np.maximum(cos_incidence_angle, 0)
+        initial_weights = xr.where(cos_incidence_angle > 0, cos_incidence_angle, np.nan)
 
         weights_cosine, weights_count = geocoding.sum_weights(
             initial_weights.compute(),

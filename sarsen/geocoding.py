@@ -285,19 +285,30 @@ def sum_weights(
         .set_index(z=("azimuth_index", "slant_range_index"))
     )
 
+    min_preiods = multilook[0] * multilook[1] // 2
+
     print("  groupby")
 
     grouped = stacked_geocoded.groupby("z")
 
-    print("  count")
+    print("  sum")
 
     flat_sum = grouped.sum()
+
+    print("  count")
+
     flat_count = grouped.count()
+
+    print("  reformat")
 
     flat_sum_smooth = (
         flat_sum.unstack("z")
-        .fillna(0)
-        .rolling(z_level_0=multilook[0], z_level_1=multilook[1], center=True)
+        .rolling(
+            z_level_0=multilook[0],
+            z_level_1=multilook[1],
+            center=True,
+            min_periods=min_periods,
+        )
         .mean()
         .stack(z=("z_level_0", "z_level_1"))
     )
@@ -309,16 +320,12 @@ def sum_weights(
         .stack(z=("z_level_0", "z_level_1"))
     )
 
-    print("  reformat")
-
     stacked_sum = flat_sum_smooth.sel(z=stacked_geocoded.indexes["z"]).assign_coords(
         stacked_geocoded.coords
     )
     stacked_count = flat_count_smooth.sel(
         z=stacked_geocoded.indexes["z"]
     ).assign_coords(stacked_geocoded.coords)
-
-    print("  unstack")
 
     weights_sum: xr.DataArray = stacked_sum.set_index(z=("y", "x")).unstack("z")
     weights_count: xr.DataArray = stacked_count.set_index(z=("y", "x")).unstack("z")
