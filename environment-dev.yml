@@ -1,7 +1,7 @@
 channels:
   - conda-forge
 dependencies:
-  - adlsf
+  - adlfs
   - build
   - gcsfs
   - gdal
