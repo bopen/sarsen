@@ -60,12 +60,13 @@ def backward_geocode_sentinel1(
     correct_radiometry: T.Optional[str] = None,
     interp_method: str = "nearest",
     multilook: T.Optional[T.Tuple[int, int]] = None,
+    grouping_area_factor: T.Tuple[float, float] = [1, 1],
     **kwargs: T.Any,
 ) -> None:
     orbit_group = orbit_group or f"{measurement_group}/orbit"
     calibration_group = calibration_group or f"{measurement_group}/calibration"
 
-    print("open data")
+    print(f"open data {product_urlpath!r}")
 
     measurement_ds = xr.open_dataset(product_urlpath, engine="sentinel-1", group=measurement_group, **kwargs)  # type: ignore
     measurement = measurement_ds.measurement
@@ -135,8 +136,7 @@ def backward_geocode_sentinel1(
             azimuth_time0=measurement.azimuth_time.values[0],
             azimuth_time_interval=measurement.attrs["azimuth_time_interval"],
             slant_range_time_interval=measurement.attrs["slant_range_time_interval"],
-            pixel_spacing_azimuth=measurement.attrs["sar:pixel_spacing_azimuth"],
-            pixel_spacing_range=measurement.attrs["sar:pixel_spacing_range"],
+            grouping_area_factor=grouping_area_factor
         )
         geocoded = geocoded / weights
 

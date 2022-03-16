@@ -186,20 +186,19 @@ def gamma_weights(
     azimuth_time0: np.datetime64,
     slant_range_time_interval: float,
     azimuth_time_interval: float,
-    pixel_spacing_azimuth: float = 1,
-    pixel_spacing_range: float = 1,
+    grouping_area_factor: T.Tuple[float, float] = [1, 1]
 ) -> xr.DataArray:
 
     area = dem_area_gamma(dem_ecef, dem_coords.dem_direction)
 
     # compute dem image coordinates
-    slant_range_index = (
-        dem_coords.slant_range_time - slant_range_time0
-    ) / slant_range_time_interval
-
     azimuth_index = (
         (dem_coords.azimuth_time - azimuth_time0) / ONE_SECOND
-    ) / azimuth_time_interval
+    ) / (azimuth_time_interval * grouping_area_factor[0])
+
+    slant_range_index = (
+        dem_coords.slant_range_time - slant_range_time0
+    ) / (slant_range_time_interval * grouping_area_factor[1])
 
     slant_range_index_0 = np.floor(slant_range_index).astype(int)
     slant_range_index_1 = np.ceil(slant_range_index).astype(int)
@@ -248,7 +247,7 @@ def gamma_weights(
 
     tot_area = tot_area_00 + tot_area_01 + tot_area_10 + tot_area_11
 
-    return tot_area / (pixel_spacing_azimuth * pixel_spacing_range)
+    return tot_area
 
 
 def sum_weights(
