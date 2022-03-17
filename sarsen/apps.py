@@ -1,5 +1,4 @@
 import typing as T
-from unittest.loader import VALID_MODULE_NAME
 
 import numpy as np
 import xarray as xr
@@ -122,12 +121,18 @@ def backward_geocode_sentinel1(
         **interp_kwargs,
     )
 
-    if correct_radiometry == "gamma":
+    if correct_radiometry:
         print("correct radiometry")
         if measurement_ds.attrs["sar:product_type"] == "GRD":
             slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
         else:
             slant_range_time0 = measurement.slant_range_time.values[0]
+
+        slant_range_time_interval = (
+            measurement.attrs["sar:pixel_spacing_azimuth"]
+            * 2
+            / geocoding.SPEED_OF_LIGHT
+        )
 
         weights = geocoding.gamma_weights(
             dem_ecef.compute(),
@@ -135,36 +140,12 @@ def backward_geocode_sentinel1(
             slant_range_time0=slant_range_time0,
             azimuth_time0=measurement.azimuth_time.values[0],
             azimuth_time_interval=measurement.attrs["azimuth_time_interval"],
-            slant_range_time_interval=measurement.attrs["slant_range_time_interval"],
-            grouping_area_factor=grouping_area_factor
+            slant_range_time_interval=slant_range_time_interval,
+            pixel_spacing_azimuth=measurement.attrs["sar:pixel_spacing_azimuth"],
+            pixel_spacing_slant_range=measurement.attrs["sar:pixel_spacing_azimuth"],
+            grouping_area_factor=grouping_area_factor,
         )
         geocoded = geocoded / weights
-
-    elif correct_radiometry == "cosine":
-
-        print("correct radiometry")
-        if measurement_ds.attrs["sar:product_type"] == "GRD":
-            slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
-        else:
-            slant_range_time0 = measurement.slant_range_time.values[0]
-
-        dem_normal = scene.compute_diff_normal(dem_ecef)
-
-        cos_incidence_angle = xr.dot(dem_normal, -acquisition.dem_direction, dims="axis")  # type: ignore
-        initial_weights = xr.where(cos_incidence_angle > 0, cos_incidence_angle, np.nan)
-
-        weights_cosine, weights_count = geocoding.sum_weights(
-            initial_weights.compute(),
-            acquisition.compute(),
-            slant_range_time0=slant_range_time0,
-            azimuth_time0=measurement.azimuth_time.values[0],
-            azimuth_time_interval=measurement.attrs["azimuth_time_interval"],
-            slant_range_time_interval=measurement.attrs["slant_range_time_interval"],
-        )
-        # we don't really have an explanation for the `weights_count ** 0.5` term
-        geocoded = geocoded / weights_cosine / weights_count ** 0.5
-    elif correct_radiometry is not None:
-        raise ValueError(f"unkwon radiometry corrcetion method: {correct_radiometry!r}")
 
     print("save output")
 
