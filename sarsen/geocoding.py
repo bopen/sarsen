@@ -253,9 +253,10 @@ def gamma_weights(
 
     tot_area = tot_area_00 + tot_area_01 + tot_area_10 + tot_area_11
 
-    return tot_area / (
+    normalized_area = tot_area / (
         pixel_spacing_azimuth
         * pixel_spacing_slant_range
         * grouping_area_factor[0]
         * grouping_area_factor[1]
     )
+    return normalized_area

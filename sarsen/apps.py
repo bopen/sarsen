@@ -126,15 +126,20 @@ def backward_geocode_sentinel1(
 
     if correct_radiometry:
         logger.info("correct radiometry")
+        incidence_angle_mid_swath = (
+            measurement_ds.attrs.get("incidence_angle_mid_swath", 1) / 180 * np.pi
+        )
         if measurement_ds.attrs["sar:product_type"] == "GRD":
             slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
+            pixel_spacing_slant_range = measurement.attrs[
+                "sar:pixel_spacing_range"
+            ] * np.sin(incidence_angle_mid_swath)
         else:
             slant_range_time0 = measurement.slant_range_time.values[0]
+            pixel_spacing_slant_range = measurement.attrs["sar:pixel_spacing_range"]
 
         slant_range_time_interval = (
-            measurement.attrs["sar:pixel_spacing_azimuth"]
-            * 2
-            / geocoding.SPEED_OF_LIGHT
+            pixel_spacing_slant_range * 2 / geocoding.SPEED_OF_LIGHT
         )
 
         weights = geocoding.gamma_weights(
@@ -145,7 +150,7 @@ def backward_geocode_sentinel1(
             azimuth_time_interval=measurement.attrs["azimuth_time_interval"],
             slant_range_time_interval=slant_range_time_interval,
             pixel_spacing_azimuth=measurement.attrs["sar:pixel_spacing_azimuth"],
-            pixel_spacing_slant_range=measurement.attrs["sar:pixel_spacing_azimuth"],
+            pixel_spacing_slant_range=pixel_spacing_slant_range,
             grouping_area_factor=grouping_area_factor,
         )
         geocoded = geocoded / weights
