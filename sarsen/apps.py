@@ -1,3 +1,4 @@
+import logging
 import typing as T
 
 import numpy as np
@@ -5,6 +6,8 @@ import xarray as xr
 import xarray_sentinel
 
 from . import geocoding, orbit, scene
+
+logger = logging.getLogger(__name__)
 
 
 def mosaic_slc_iw(image: xr.DataArray, crop: int = 90) -> xr.DataArray:
@@ -20,13 +23,13 @@ def simulate_acquisition(
     dem_ecef: xr.DataArray,
 ) -> xr.Dataset:
 
-    print("interpolate orbit")
+    logger.info("interpolate orbit")
 
     orbit_interpolator = orbit.OrbitPolyfitIterpolator.from_position(position_ecef)
     position_ecef = orbit_interpolator.position()
     velocity_ecef = orbit_interpolator.velocity()
 
-    print("geocode")
+    logger.info("geocode")
 
     acquisition = geocoding.backward_geocode(dem_ecef, position_ecef, velocity_ecef)
 
@@ -59,13 +62,13 @@ def backward_geocode_sentinel1(
     correct_radiometry: T.Optional[str] = None,
     interp_method: str = "nearest",
     multilook: T.Optional[T.Tuple[int, int]] = None,
-    grouping_area_factor: T.Tuple[float, float] = [1, 1],
+    grouping_area_factor: T.Tuple[float, float] = (1.0, 1.0),
     **kwargs: T.Any,
 ) -> None:
     orbit_group = orbit_group or f"{measurement_group}/orbit"
     calibration_group = calibration_group or f"{measurement_group}/calibration"
 
-    print(f"open data {product_urlpath!r}")
+    logger.info(f"open data {product_urlpath!r}")
 
     measurement_ds = xr.open_dataset(product_urlpath, engine="sentinel-1", group=measurement_group, **kwargs)  # type: ignore
     measurement = measurement_ds.measurement
@@ -77,19 +80,19 @@ def backward_geocode_sentinel1(
     calibration = xr.open_dataset(product_urlpath, engine="sentinel-1", group=calibration_group, **kwargs)  # type: ignore
     beta_nought_lut = calibration.betaNought
 
-    print("pre-process DEM")
+    logger.info("pre-process DEM")
 
     dem_ecef = scene.convert_to_dem_ecef(dem_raster)
 
-    print("simulate acquisition")
+    logger.info("simulate acquisition")
 
     acquisition = simulate_acquisition(position_ecef, dem_ecef)
 
-    print("calibrate radiometry")
+    logger.info("calibrate radiometry")
 
     beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
 
-    print("interpolate image")
+    logger.info("interpolate image")
 
     if measurement_ds.attrs["sar:product_type"] == "GRD":
         coordinate_conversion = xr.open_dataset(
@@ -122,7 +125,7 @@ def backward_geocode_sentinel1(
     )
 
     if correct_radiometry:
-        print("correct radiometry")
+        logger.info("correct radiometry")
         if measurement_ds.attrs["sar:product_type"] == "GRD":
             slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
         else:
@@ -147,7 +150,7 @@ def backward_geocode_sentinel1(
         )
         geocoded = geocoded / weights
 
-    print("save output")
+    logger.info("save output")
 
     geocoded.rio.set_crs(dem_raster.rio.crs)
     geocoded.rio.to_raster(

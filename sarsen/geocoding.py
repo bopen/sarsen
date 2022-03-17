@@ -3,11 +3,15 @@ Reference "Guide to Sentinel-1 Geocoding" UZH-S1-GC-AD 1.10 26.03.2019
 https://sentinel.esa.int/documents/247904/0/Guide-to-Sentinel-1-Geocoding.pdf/e0450150-b4e9-4b2d-9b32-dadf989d3bd3
 """
 import functools
+import logging
 import typing as T
 
 import numpy as np
 import numpy.typing as npt
 import xarray as xr
+
+logger = logging.getLogger(__name__)
+
 
 SPEED_OF_LIGHT = 299_792_458.0  # m / s
 ONE_SECOND = np.timedelta64(1, "s")
@@ -186,7 +190,7 @@ def gamma_weights(
     azimuth_time0: np.datetime64,
     slant_range_time_interval: float,
     azimuth_time_interval: float,
-    grouping_area_factor: T.Tuple[float, float] = [1, 1],
+    grouping_area_factor: T.Tuple[float, float] = (1.0, 1.0),
     pixel_spacing_azimuth: float = 1,
     pixel_spacing_slant_range: float = 1,
 ) -> xr.DataArray:
@@ -207,7 +211,7 @@ def gamma_weights(
     azimuth_index_0 = np.floor(azimuth_index).astype(int)
     azimuth_index_1 = np.ceil(azimuth_index).astype(int)
 
-    print("compute gamma areas 1/4")
+    logger.info("compute gamma areas 1/4")
     w_00 = abs(
         (azimuth_index_1 - azimuth_index) * (slant_range_index_1 - slant_range_index)
     )
@@ -217,7 +221,7 @@ def gamma_weights(
         slant_range_index=slant_range_index_0,
     )
 
-    print("compute gamma areas 2/4")
+    logger.info("compute gamma areas 2/4")
     w_01 = abs(
         (azimuth_index_1 - azimuth_index) * (slant_range_index_0 - slant_range_index)
     )
@@ -227,7 +231,7 @@ def gamma_weights(
         slant_range_index=slant_range_index_1,
     )
 
-    print("compute gamma areas 3/4")
+    logger.info("compute gamma areas 3/4")
     w_10 = abs(
         (azimuth_index_0 - azimuth_index) * (slant_range_index_1 - slant_range_index)
     )
@@ -237,7 +241,7 @@ def gamma_weights(
         slant_range_index=slant_range_index_0,
     )
 
-    print("compute gamma areas 4/4")
+    logger.info("compute gamma areas 4/4")
     w_11 = abs(
         (azimuth_index_0 - azimuth_index) * (slant_range_index_0 - slant_range_index)
     )
@@ -255,85 +259,3 @@ def gamma_weights(
         * grouping_area_factor[0]
         * grouping_area_factor[1]
     )
-
-
-def sum_weights(
-    initial_weights: xr.DataArray,
-    acquisition: xr.Dataset,
-    slant_range_time0: float,
-    azimuth_time0: np.datetime64,
-    slant_range_time_interval: float,
-    azimuth_time_interval: float,
-    slant_range_time_to_index: int = 5,
-    multilook: T.Tuple[int, int] = (3, 3),
-) -> T.Tuple[xr.DataArray, xr.DataArray]:
-    # compute dem image coordinates
-    slant_range_index = (
-        (acquisition.slant_range_time - slant_range_time0)
-        / slant_range_time_interval
-        / slant_range_time_to_index
-    )
-
-    azimuth_index = (
-        (acquisition.azimuth_time - azimuth_time0) / ONE_SECOND
-    ) / azimuth_time_interval
-
-    slant_range_index = np.round(slant_range_index).astype(int)
-    azimuth_index = np.round(azimuth_index).astype(int)
-
-    geocoded = initial_weights.assign_coords(
-        slant_range_index=slant_range_index, azimuth_index=azimuth_index
-    )
-
-    stacked_geocoded = (
-        geocoded.stack(z=("y", "x"))
-        .reset_index("z")
-        .set_index(z=("azimuth_index", "slant_range_index"))
-    )
-
-    min_periods = multilook[0] * multilook[1] // 2 + 1
-
-    print("  groupby")
-
-    grouped = stacked_geocoded.groupby("z")
-
-    print("  sum")
-
-    flat_sum = grouped.sum()
-
-    print("  count")
-
-    flat_count = grouped.count()
-
-    print("  reformat")
-
-    flat_sum_smooth = (
-        flat_sum.unstack("z")
-        .rolling(
-            z_level_0=multilook[0],
-            z_level_1=multilook[1],
-            center=True,
-            min_periods=min_periods,
-        )
-        .mean()
-        .stack(z=("z_level_0", "z_level_1"))
-    )
-    flat_count_smooth = (
-        flat_count.unstack("z")
-        .fillna(0)
-        .rolling(z_level_0=multilook[0], z_level_1=multilook[1], center=True)
-        .mean()
-        .stack(z=("z_level_0", "z_level_1"))
-    )
-
-    stacked_sum = flat_sum_smooth.sel(z=stacked_geocoded.indexes["z"]).assign_coords(
-        stacked_geocoded.coords
-    )
-    stacked_count = flat_count_smooth.sel(
-        z=stacked_geocoded.indexes["z"]
-    ).assign_coords(stacked_geocoded.coords)
-
-    weights_sum: xr.DataArray = stacked_sum.set_index(z=("y", "x")).unstack("z")
-    weights_count: xr.DataArray = stacked_count.set_index(z=("y", "x")).unstack("z")
-
-    return weights_sum, weights_count
