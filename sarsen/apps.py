@@ -52,6 +52,52 @@ def interpolate_measurement(
     return geocoded
 
 
+def azimuth_slant_range_grid(
+    measurement_ds: xr.DataArray,
+    coordinate_conversion: T.Optional[xr.DataArray] = None,
+    grouping_area_factor: T.Tuple[float, float] = (1.0, 1.0),
+) -> T.Dict[str, float]:
+
+    grid: T.Dict[str, float] = {}
+    incidence_angle_mid_swath = (
+        measurement_ds.attrs.get("incidence_angle_mid_swath", 90) / 180 * np.pi
+    )
+    if coordinate_conversion:
+        grid["slant_range_time0"] = coordinate_conversion.slant_range_time.values[0]
+        grid["pixel_spacing_slant_range"] = (
+            measurement_ds.attrs["sar:pixel_spacing_range"]
+            * np.sin(incidence_angle_mid_swath)
+            * grouping_area_factor[1]
+        )
+    else:
+        grid["slant_range_time0"] = measurement_ds.slant_range_time.values[0]
+        grid["pixel_spacing_slant_range"] = (
+            measurement_ds.attrs["sar:pixel_spacing_range"] * grouping_area_factor[1]
+        )
+
+    grid["slant_range_time_interval"] = (
+        grid["pixel_spacing_slant_range"] * 2 / geocoding.SPEED_OF_LIGHT  # ignore type
+    ) * grouping_area_factor[1]
+    grid["pixel_spacing_azimuth"] = (
+        measurement_ds.attrs["sar:pixel_spacing_azimuth"] * grouping_area_factor[0]
+    )
+    grid["azimuth_time_interval"] = (
+        measurement_ds.attrs["azimuth_time_interval"] * grouping_area_factor[0]
+    )
+    return grid  # ignore type
+
+
+def check_dem_resolution(dem_ecef: xr.DataArray, grid: T.Dict[str, float]) -> None:
+    dem_area = abs(dem_ecef.x[1] - dem_ecef.x[0]) * abs(dem_ecef.y[1] - dem_ecef.y[0])
+    grouping_area = grid["pixel_spacing_slant_range"] * grid["pixel_spacing_azimuth"]
+
+    if grouping_area / dem_area < 2 ** 2:
+        logger.warning(
+            "DEM resolution is too low, "
+            "consider to over-sample the input DEM or to a use an higher ´grouping_area_factor´"
+        )
+
+
 def backward_geocode_sentinel1(
     product_urlpath: str,
     measurement_group: str,
@@ -65,8 +111,8 @@ def backward_geocode_sentinel1(
     grouping_area_factor: T.Tuple[float, float] = (1.0, 1.0),
     **kwargs: T.Any,
 ) -> None:
-    if correct_radiometry and "chunk" in kwargs:
-        raise ValueError("chunk is not supported if ´correct_radiometry´ is True")
+    if correct_radiometry and "chunks" in kwargs:
+        raise ValueError("chunks are not supported if ´correct_radiometry´ is True")
 
     orbit_group = orbit_group or f"{measurement_group}/orbit"
     calibration_group = calibration_group or f"{measurement_group}/calibration"
@@ -96,7 +142,7 @@ def backward_geocode_sentinel1(
     beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
 
     logger.info("interpolate image")
-
+    coordinate_conversion = None
     if measurement_ds.attrs["sar:product_type"] == "GRD":
         coordinate_conversion = xr.open_dataset(
             product_urlpath,
@@ -129,48 +175,15 @@ def backward_geocode_sentinel1(
 
     if correct_radiometry:
         logger.info("correct radiometry")
-        incidence_angle_mid_swath = (
-            measurement_ds.attrs.get("incidence_angle_mid_swath", 1) / 180 * np.pi
+        grid = azimuth_slant_range_grid(
+            measurement_ds, coordinate_conversion, grouping_area_factor
         )
-        if measurement_ds.attrs["sar:product_type"] == "GRD":
-            slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
-            pixel_spacing_slant_range = measurement.attrs[
-                "sar:pixel_spacing_range"
-            ] * np.sin(incidence_angle_mid_swath)
-        else:
-            slant_range_time0 = measurement.slant_range_time.values[0]
-            pixel_spacing_slant_range = measurement.attrs["sar:pixel_spacing_range"]
-
-        slant_range_time_interval = (
-            pixel_spacing_slant_range * 2 / geocoding.SPEED_OF_LIGHT
-        )
-        pixel_spacing_azimuth = measurement.attrs["sar:pixel_spacing_azimuth"]
-        dem_area = abs(dem_ecef.x[1] - dem_ecef.x[0]) * abs(
-            dem_ecef.y[1] - dem_ecef.y[0]
-        )
-        grouping_area = (
-            pixel_spacing_slant_range
-            * grouping_area_factor[1]
-            * pixel_spacing_azimuth
-            * grouping_area_factor[0]
-        )
-
-        if grouping_area / dem_area > 3 ** 2:
-            logger.warning(
-                "DEM resolution is too low, "
-                "consider to over-sample the input DEM or to a use a ´grouping_area_factor´ > (1, 1)"
-            )
-
+        check_dem_resolution(dem_ecef, grid)
         weights = geocoding.gamma_weights(
-            dem_ecef.compute(),
-            acquisition.compute(),
-            slant_range_time0=slant_range_time0,
-            azimuth_time0=measurement.azimuth_time.values[0],
-            azimuth_time_interval=measurement.attrs["azimuth_time_interval"],
-            slant_range_time_interval=slant_range_time_interval,
-            pixel_spacing_azimuth=pixel_spacing_azimuth,
-            pixel_spacing_slant_range=pixel_spacing_slant_range,
-            grouping_area_factor=grouping_area_factor,
+            dem_ecef,
+            acquisition,
+            azimuth_time0=measurement_ds.azimuth_time.values[0],
+            **grid,
         )
         geocoded = geocoded / weights
 
