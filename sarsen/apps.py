@@ -59,12 +59,15 @@ def backward_geocode_sentinel1(
     orbit_group: T.Optional[str] = None,
     calibration_group: T.Optional[str] = None,
     output_urlpath: str = "GRD.tif",
-    correct_radiometry: T.Optional[str] = None,
+    correct_radiometry: bool = False,
     interp_method: str = "nearest",
     multilook: T.Optional[T.Tuple[int, int]] = None,
     grouping_area_factor: T.Tuple[float, float] = (1.0, 1.0),
     **kwargs: T.Any,
 ) -> None:
+    if correct_radiometry and "chunk" in kwargs:
+        raise ValueError("chunk is not supported if ´correct_radiometry´ is True")
+
     orbit_group = orbit_group or f"{measurement_group}/orbit"
     calibration_group = calibration_group or f"{measurement_group}/calibration"
 
@@ -141,6 +144,22 @@ def backward_geocode_sentinel1(
         slant_range_time_interval = (
             pixel_spacing_slant_range * 2 / geocoding.SPEED_OF_LIGHT
         )
+        pixel_spacing_azimuth = measurement.attrs["sar:pixel_spacing_azimuth"]
+        dem_area = abs(dem_ecef.x[1] - dem_ecef.x[0]) * abs(
+            dem_ecef.y[1] - dem_ecef.y[0]
+        )
+        grouping_area = (
+            pixel_spacing_slant_range
+            * grouping_area_factor[1]
+            * pixel_spacing_azimuth
+            * grouping_area_factor[0]
+        )
+
+        if grouping_area / dem_area > 3 ** 2:
+            logger.warning(
+                "DEM resolution is too low, "
+                "consider to over-sample the input DEM or to a use a ´grouping_area_factor´ > (1, 1)"
+            )
 
         weights = geocoding.gamma_weights(
             dem_ecef.compute(),
@@ -149,7 +168,7 @@ def backward_geocode_sentinel1(
             azimuth_time0=measurement.azimuth_time.values[0],
             azimuth_time_interval=measurement.attrs["azimuth_time_interval"],
             slant_range_time_interval=slant_range_time_interval,
-            pixel_spacing_azimuth=measurement.attrs["sar:pixel_spacing_azimuth"],
+            pixel_spacing_azimuth=pixel_spacing_azimuth,
             pixel_spacing_slant_range=pixel_spacing_slant_range,
             grouping_area_factor=grouping_area_factor,
         )
