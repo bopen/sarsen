@@ -56,7 +56,7 @@ def backward_geocode_sentinel1(
     orbit_group: T.Optional[str] = None,
     calibration_group: T.Optional[str] = None,
     output_urlpath: str = "GRD.tif",
-    correct_radiometry: T.Optional[str] = None,
+    correct_radiometry: bool = False,
     interp_method: str = "nearest",
     multilook: T.Optional[T.Tuple[int, int]] = None,
     **kwargs: T.Any,
@@ -120,7 +120,7 @@ def backward_geocode_sentinel1(
         **interp_kwargs,
     )
 
-    if correct_radiometry == "gamma":
+    if correct_radiometry:
         print("correct radiometry")
         if measurement_ds.attrs["sar:product_type"] == "GRD":
             slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
@@ -138,32 +138,6 @@ def backward_geocode_sentinel1(
             pixel_spacing_range=measurement.attrs["sar:pixel_spacing_range"],
         )
         geocoded = geocoded / weights
-
-    elif correct_radiometry == "cosine":
-
-        print("correct radiometry")
-        if measurement_ds.attrs["sar:product_type"] == "GRD":
-            slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
-        else:
-            slant_range_time0 = measurement.slant_range_time.values[0]
-
-        dem_normal = scene.compute_diff_normal(dem_ecef)
-
-        cos_incidence_angle = xr.dot(dem_normal, -acquisition.dem_direction, dims="axis")  # type: ignore
-        initial_weights = xr.where(cos_incidence_angle > 0, cos_incidence_angle, np.nan)
-
-        weights_cosine, weights_count = geocoding.sum_weights(
-            initial_weights.compute(),
-            acquisition.compute(),
-            slant_range_time0=slant_range_time0,
-            azimuth_time0=measurement.azimuth_time.values[0],
-            azimuth_time_interval=measurement.attrs["azimuth_time_interval"],
-            slant_range_time_interval=measurement.attrs["slant_range_time_interval"],
-        )
-        # we don't really have an explanation for the `weights_count ** 0.5` term
-        geocoded = geocoded / weights_cosine / weights_count ** 0.5
-    elif correct_radiometry is not None:
-        raise ValueError(f"unkwon radiometry corrcetion method: {correct_radiometry!r}")
 
     print("save output")
 
