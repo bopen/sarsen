@@ -10,19 +10,6 @@ from . import geocoding, orbit, scene
 logger = logging.getLogger(__name__)
 
 
-GridParamsType = T.TypedDict(
-    "GridParamsType",
-    {
-        "slant_range_time0": float,
-        "azimuth_time0": np.datetime64,
-        "slant_range_time_interval_s": float,
-        "azimuth_time_interval_s": float,
-        "slant_range_spacing_m": float,
-        "azimuth_spacing_m": float,
-    },
-)
-
-
 def mosaic_slc_iw(image: xr.DataArray, crop: int = 90) -> xr.DataArray:
     bursts = []
     for i in range(image.attrs["number_of_bursts"]):
@@ -69,7 +56,7 @@ def azimuth_slant_range_grid(
     measurement_ds: xr.DataArray,
     coordinate_conversion: T.Optional[xr.DataArray] = None,
     grouping_area_factor: T.Tuple[float, float] = (1.0, 1.0),
-) -> GridParamsType:
+) -> T.Dict[str, T.Any]:
 
     incidence_angle_mid_swath = (
         measurement_ds.attrs.get("incidence_angle_mid_swath", 90) / 180 * np.pi
@@ -91,7 +78,7 @@ def azimuth_slant_range_grid(
         slant_range_spacing_m * 2 / geocoding.SPEED_OF_LIGHT  # ignore type
     )
 
-    grid: GridParamsType = {
+    grid_parameters: T.Dict[str, T.Any] = {
         "slant_range_time0": slant_range_time0,
         "slant_range_time_interval_s": slant_range_time_interval_s,
         "slant_range_spacing_m": slant_range_spacing_m,
@@ -101,12 +88,16 @@ def azimuth_slant_range_grid(
         "azimuth_spacing_m": measurement_ds.attrs["sar:pixel_spacing_azimuth"]
         * grouping_area_factor[0],
     }
-    return grid
+    return grid_parameters
 
 
-def check_dem_resolution(dem_ecef: xr.DataArray, grid: GridParamsType) -> None:
+def check_dem_resolution(
+    dem_ecef: xr.DataArray,
+    slant_range_spacing_m: float,
+    azimuth_spacing_m: float,
+) -> None:
     dem_area = abs(dem_ecef.x[1] - dem_ecef.x[0]) * abs(dem_ecef.y[1] - dem_ecef.y[0])
-    grouping_area = grid["slant_range_spacing_m"] * grid["azimuth_spacing_m"]
+    grouping_area = slant_range_spacing_m * azimuth_spacing_m
     if grouping_area / dem_area < 2 ** 2:
         logger.warning(
             "DEM resolution is too low, "
@@ -191,14 +182,18 @@ def backward_geocode_sentinel1(
 
     if correct_radiometry:
         logger.info("correct radiometry")
-        grid = azimuth_slant_range_grid(
+        grid_parameters = azimuth_slant_range_grid(
             measurement_ds, coordinate_conversion, grouping_area_factor
         )
-        check_dem_resolution(dem_ecef, grid)
+        check_dem_resolution(
+            dem_ecef,
+            slant_range_spacing_m=grid_parameters["slant_range_spacing_m"],
+            azimuth_spacing_m=grid_parameters["azimuth_spacing_m"],
+        )
         weights = geocoding.gamma_weights(
             dem_ecef,
             acquisition,
-            **grid,
+            **grid_parameters,
         )
         geocoded = geocoded / weights
 
