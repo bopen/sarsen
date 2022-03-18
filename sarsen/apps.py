@@ -10,6 +10,19 @@ from . import geocoding, orbit, scene
 logger = logging.getLogger(__name__)
 
 
+GridParamsType = T.TypedDict(
+    "GridParamsType",
+    {
+        "slant_range_time0": float,
+        "azimuth_time0": np.datetime64,
+        "slant_range_time_interval_s": float,
+        "azimuth_time_interval_s": float,
+        "slant_range_spacing_m": float,
+        "azimuth_spacing_m": float,
+    },
+)
+
+
 def mosaic_slc_iw(image: xr.DataArray, crop: int = 90) -> xr.DataArray:
     bursts = []
     for i in range(image.attrs["number_of_bursts"]):
@@ -56,41 +69,44 @@ def azimuth_slant_range_grid(
     measurement_ds: xr.DataArray,
     coordinate_conversion: T.Optional[xr.DataArray] = None,
     grouping_area_factor: T.Tuple[float, float] = (1.0, 1.0),
-) -> T.Dict[str, float]:
+) -> GridParamsType:
 
-    grid: T.Dict[str, float] = {}
     incidence_angle_mid_swath = (
         measurement_ds.attrs.get("incidence_angle_mid_swath", 90) / 180 * np.pi
     )
     if coordinate_conversion:
-        grid["slant_range_time0"] = coordinate_conversion.slant_range_time.values[0]
-        grid["pixel_spacing_slant_range"] = (
+        slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
+        slant_range_spacing_m = (
             measurement_ds.attrs["sar:pixel_spacing_range"]
             * np.sin(incidence_angle_mid_swath)
             * grouping_area_factor[1]
         )
     else:
-        grid["slant_range_time0"] = measurement_ds.slant_range_time.values[0]
-        grid["pixel_spacing_slant_range"] = (
+        slant_range_time0 = measurement_ds.slant_range_time.values[0]
+        slant_range_spacing_m = (
             measurement_ds.attrs["sar:pixel_spacing_range"] * grouping_area_factor[1]
-        )
+        ) * grouping_area_factor[1]
 
-    grid["slant_range_time_interval"] = (
-        grid["pixel_spacing_slant_range"] * 2 / geocoding.SPEED_OF_LIGHT  # ignore type
-    ) * grouping_area_factor[1]
-    grid["pixel_spacing_azimuth"] = (
-        measurement_ds.attrs["sar:pixel_spacing_azimuth"] * grouping_area_factor[0]
+    slant_range_time_interval_s = (
+        slant_range_spacing_m * 2 / geocoding.SPEED_OF_LIGHT  # ignore type
     )
-    grid["azimuth_time_interval"] = (
-        measurement_ds.attrs["azimuth_time_interval"] * grouping_area_factor[0]
-    )
-    return grid  # ignore type
+
+    grid: GridParamsType = {
+        "slant_range_time0": slant_range_time0,
+        "slant_range_time_interval_s": slant_range_time_interval_s,
+        "slant_range_spacing_m": slant_range_spacing_m,
+        "azimuth_time0": measurement_ds.azimuth_time.values[0],  # ignore type
+        "azimuth_time_interval_s": measurement_ds.attrs["azimuth_time_interval"]
+        * grouping_area_factor[0],
+        "azimuth_spacing_m": measurement_ds.attrs["sar:pixel_spacing_azimuth"]
+        * grouping_area_factor[0],
+    }
+    return grid
 
 
-def check_dem_resolution(dem_ecef: xr.DataArray, grid: T.Dict[str, float]) -> None:
+def check_dem_resolution(dem_ecef: xr.DataArray, grid: GridParamsType) -> None:
     dem_area = abs(dem_ecef.x[1] - dem_ecef.x[0]) * abs(dem_ecef.y[1] - dem_ecef.y[0])
-    grouping_area = grid["pixel_spacing_slant_range"] * grid["pixel_spacing_azimuth"]
-
+    grouping_area = grid["slant_range_spacing_m"] * grid["azimuth_spacing_m"]
     if grouping_area / dem_area < 2 ** 2:
         logger.warning(
             "DEM resolution is too low, "
@@ -182,7 +198,6 @@ def backward_geocode_sentinel1(
         weights = geocoding.gamma_weights(
             dem_ecef,
             acquisition,
-            azimuth_time0=measurement_ds.azimuth_time.values[0],
             **grid,
         )
         geocoded = geocoded / weights
