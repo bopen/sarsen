@@ -18,6 +18,7 @@ dependencies:
   - pytest-cov
   - rasterio >= 1.2.4
   - rioxarray
+  - scipy
   - types-setuptools
   - xarray >= 0.20.2
   - xmlschema

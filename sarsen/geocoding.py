@@ -3,11 +3,15 @@ Reference "Guide to Sentinel-1 Geocoding" UZH-S1-GC-AD 1.10 26.03.2019
 https://sentinel.esa.int/documents/247904/0/Guide-to-Sentinel-1-Geocoding.pdf/e0450150-b4e9-4b2d-9b32-dadf989d3bd3
 """
 import functools
+import logging
 import typing as T
 
 import numpy as np
 import numpy.typing as npt
 import xarray as xr
+
+logger = logging.getLogger(__name__)
+
 
 SPEED_OF_LIGHT = 299_792_458.0  # m / s
 ONE_SECOND = np.timedelta64(1, "s")
@@ -184,29 +188,29 @@ def gamma_weights(
     dem_coords: xr.Dataset,
     slant_range_time0: float,
     azimuth_time0: np.datetime64,
-    slant_range_time_interval: float,
-    azimuth_time_interval: float,
-    pixel_spacing_azimuth: float = 1,
-    pixel_spacing_range: float = 1,
+    slant_range_time_interval_s: float,
+    azimuth_time_interval_s: float,
+    slant_range_spacing_m: float = 1,
+    azimuth_spacing_m: float = 1,
 ) -> xr.DataArray:
 
     area = dem_area_gamma(dem_ecef, dem_coords.dem_direction)
 
     # compute dem image coordinates
-    slant_range_index = (
-        dem_coords.slant_range_time - slant_range_time0
-    ) / slant_range_time_interval
+    azimuth_index = ((dem_coords.azimuth_time - azimuth_time0) / ONE_SECOND) / (
+        azimuth_time_interval_s
+    )
 
-    azimuth_index = (
-        (dem_coords.azimuth_time - azimuth_time0) / ONE_SECOND
-    ) / azimuth_time_interval
+    slant_range_index = (dem_coords.slant_range_time - slant_range_time0) / (
+        slant_range_time_interval_s
+    )
 
     slant_range_index_0 = np.floor(slant_range_index).astype(int)
     slant_range_index_1 = np.ceil(slant_range_index).astype(int)
     azimuth_index_0 = np.floor(azimuth_index).astype(int)
     azimuth_index_1 = np.ceil(azimuth_index).astype(int)
 
-    print("compute gamma areas 1/4")
+    logger.info("compute gamma areas 1/4")
     w_00 = abs(
         (azimuth_index_1 - azimuth_index) * (slant_range_index_1 - slant_range_index)
     )
@@ -216,7 +220,7 @@ def gamma_weights(
         slant_range_index=slant_range_index_0,
     )
 
-    print("compute gamma areas 2/4")
+    logger.info("compute gamma areas 2/4")
     w_01 = abs(
         (azimuth_index_1 - azimuth_index) * (slant_range_index_0 - slant_range_index)
     )
@@ -226,7 +230,7 @@ def gamma_weights(
         slant_range_index=slant_range_index_1,
     )
 
-    print("compute gamma areas 3/4")
+    logger.info("compute gamma areas 3/4")
     w_10 = abs(
         (azimuth_index_0 - azimuth_index) * (slant_range_index_1 - slant_range_index)
     )
@@ -236,7 +240,7 @@ def gamma_weights(
         slant_range_index=slant_range_index_0,
     )
 
-    print("compute gamma areas 4/4")
+    logger.info("compute gamma areas 4/4")
     w_11 = abs(
         (azimuth_index_0 - azimuth_index) * (slant_range_index_0 - slant_range_index)
     )
@@ -248,4 +252,5 @@ def gamma_weights(
 
     tot_area = tot_area_00 + tot_area_01 + tot_area_10 + tot_area_11
 
-    return tot_area / (pixel_spacing_azimuth * pixel_spacing_range)
+    normalized_area = tot_area / (azimuth_spacing_m * slant_range_spacing_m)
+    return normalized_area
