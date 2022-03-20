@@ -116,6 +116,7 @@ def backward_geocode_sentinel1(
     interp_method: str = "nearest",
     multilook: T.Optional[T.Tuple[int, int]] = None,
     grouping_area_factor: T.Tuple[float, float] = (1.0, 1.0),
+    open_dem_raster_kwargs: T.Dict[str, T.Any] = {},
     **kwargs: T.Any,
 ) -> None:
     if correct_radiometry and "chunks" in kwargs:
@@ -129,7 +130,7 @@ def backward_geocode_sentinel1(
     measurement_ds = xr.open_dataset(product_urlpath, engine="sentinel-1", group=measurement_group, **kwargs)  # type: ignore
     measurement = measurement_ds.measurement
 
-    dem_raster = scene.open_dem_raster(dem_urlpath)
+    dem_raster = scene.open_dem_raster(dem_urlpath, **open_dem_raster_kwargs)
 
     orbit_ecef = xr.open_dataset(product_urlpath, engine="sentinel-1", group=orbit_group, **kwargs)  # type: ignore
     position_ecef = orbit_ecef.position
