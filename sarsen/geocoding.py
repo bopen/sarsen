@@ -160,27 +160,46 @@ def dem_area_gamma(
     return area
 
 
-def sum_area_on_image_pixels(
-    dem_area: xr.DataArray,
+def sum_weights(
+    initial_weights: xr.DataArray,
     azimuth_index: xr.DataArray,
     slant_range_index: xr.DataArray,
+    multilook: T.Optional[T.Tuple[int, int]] = None,
 ) -> xr.DataArray:
-    dem_area = dem_area.assign_coords(  # type: ignore
-        {
-            "azimuth_index": azimuth_index,
-            "slant_range_index": slant_range_index,
-        }
+    geocoded = initial_weights.assign_coords(
+        slant_range_index=slant_range_index, azimuth_index=azimuth_index
+    )  # type: ignore
+
+    stacked_geocoded = (
+        geocoded.stack(z=("y", "x"))
+        .reset_index("z")
+        .set_index(z=("azimuth_index", "slant_range_index"))
     )
 
-    dem_area = dem_area.stack(z=("x", "y")).reset_index("z")
-    dem_area = dem_area.set_index(z=("azimuth_index", "slant_range_index"))
+    grouped = stacked_geocoded.groupby("z")
 
-    sum_area: xr.DataArray = dem_area.groupby("z").sum()
+    flat_sum = grouped.sum()
 
-    tot_area = sum_area.sel(z=dem_area.indexes["z"])
-    tot_area = tot_area.assign_coords(dem_area.coords)  # type: ignore
-    tot_area = tot_area.reset_index("z").set_index(z=("x", "y")).unstack("z")
-    return tot_area
+    if multilook:
+        flat_sum = (
+            flat_sum.unstack("z")
+            .rolling(
+                z_level_0=multilook[0],
+                z_level_1=multilook[1],
+                center=True,
+                min_periods=multilook[0] * multilook[1] // 2 + 1,
+            )
+            .mean()
+            .stack(z=("z_level_0", "z_level_1"))
+        )
+
+    stacked_sum = flat_sum.sel(z=stacked_geocoded.indexes["z"]).assign_coords(
+        stacked_geocoded.coords
+    )
+
+    weights_sum: xr.DataArray = stacked_sum.set_index(z=("y", "x")).unstack("z")
+
+    return weights_sum
 
 
 def gamma_weights(
@@ -214,7 +233,7 @@ def gamma_weights(
     w_00 = abs(
         (azimuth_index_1 - azimuth_index) * (slant_range_index_1 - slant_range_index)
     )
-    tot_area_00 = sum_area_on_image_pixels(
+    tot_area_00 = sum_weights(
         area * w_00,
         azimuth_index=azimuth_index_0,
         slant_range_index=slant_range_index_0,
@@ -224,7 +243,7 @@ def gamma_weights(
     w_01 = abs(
         (azimuth_index_1 - azimuth_index) * (slant_range_index_0 - slant_range_index)
     )
-    tot_area_01 = sum_area_on_image_pixels(
+    tot_area_01 = sum_weights(
         area * w_01,
         azimuth_index=azimuth_index_0,
         slant_range_index=slant_range_index_1,
@@ -234,7 +253,7 @@ def gamma_weights(
     w_10 = abs(
         (azimuth_index_0 - azimuth_index) * (slant_range_index_1 - slant_range_index)
     )
-    tot_area_10 = sum_area_on_image_pixels(
+    tot_area_10 = sum_weights(
         area * w_10,
         azimuth_index=azimuth_index_1,
         slant_range_index=slant_range_index_0,
@@ -244,7 +263,7 @@ def gamma_weights(
     w_11 = abs(
         (azimuth_index_0 - azimuth_index) * (slant_range_index_0 - slant_range_index)
     )
-    tot_area_11 = sum_area_on_image_pixels(
+    tot_area_11 = sum_weights(
         area * w_11,
         azimuth_index=azimuth_index_1,
         slant_range_index=slant_range_index_1,
