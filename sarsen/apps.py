@@ -5,7 +5,7 @@ import numpy as np
 import xarray as xr
 import xarray_sentinel
 
-from . import geocoding, orbit, scene
+from . import geocoding, orbit, radiometry, scene
 
 logger = logging.getLogger(__name__)
 
@@ -42,45 +42,6 @@ def interpolate_measurement(
     geocoded = image.interp(method=interp_method, **interp_kwargs)
 
     return geocoded
-
-
-def azimuth_slant_range_grid(
-    measurement_ds: xr.DataArray,
-    coordinate_conversion: T.Optional[xr.DataArray] = None,
-    grouping_area_factor: T.Tuple[float, float] = (1.0, 1.0),
-) -> T.Dict[str, T.Any]:
-
-    incidence_angle_mid_swath = (
-        measurement_ds.attrs.get("incidence_angle_mid_swath", 90) / 180 * np.pi
-    )
-    if coordinate_conversion:
-        slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
-        slant_range_spacing_m = (
-            measurement_ds.attrs["sar:pixel_spacing_range"]
-            * np.sin(incidence_angle_mid_swath)
-            * grouping_area_factor[1]
-        )
-    else:
-        slant_range_time0 = measurement_ds.slant_range_time.values[0]
-        slant_range_spacing_m = (
-            measurement_ds.attrs["sar:pixel_spacing_range"] * grouping_area_factor[1]
-        ) * grouping_area_factor[1]
-
-    slant_range_time_interval_s = (
-        slant_range_spacing_m * 2 / geocoding.SPEED_OF_LIGHT  # ignore type
-    )
-
-    grid_parameters: T.Dict[str, T.Any] = {
-        "slant_range_time0": slant_range_time0,
-        "slant_range_time_interval_s": slant_range_time_interval_s,
-        "slant_range_spacing_m": slant_range_spacing_m,
-        "azimuth_time0": measurement_ds.azimuth_time.values[0],  # ignore type
-        "azimuth_time_interval_s": measurement_ds.attrs["azimuth_time_interval"]
-        * grouping_area_factor[0],
-        "azimuth_spacing_m": measurement_ds.attrs["sar:pixel_spacing_azimuth"]
-        * grouping_area_factor[0],
-    }
-    return grid_parameters
 
 
 def check_dem_resolution(
@@ -187,7 +148,7 @@ def backward_geocode_sentinel1(
 
     if correct_radiometry:
         logger.info("correct radiometry")
-        grid_parameters = azimuth_slant_range_grid(
+        grid_parameters = radiometry.azimuth_slant_range_grid(
             measurement_ds, coordinate_conversion, grouping_area_factor
         )
         check_dem_resolution(
@@ -195,7 +156,7 @@ def backward_geocode_sentinel1(
             slant_range_spacing_m=grid_parameters["slant_range_spacing_m"],
             azimuth_spacing_m=grid_parameters["azimuth_spacing_m"],
         )
-        weights = geocoding.gamma_weights(
+        weights = radiometry.gamma_weights(
             dem_ecef,
             acquisition,
             **grid_parameters,
