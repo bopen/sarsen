@@ -31,8 +31,8 @@ Overall the software is in the **alpha** phase and the usual caveats apply.
 
 ## Development focus
 
-Focus until this release has been on algotithic correctness and comparison with existing tools.
-From now on the focus will shift to improving performance and scalability. 
+Focus until this release has been on algorithmic correctness and comparison with existing tools.
+From now on the focus will shift to improving performance and scalability.
 
 ## Install
 
