@@ -107,7 +107,7 @@ def backward_geocode_sentinel1(
     correct_radiometry: bool = False,
     interp_method: str = "nearest",
     multilook: T.Optional[T.Tuple[int, int]] = None,
-    grouping_area_factor: T.Tuple[float, float] = (1.0, 1.0),
+    grouping_area_factor: T.Tuple[float, float] = (3.0, 13.0),
     open_dem_raster_kwargs: T.Dict[str, T.Any] = {},
     **kwargs: T.Any,
 ) -> xr.DataArray:
