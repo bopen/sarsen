@@ -25,15 +25,15 @@ Sarsen is a Python library and command line tool with the following functionalit
 
 Overall, the software is in the **alpha** phase and the usual caveats apply.
 
-## Non-objectives / Caveat emptor
+Current limitations and work-in-progress items:
+
+- little-to-no documentation. See #6.
+- radiometric terrain-correction algorithm slow and memory hungry. See #7.
+
+Non-objectives / Caveat emptor items:
 
 - No attempt is made to support UTC leap seconds. Observations that include a leap second may crash the code or
   silently return wrong results.
-
-## Development focus
-
-Focus until this release has been on algorithmic correctness and comparison with existing tools.
-From now on the focus will shift to improving performance and scalability.
 
 ## Install
 
@@ -51,7 +51,8 @@ The following commands create a new environment, activate it, install the packag
 The `sarsen` command line tool corrects SAR data based on a selected DEM and may produce
 geometrically terrain-corrected images (GTC) or radiometrically terrain-corrected images (RTC).
 Terrain-corrected images will have the same pixels as the input DEM, that should be resampled
-to the target projection and spacing in advance, for example using `gdalwarp`.
+to the target projection and spacing in advance, for example using
+[`gdalwarp`](https://gdal.org/programs/gdalwarp.html).
 
 The following command performs a geometric terrain correction:
 
