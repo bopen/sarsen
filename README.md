@@ -6,8 +6,6 @@ This Open Source project is sponsored by B-Open - https://www.bopen.eu.
 
 ## Features
 
-Overall the software is in the **alpha** phase and the usual caveats apply.
-
 - provides algorithms to terrain-correct satellite SAR data
   - geometric terrain correction (geocoding)
     - *fast mode*: to terrain-correct images
@@ -23,6 +21,8 @@ Overall the software is in the **alpha** phase and the usual caveats apply.
   - reads local and remote data in virtually any raster format via
     [*rasterio*](https://rasterio.readthedocs.io) / [*GDAL*](https://gdal.org)
 - supports larger-than-memory and distributed data access and processing via [*dask*](https://dask.org)
+
+Overall the software is in the **alpha** phase and the usual caveats apply.
 
 ## Non-objectives / Caveat emptor
 
