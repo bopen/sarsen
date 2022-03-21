@@ -4,20 +4,20 @@ Algorithms and utilities for SAR sensors. Enables cloud-native SAR processing vi
 
 This Open Source project is sponsored by B-Open - https://www.bopen.eu.
 
-## Features
+Sarsen current features:
 
 - provides algorithms to terrain-correct satellite SAR data
   - geometric terrain correction (geocoding)
     - *fast mode*: to terrain-correct images
     - *accurate mode*: for interferometric processing
   - radiometric terrain correction (gamma flattening)
-- SAR data access via [*xarray-sentinel*](https://github.com/bopen/xarray-sentinel):
+- accesses SAR data via [*xarray-sentinel*](https://github.com/bopen/xarray-sentinel):
   - supports all Sentinel-1 data products as [distributed by ESA](https://scihub.copernicus.eu/dhus/#/home):
     - Sentinel-1 Single Look Complex (SLC) SM/IW/EW
     - Sentinel-1 Ground Range Detected (GRD) SM/IW/EW
   - reads uncompressed and compressed SAFE data products on the local computer or
     on a network via [*fsspec*](https://filesystem-spec.readthedocs.io) - **depends on rasterio>=1.3a3**
-- DEM data access via [*rioxarray*](https://corteva.github.io/rioxarray):
+- accesses DEM data via [*rioxarray*](https://corteva.github.io/rioxarray):
   - reads local and remote data in virtually any raster format via
     [*rasterio*](https://rasterio.readthedocs.io) / [*GDAL*](https://gdal.org)
 - supports larger-than-memory and distributed data access and processing via [*dask*](https://dask.org)
