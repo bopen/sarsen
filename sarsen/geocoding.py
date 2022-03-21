@@ -9,7 +9,6 @@ import numpy as np
 import numpy.typing as npt
 import xarray as xr
 
-
 SPEED_OF_LIGHT = 299_792_458.0  # m / s
 
 TimedeltaArrayLike = T.TypeVar("TimedeltaArrayLike", bound=npt.ArrayLike)
@@ -102,4 +101,3 @@ def backward_geocode(
         ]
     )
     return simulation.reset_coords("azimuth_time")
-

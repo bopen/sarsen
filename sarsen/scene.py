@@ -59,7 +59,7 @@ def convert_to_dem_ecef(dem_raster: xr.DataArray) -> xr.DataArray:
 
 
 def compute_dem_oriented_area(
-        dem_ecef: xr.DataArray,
+    dem_ecef: xr.DataArray,
 ) -> xr.DataArray:
     x_corners: npt.ArrayLike = np.concatenate(
         [

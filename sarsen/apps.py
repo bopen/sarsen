@@ -5,7 +5,7 @@ import numpy as np
 import xarray as xr
 import xarray_sentinel
 
-from . import geocoding, orbit, scene, radiometry
+from . import geocoding, orbit, radiometry, scene
 
 logger = logging.getLogger(__name__)
 
