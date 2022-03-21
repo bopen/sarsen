@@ -56,15 +56,15 @@ to the target projection and spacing in advance, for example using
 
 The following command performs a geometric terrain correction:
 
-```
-  $ sarsen gtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
+```shell
+  sarsen gtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
 ```
 
 Performing geometric and radiometric terrain correction requires significantly more resources.
 Currently it is possible to produce 50km x 50km RTC images at a 10m resolution on a 32Gb machine:
 
-```
-  $ sarsen rtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
+```shell
+  sarsen rtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
 ```
 
 ## Python API
@@ -72,9 +72,9 @@ Currently it is possible to produce 50km x 50km RTC images at a 10m resolution o
 The python API has entry points to the same commands and it also gives access to several lower level
 algorithms, but internal APIs should not be considered stable:
 
-```python-repl
->>> from sarsen import apps
->>> gtc = apps.backward_geocode_sentinel1(
+```python
+from sarsen import apps
+gtc = apps.backward_geocode_sentinel1(
   "S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE",
   measurement_group="IW/VV",
   dem_urlpath="South-of-Redmond-10m_UTM.tif",
