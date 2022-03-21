@@ -29,6 +29,11 @@ Overall the software is in the **alpha** phase and the usual caveats apply.
 - No attempt is done to support UTC leap seconds. Observations that include a leap second may crash the code or
   silently return wrong results.
 
+## Development focus
+
+Focus until this release has been on algotithic correctness and comparison with existing tools.
+From now on the focus will shift to improving performance and scalability. 
+
 ## Install
 
 The easiest way to install *sarsen* is in a *conda* environment.
@@ -46,17 +51,17 @@ with the following commands:
 
 The `sarsen` command line tool corrects SAR data based on a selected DEM and may produce
 geometrically terrain-corrected images (GTC) or radiometrically terrain-corrected images (RTC).
-The terrain corrected images will have the same pixels as the inpute DEM, that should be resampled
+The terrain corrected images will have the same pixels as the input DEM, that should be resampled
 to the target projection and spacing in advance, for example using `gdalwarp`.
 
-Geometric terrain correct is perfomred with:
+Geometric terrain correct is performed with:
 
 ```
   $ sarsen gtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
 ```
 
 Performing geometric and radiometric terrain correction is more resoure demanding,
-currently it is possible to produce an RTC images of 50km x 50km at a 10m resolution on a 32Gb machine.
+currently it is possible to produce an RTC images of 50km x 50km at a 10m resolution on a 32Gb machine:
 
 ```
   $ sarsen rtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
@@ -65,7 +70,7 @@ currently it is possible to produce an RTC images of 50km x 50km at a 10m resolu
 ## Python API
 
 The python API has entry points to the same commands and it also gives access to several lower level
-algorithms
+algorithms, but internal APIs should not be considered stable:
 
 ```python-repl
 >>> from sarsen import apps
@@ -104,7 +109,7 @@ See also the list of [contributors](https://github.com/bopen/sarsen/contributors
 
 We wish to express our gratitude to the project sponsors:
 
-- [Microsoft](https://microsoft.com) has sponsored the support for GRD products and the gamma flattening algorithm.
+- [Microsoft](https://microsoft.com) has sponsored the support for *GRD* products and the *gamma flattening* algorithm.
 
 ## License
 
