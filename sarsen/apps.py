@@ -10,14 +10,6 @@ from . import geocoding, orbit, scene
 logger = logging.getLogger(__name__)
 
 
-def mosaic_slc_iw(image: xr.DataArray, crop: int = 90) -> xr.DataArray:
-    bursts = []
-    for i in range(image.attrs["number_of_bursts"]):
-        burst = xarray_sentinel.crop_burst_dataset(image, burst_index=i)
-        bursts.append(burst.isel(azimuth_time=slice(crop, -crop)))
-    return xr.concat(bursts, dim="azimuth_time")  # type: ignore
-
-
 def simulate_acquisition(
     position_ecef: xr.DataArray,
     dem_ecef: xr.DataArray,
@@ -179,7 +171,7 @@ def backward_geocode_sentinel1(
     elif measurement_ds.attrs["sar:product_type"] == "SLC":
         interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
         if measurement_ds.attrs["sar:instrument_mode"] == "IW":
-            beta_nought = mosaic_slc_iw(beta_nought)
+            beta_nought = xarray_sentinel.mosaic_slc_iw(beta_nought)
     else:
         raise ValueError(
             f"unsupported sar:product_type {measurement_ds.attrs['sar:product_type']}"

@@ -15,8 +15,8 @@ Overall the software is in the **alpha** phase and the usual caveats apply.
   - radiometric terrain correction (gamma flattening)
 - SAR data access via [*xarray-sentinel*](https://github.com/bopen/xarray-sentinel):
   - supports all Sentinel-1 data products as [distributed by ESA](https://scihub.copernicus.eu/dhus/#/home):
-    - Sentinel-1 Single Look Complex (SLC) SM/IW/EW/WV
-    - Sentinel-1 Ground Range Detected (GRD) SM/IW/EW/WV
+    - Sentinel-1 Single Look Complex (SLC) SM/IW/EW
+    - Sentinel-1 Ground Range Detected (GRD) SM/IW/EW
   - reads uncompressed and compressed SAFE data products on the local computer or
     on a network via [*fsspec*](https://filesystem-spec.readthedocs.io) - **depends on rasterio>=1.3a3**
 - DEM data access via [*rioxarray*](https://corteva.github.io/rioxarray):
@@ -44,7 +44,7 @@ with the following commands:
 
 ## Command line usage
 
-The `sarsen` command line tool correct SAR data based on a selected DEM and may produce
+The `sarsen` command line tool corrects SAR data based on a selected DEM and may produce
 geometrically terrain-corrected images (GTC) or radiometrically terrain-corrected images (RTC).
 The terrain corrected images will have the same pixels as the inpute DEM, that should be resampled
 to the target projection and spacing in advance, for example using `gdalwarp`.
