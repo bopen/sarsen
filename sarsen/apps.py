@@ -118,7 +118,7 @@ def backward_geocode_sentinel1(
     grouping_area_factor: T.Tuple[float, float] = (1.0, 1.0),
     open_dem_raster_kwargs: T.Dict[str, T.Any] = {},
     **kwargs: T.Any,
-) -> None:
+) -> xr.DataArray:
     if correct_radiometry and "chunks" in kwargs:
         raise ValueError("chunks are not supported if ´correct_radiometry´ is True")
 
@@ -127,7 +127,19 @@ def backward_geocode_sentinel1(
 
     logger.info(f"open data {product_urlpath!r}")
 
-    measurement_ds = xr.open_dataset(product_urlpath, engine="sentinel-1", group=measurement_group, **kwargs)  # type: ignore
+    try:
+        measurement_ds = xr.open_dataset(
+            product_urlpath, engine="sentinel-1", group=measurement_group, **kwargs  # type: ignore
+        )
+    except FileNotFoundError:
+        # re-try with Planetary Computer option
+        kwargs = {
+            "override_product_files": "{dirname}/{prefix}{swath}-{polarization}{ext}"
+        }
+        measurement_ds = xr.open_dataset(
+            product_urlpath, engine="sentinel-1", group=measurement_group, **kwargs  # type: ignore
+        )
+
     measurement = measurement_ds.measurement
 
     dem_raster = scene.open_dem_raster(dem_urlpath, **open_dem_raster_kwargs)
@@ -210,3 +222,5 @@ def backward_geocode_sentinel1(
         compress="ZSTD",
         num_threads="ALL_CPUS",
     )
+
+    return geocoded
