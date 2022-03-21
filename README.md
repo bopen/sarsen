@@ -49,8 +49,17 @@ geometrically terrain-corrected images (GTC) or radiometrically terrain-correcte
 The terrain corrected images will have the same pixels as the inpute DEM, that should be resampled
 to the target projection and spacing in advance, for example using `gdalwarp`.
 
+Geometric terrain correct is perfomred with:
+
 ```
   $ sarsen gtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
+```
+
+Performing geometric and radiometric terrain correction is more resoure demanding,
+currently it is possible to produce an RTC images of 50km x 50km at a 10m resolution on a 32Gb machine.
+
+```
+  $ sarsen rtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
 ```
 
 ## Python API
