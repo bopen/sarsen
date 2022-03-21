@@ -3,18 +3,14 @@ Reference "Guide to Sentinel-1 Geocoding" UZH-S1-GC-AD 1.10 26.03.2019
 https://sentinel.esa.int/documents/247904/0/Guide-to-Sentinel-1-Geocoding.pdf/e0450150-b4e9-4b2d-9b32-dadf989d3bd3
 """
 import functools
-import logging
 import typing as T
 
 import numpy as np
 import numpy.typing as npt
 import xarray as xr
 
-logger = logging.getLogger(__name__)
-
 
 SPEED_OF_LIGHT = 299_792_458.0  # m / s
-ONE_SECOND = np.timedelta64(1, "s")
 
 TimedeltaArrayLike = T.TypeVar("TimedeltaArrayLike", bound=npt.ArrayLike)
 FloatArrayLike = T.TypeVar("FloatArrayLike", bound=npt.ArrayLike)
@@ -107,169 +103,3 @@ def backward_geocode(
     )
     return simulation.reset_coords("azimuth_time")
 
-
-def dem_area_gamma(
-    dem_ecef: xr.DataArray,
-    dem_direction: xr.DataArray,
-) -> xr.DataArray:
-
-    x_corners: npt.ArrayLike = np.concatenate(
-        [
-            [dem_ecef.x[0] + (dem_ecef.x[0] - dem_ecef.x[1]) / 2],
-            ((dem_ecef.x.shift(x=-1) + dem_ecef.x) / 2)[:-1].data,
-            [dem_ecef.x[-1] + (dem_ecef.x[-1] - dem_ecef.x[-2]) / 2],
-        ]
-    )
-    y_corners: npt.ArrayLike = np.concatenate(
-        [
-            [dem_ecef.y[0] + (dem_ecef.y[0] - dem_ecef.y[1]) / 2],
-            ((dem_ecef.y.shift(y=-1) + dem_ecef.y) / 2)[:-1].data,
-            [dem_ecef.y[-1] + (dem_ecef.y[-1] - dem_ecef.y[-2]) / 2],
-        ]
-    )
-    dem_ecef_corners = dem_ecef.interp(
-        {"x": x_corners, "y": y_corners},
-        method="linear",
-        kwargs={"fill_value": "extrapolate"},
-    )
-
-    dx = dem_ecef_corners.diff("x", 1)
-    dy = dem_ecef_corners.diff("y", 1)
-
-    dx1 = dx.isel(y=slice(1, None)).assign_coords(dem_ecef.coords)  # type: ignore
-    dy1 = dy.isel(x=slice(1, None)).assign_coords(dem_ecef.coords)  # type: ignore
-    dx2 = dx.isel(y=slice(None, -1)).assign_coords(dem_ecef.coords)  # type: ignore
-    dy2 = dy.isel(x=slice(None, -1)).assign_coords(dem_ecef.coords)  # type: ignore
-
-    cross_1 = xr.cross(dx1, dy1, dim="axis") / 2
-    sign = np.sign(
-        xr.dot(cross_1, dem_ecef, dims="axis")  # type: ignore
-    )  # ensure direction out of DEM
-    area_t1 = xr.dot(sign * cross_1, -dem_direction, dims="axis")  # type: ignore
-    area_t1 = area_t1.where(area_t1 > 0, 0)
-
-    cross_2 = xr.cross(dx2, dy2, dim="axis") / 2
-    sign = np.sign(
-        xr.dot(cross_2, dem_ecef, dims="axis")  # type: ignore
-    )  # ensure direction out of DEM
-    area_t2 = xr.dot(sign * cross_2, -dem_direction, dims="axis")  # type: ignore
-    area_t2 = area_t2.where(area_t2 > 0, 0)
-
-    area: xr.DataArray = area_t1 + area_t2
-
-    return area
-
-
-def sum_weights(
-    initial_weights: xr.DataArray,
-    azimuth_index: xr.DataArray,
-    slant_range_index: xr.DataArray,
-    multilook: T.Optional[T.Tuple[int, int]] = None,
-) -> xr.DataArray:
-    geocoded = initial_weights.assign_coords(
-        slant_range_index=slant_range_index, azimuth_index=azimuth_index
-    )  # type: ignore
-
-    stacked_geocoded = (
-        geocoded.stack(z=("y", "x"))
-        .reset_index("z")
-        .set_index(z=("azimuth_index", "slant_range_index"))
-    )
-
-    grouped = stacked_geocoded.groupby("z")
-
-    flat_sum = grouped.sum()
-
-    if multilook:
-        flat_sum = (
-            flat_sum.unstack("z")
-            .rolling(
-                z_level_0=multilook[0],
-                z_level_1=multilook[1],
-                center=True,
-                min_periods=multilook[0] * multilook[1] // 2 + 1,
-            )
-            .mean()
-            .stack(z=("z_level_0", "z_level_1"))
-        )
-
-    stacked_sum = flat_sum.sel(z=stacked_geocoded.indexes["z"]).assign_coords(
-        stacked_geocoded.coords
-    )
-
-    weights_sum: xr.DataArray = stacked_sum.set_index(z=("y", "x")).unstack("z")
-
-    return weights_sum
-
-
-def gamma_weights(
-    dem_ecef: xr.DataArray,
-    dem_coords: xr.Dataset,
-    slant_range_time0: float,
-    azimuth_time0: np.datetime64,
-    slant_range_time_interval_s: float,
-    azimuth_time_interval_s: float,
-    slant_range_spacing_m: float = 1,
-    azimuth_spacing_m: float = 1,
-) -> xr.DataArray:
-
-    area = dem_area_gamma(dem_ecef, dem_coords.dem_direction)
-
-    # compute dem image coordinates
-    azimuth_index = ((dem_coords.azimuth_time - azimuth_time0) / ONE_SECOND) / (
-        azimuth_time_interval_s
-    )
-
-    slant_range_index = (dem_coords.slant_range_time - slant_range_time0) / (
-        slant_range_time_interval_s
-    )
-
-    slant_range_index_0 = np.floor(slant_range_index).astype(int)
-    slant_range_index_1 = np.ceil(slant_range_index).astype(int)
-    azimuth_index_0 = np.floor(azimuth_index).astype(int)
-    azimuth_index_1 = np.ceil(azimuth_index).astype(int)
-
-    logger.info("compute gamma areas 1/4")
-    w_00 = abs(
-        (azimuth_index_1 - azimuth_index) * (slant_range_index_1 - slant_range_index)
-    )
-    tot_area_00 = sum_weights(
-        area * w_00,
-        azimuth_index=azimuth_index_0,
-        slant_range_index=slant_range_index_0,
-    )
-
-    logger.info("compute gamma areas 2/4")
-    w_01 = abs(
-        (azimuth_index_1 - azimuth_index) * (slant_range_index_0 - slant_range_index)
-    )
-    tot_area_01 = sum_weights(
-        area * w_01,
-        azimuth_index=azimuth_index_0,
-        slant_range_index=slant_range_index_1,
-    )
-
-    logger.info("compute gamma areas 3/4")
-    w_10 = abs(
-        (azimuth_index_0 - azimuth_index) * (slant_range_index_1 - slant_range_index)
-    )
-    tot_area_10 = sum_weights(
-        area * w_10,
-        azimuth_index=azimuth_index_1,
-        slant_range_index=slant_range_index_0,
-    )
-
-    logger.info("compute gamma areas 4/4")
-    w_11 = abs(
-        (azimuth_index_0 - azimuth_index) * (slant_range_index_0 - slant_range_index)
-    )
-    tot_area_11 = sum_weights(
-        area * w_11,
-        azimuth_index=azimuth_index_1,
-        slant_range_index=slant_range_index_1,
-    )
-
-    tot_area = tot_area_00 + tot_area_01 + tot_area_10 + tot_area_11
-
-    normalized_area = tot_area / (azimuth_spacing_m * slant_range_spacing_m)
-    return normalized_area
