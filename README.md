@@ -95,7 +95,7 @@ See also the list of [contributors](https://github.com/bopen/sarsen/contributors
 
 We wish to express our gratitude to the project sponsors:
 
-- [Microsoft](https://microsoft.com)
+- [Microsoft](https://microsoft.com) has sponsored the support for GRD products and the gamma flattening algorithm.
 
 ## License
 
