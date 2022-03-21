@@ -5,6 +5,8 @@ Enables cloud-native SAR processing via *Xarray* and *Dask*.
 
 This Open Source project is sponsored by B-Open - https://www.bopen.eu.
 
+## Features and limitations
+
 Sarsen is a Python library and command line tool with the following functionalities:
 
 - provides algorithms to terrain-correct satellite SAR data
