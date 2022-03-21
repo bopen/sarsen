@@ -2,9 +2,11 @@
 
 Algorithms and utilities for SAR sensors. Enables cloud-native SAR processing via *Xarray* and *Dask*.
 
-## Target features
+This Open Source project is sponsored by B-Open - https://www.bopen.eu.
 
-Overall the software is in early **alpha** phase and the usual caveats apply.
+## Features
+
+Overall the software is in the **alpha** phase and the usual caveats apply.
 
 - provides algorithms to terrain-correct satellite SAR data
   - geometric terrain correction (geocoding)
@@ -16,7 +18,7 @@ Overall the software is in early **alpha** phase and the usual caveats apply.
     - Sentinel-1 Single Look Complex (SLC) SM/IW/EW/WV
     - Sentinel-1 Ground Range Detected (GRD) SM/IW/EW/WV
   - reads uncompressed and compressed SAFE data products on the local computer or
-    on a network via [*fsspec*](https://filesystem-spec.readthedocs.io)
+    on a network via [*fsspec*](https://filesystem-spec.readthedocs.io) - **depends on rasterio>=1.3a3**
 - DEM data access via [*rioxarray*](https://corteva.github.io/rioxarray):
   - reads local and remote data in virtually any raster format via
     [*rasterio*](https://rasterio.readthedocs.io) / [*GDAL*](https://gdal.org)
@@ -27,11 +29,42 @@ Overall the software is in early **alpha** phase and the usual caveats apply.
 - No attempt is done to support UTC leap seconds. Observations that include a leap second may crash the code or
   silently return wrong results.
 
-## Usage
+## Install
+
+The easiest way to install *sarsen* is in a *conda* environment.
+You may create a new environment, activate it, install the package and its dependencies
+with the following commands:
+
+```shell
+    conda create -n SARSEN
+    conda activate SARSEN
+    conda install -c conda-forge fsspec dask rioxarray scipy xarray xmlschema
+    pip install sarsen
+```
+
+## Command line usage
+
+The `sarsen` command line tool correct SAR data based on a selected DEM and may produce
+geometrically terrain-corrected images (GTC) or radiometrically terrain-corrected images (RTC).
+The terrain corrected images will have the same pixels as the inpute DEM, that should be resampled
+to the target projection and spacing in advance, for example using `gdalwarp`.
+
+```
+  $ sarsen gtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
+```
+
+## Python API
+
+The python API has entry points to the same commands and it also gives access to several lower level
+algorithms
 
 ```python-repl
->>> import sarsen
-
+>>> from sarsen import apps
+>>> gtc = apps.backward_geocode_sentinel1(
+  "S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE",
+  measurement_group="IW/VV",
+  dem_urlpath="South-of-Redmond-10m_UTM.tif",
+)
 ```
 
 ## Project resources
