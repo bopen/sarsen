@@ -4,7 +4,7 @@ Algorithms and utilities for SAR sensors. Enables cloud-native SAR processing vi
 
 This Open Source project is sponsored by B-Open - https://www.bopen.eu.
 
-Sarsen current features:
+Sarsen is a Python library and command line tool with the following functionalities:
 
 - provides algorithms to terrain-correct satellite SAR data
   - geometric terrain correction (geocoding)
