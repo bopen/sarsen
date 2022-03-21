@@ -36,8 +36,7 @@ From now on the focus will shift to improving performance and scalability.
 
 ## Install
 
-The following commands create a new environment, activate it, install the package and its dependencies
-with the following commands:
+The following commands create a new environment, activate it, install the package and its dependencies:
 
 ```shell
     conda create -n SARSEN
@@ -59,7 +58,7 @@ The following command performs a geometric terrain correction:
   $ sarsen gtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
 ```
 
-Performing geometric and radiometric terrain correction requires more resources.
+Performing geometric and radiometric terrain correction requires significantly more resources.
 Currently it is possible to produce 50km x 50km RTC images at a 10m resolution on a 32Gb machine:
 
 ```
