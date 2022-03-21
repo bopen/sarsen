@@ -22,11 +22,11 @@ Sarsen is a Python library and command line tool with the following functionalit
     [*rasterio*](https://rasterio.readthedocs.io) / [*GDAL*](https://gdal.org)
 - supports larger-than-memory and distributed data access and processing via [*dask*](https://dask.org)
 
-Overall the software is in the **alpha** phase and the usual caveats apply.
+Overall, the software is in the **alpha** phase and the usual caveats apply.
 
 ## Non-objectives / Caveat emptor
 
-- No attempt is done to support UTC leap seconds. Observations that include a leap second may crash the code or
+- No attempt is made to support UTC leap seconds. Observations that include a leap second may crash the code or
   silently return wrong results.
 
 ## Development focus
@@ -36,8 +36,7 @@ From now on the focus will shift to improving performance and scalability.
 
 ## Install
 
-The easiest way to install *sarsen* is in a *conda* environment.
-You may create a new environment, activate it, install the package and its dependencies
+The following commands create a new environment, activate it, install the package and its dependencies
 with the following commands:
 
 ```shell
@@ -51,17 +50,17 @@ with the following commands:
 
 The `sarsen` command line tool corrects SAR data based on a selected DEM and may produce
 geometrically terrain-corrected images (GTC) or radiometrically terrain-corrected images (RTC).
-The terrain corrected images will have the same pixels as the input DEM, that should be resampled
+Terrain-corrected images will have the same pixels as the input DEM, that should be resampled
 to the target projection and spacing in advance, for example using `gdalwarp`.
 
-Geometric terrain correct is performed with:
+The following command performs a geometric terrain correction:
 
 ```
   $ sarsen gtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
 ```
 
-Performing geometric and radiometric terrain correction is more resoure demanding,
-currently it is possible to produce an RTC images of 50km x 50km at a 10m resolution on a 32Gb machine:
+Performing geometric and radiometric terrain correction requires more resources.
+Currently it is possible to produce 50km x 50km RTC images at a 10m resolution on a 32Gb machine:
 
 ```
   $ sarsen rtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
@@ -83,8 +82,8 @@ algorithms, but internal APIs should not be considered stable:
 
 ## Contributing
 
-The main repository is hosted on GitHub,
-testing, bug reports and contributions are highly welcomed and appreciated:
+The main repository is hosted on GitHub.
+Testing, bug reports and contributions are highly welcomed and appreciated:
 
 https://github.com/bopen/sarsen
 
