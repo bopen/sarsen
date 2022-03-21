@@ -1,6 +1,7 @@
 # Sarsen
 
-Algorithms and utilities for SAR sensors. Enables cloud-native SAR processing via *Xarray* and *Dask*.
+Algorithms and utilities for Synthetic Aperture Radar (SAR) sensors.
+Enables cloud-native SAR processing via *Xarray* and *Dask*.
 
 This Open Source project is sponsored by B-Open - https://www.bopen.eu.
 
