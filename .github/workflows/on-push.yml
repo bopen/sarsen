@@ -43,7 +43,7 @@ jobs:
         run: |
           make test COV_REPORT=xml
       - name: Upload code coverage to Codecov
-        uses: codecov/codecov-action@v2.1.0
+        uses: codecov/codecov-action@v3.0.0
 
   code-quality:
     runs-on: ubuntu-latest
