@@ -2,7 +2,7 @@ channels:
   - conda-forge
 dependencies:
   - attrs
-  - black = 21.12b0
+  - black = 22.3.0
   - click
   - dask
   - flake8
@@ -21,8 +21,8 @@ dependencies:
   - scipy
   - types-setuptools
   - xarray >= 0.20.2
+  - xarray-sentinel
   - xmlschema
   - zarr
   - pip:
-    - mdformat-gfm
-    - xarray-sentinel
+      - mdformat-gfm

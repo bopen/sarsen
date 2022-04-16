@@ -51,7 +51,7 @@ def check_dem_resolution(
 ) -> None:
     dem_area = abs(dem_ecef.x[1] - dem_ecef.x[0]) * abs(dem_ecef.y[1] - dem_ecef.y[0])
     grouping_area = slant_range_spacing_m * azimuth_spacing_m
-    if grouping_area / dem_area < 2 ** 2:
+    if grouping_area / dem_area < 2**2:
         logger.warning(
             "DEM resolution is too low, "
             "consider to over-sample the input DEM or to a use an higher ´grouping_area_factor´"

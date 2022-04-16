@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-S_TO_NS = 10 ** 9
+S_TO_NS = 10**9
 
 
 def polyder(coefficients: xr.DataArray) -> xr.DataArray:

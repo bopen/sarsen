@@ -11,7 +11,7 @@ def test_secant_method() -> None:
         t: npt.ArrayLike,
     ) -> T.Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         ft: npt.NDArray[np.float64] = np.asarray(t).astype("float64")
-        retval = 1.0 + 0.015 * ft - 0.0001 * ft ** 2 + 0.00003 * ft ** 3
+        retval = 1.0 + 0.015 * ft - 0.0001 * ft**2 + 0.00003 * ft**3
         return retval, retval
 
     t_start: npt.NDArray[np.timedelta64] = np.array([np.timedelta64(-100, "ns")])
