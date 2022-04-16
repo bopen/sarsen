@@ -1,7 +1,8 @@
 # Sarsen
 
 Algorithms and utilities for Synthetic Aperture Radar (SAR) sensors.
-Enables cloud-native SAR processing via *Xarray* and *Dask*.
+Enables cloud-native SAR processing via [*Xarray*](https://xarray.pydata.org)
+and [*Dask*](https://dask.org).
 
 This Open Source project is sponsored by B-Open - https://www.bopen.eu.
 
@@ -15,7 +16,7 @@ Sarsen is a Python library and command line tool with the following functionalit
     - *accurate mode*: for interferometric processing
   - radiometric terrain correction (gamma flattening)
 - accesses SAR data via [*xarray-sentinel*](https://github.com/bopen/xarray-sentinel):
-  - supports all Sentinel-1 data products as [distributed by ESA](https://scihub.copernicus.eu/dhus/#/home):
+  - supports most Sentinel-1 data products as [distributed by ESA](https://scihub.copernicus.eu/dhus/#/home):
     - Sentinel-1 Single Look Complex (SLC) SM/IW/EW
     - Sentinel-1 Ground Range Detected (GRD) SM/IW/EW
   - reads uncompressed and compressed SAFE data products on the local computer or
@@ -23,7 +24,7 @@ Sarsen is a Python library and command line tool with the following functionalit
 - accesses DEM data via [*rioxarray*](https://corteva.github.io/rioxarray):
   - reads local and remote data in virtually any raster format via
     [*rasterio*](https://rasterio.readthedocs.io) / [*GDAL*](https://gdal.org)
-- supports larger-than-memory and distributed data access and processing via [*dask*](https://dask.org)
+- supports larger-than-memory and distributed data access and processing via *Dask*
 
 Overall, the software is in the **alpha** phase and the usual caveats apply.
 
@@ -34,18 +35,18 @@ Current limitations and work-in-progress items:
 
 Non-objectives / Caveat emptor items:
 
-- No attempt is made to support UTC leap seconds. Observations that include a leap second may crash the code or
-  silently return wrong results.
+- No attempt is made to support UTC leap seconds. Observations that include a leap second may
+  crash the code or silently return wrong results.
 
 ## Install
 
+The easiest way to install *sarsen* is in a *conda* environment.
 The following commands create a new environment, activate it, install the package and its dependencies:
 
 ```shell
     conda create -n SARSEN
     conda activate SARSEN
-    conda install -c conda-forge fsspec dask rioxarray scipy xarray xmlschema
-    pip install sarsen
+    conda install -c conda-forge sarsen
 ```
 
 ## Command line usage
