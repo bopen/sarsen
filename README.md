@@ -46,7 +46,7 @@ The following commands create a new environment, activate it, install the packag
 ```shell
     conda create -n SARSEN
     conda activate SARSEN
-    conda install -c conda-forge sarsen
+    conda install -c conda-forge dask sarsen
 ```
 
 ## Command line usage
@@ -70,7 +70,7 @@ Currently it is possible to produce 50km x 50km RTC images at a 10m resolution o
   sarsen rtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
 ```
 
-## Python API
+## Python API usage
 
 The python API has entry points to the same commands and it also gives access to several lower level
 algorithms, but internal APIs should not be considered stable:
@@ -83,6 +83,17 @@ gtc = apps.backward_geocode_sentinel1(
   dem_urlpath="South-of-Redmond-10m_UTM.tif",
 )
 ```
+
+## Reference documentation
+
+This is the list of the reference documents:
+
+- geometric terrain-correction: "Guide to Sentinel-1 Geocoding" UZH-S1-GC-AD 1.10 26.03.2019 -
+  https://sentinel.esa.int/documents/247904/0/Guide-to-Sentinel-1-Geocoding.pdf/e0450150-b4e9-4b2d-9b32-dadf989d3bd3
+- radiometric terrain-correction / gamma flattening: D. Small, "Flattening Gamma: Radiometric Terrain
+  Correction for SAR Imagery," in IEEE Transactions on Geoscience and Remote Sensing, vol. 49, no. 8,
+  pp. 3081-3093, Aug. 2011, doi: 10.1109/TGRS.2011.2120616 -
+  https://www.geo.uzh.ch/microsite/rsl-documents/research/publications/peer-reviewed-articles/201108-TGRS-Small-tcGamma-3809999360/201108-TGRS-Small-tcGamma.pdf
 
 ## Contributing
 
