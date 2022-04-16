@@ -88,10 +88,12 @@ gtc = apps.backward_geocode_sentinel1(
 
 This is the list of the reference documents:
 
-- geometric terrain-correction: "Guide to Sentinel-1 Geocoding" UZH-S1-GC-AD 1.10 26.03.2019 -
+- the geometric terrain-correction algorithms are based on:
+  "Guide to Sentinel-1 Geocoding" UZH-S1-GC-AD 1.10 26.03.2019 -
   https://sentinel.esa.int/documents/247904/0/Guide-to-Sentinel-1-Geocoding.pdf/e0450150-b4e9-4b2d-9b32-dadf989d3bd3
-- radiometric terrain-correction / gamma flattening: D. Small, "Flattening Gamma: Radiometric Terrain
-  Correction for SAR Imagery," in IEEE Transactions on Geoscience and Remote Sensing, vol. 49, no. 8,
+- the radiometric terrain-correction algorithms are based on:
+  D. Small, "Flattening Gamma: Radiometric Terrain Correction for SAR Imagery,"
+  in IEEE Transactions on Geoscience and Remote Sensing, vol. 49, no. 8,
   pp. 3081-3093, Aug. 2011, doi: 10.1109/TGRS.2011.2120616 -
   https://www.geo.uzh.ch/microsite/rsl-documents/research/publications/peer-reviewed-articles/201108-TGRS-Small-tcGamma-3809999360/201108-TGRS-Small-tcGamma.pdf
 
