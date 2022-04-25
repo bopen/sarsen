@@ -73,12 +73,12 @@ def backward_geocode_sentinel1(
     **kwargs: T.Any,
 ) -> xr.DataArray:
     if correct_radiometry and "chunks" in kwargs:
-        raise ValueError("chunks are not supported if ´correct_radiometry´ is True")
+        raise ValueError("chunks are not supported when 'correct_radiometry' is set")
     allowed_correct_radiometry = [None, "gamma_bilinear", "gamma_nearest"]
     if correct_radiometry not in allowed_correct_radiometry:
         raise ValueError(
-            f"'correct_radiometry={correct_radiometry}' not supported, "
-            f"correct_radiometry allowed values are: {allowed_correct_radiometry}"
+            f"{correct_radiometry=} not supported, "
+            f"allowed values are: {allowed_correct_radiometry}"
         )
 
     orbit_group = orbit_group or f"{measurement_group}/orbit"
@@ -122,7 +122,7 @@ def backward_geocode_sentinel1(
 
     logger.info("interpolate image")
     coordinate_conversion = None
-    if measurement_ds.attrs["sar:product_type"] == "GRD":
+    if measurement_ds.attrs["product_type"] == "GRD":
         coordinate_conversion = xr.open_dataset(
             product_urlpath,
             engine="sentinel-1",
@@ -135,13 +135,13 @@ def backward_geocode_sentinel1(
             coordinate_conversion,
         )
         interp_kwargs = {"ground_range": ground_range}
-    elif measurement_ds.attrs["sar:product_type"] == "SLC":
+    elif measurement_ds.attrs["product_type"] == "SLC":
         interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
-        if measurement_ds.attrs["sar:instrument_mode"] == "IW":
+        if measurement_ds.attrs["mode"] == "IW":
             beta_nought = xarray_sentinel.mosaic_slc_iw(beta_nought)
     else:
         raise ValueError(
-            f"unsupported sar:product_type {measurement_ds.attrs['sar:product_type']}"
+            f"unsupported product_type {measurement_ds.attrs['product_type']}"
         )
 
     geocoded = interpolate_measurement(
@@ -152,7 +152,7 @@ def backward_geocode_sentinel1(
         **interp_kwargs,
     )
 
-    if correct_radiometry == "gamma_bilinear":
+    if correct_radiometry is not None:
         logger.info("correct radiometry")
         grid_parameters = radiometry.azimuth_slant_range_grid(
             measurement_ds, coordinate_conversion, grouping_area_factor
@@ -162,24 +162,13 @@ def backward_geocode_sentinel1(
             slant_range_spacing_m=grid_parameters["slant_range_spacing_m"],
             azimuth_spacing_m=grid_parameters["azimuth_spacing_m"],
         )
-        weights = radiometry.gamma_weights_bilinear(
-            dem_ecef,
-            acquisition,
-            **grid_parameters,
-        )
-        geocoded = geocoded / weights
 
-    elif correct_radiometry == "gamma_nearest":
-        logger.info("correct radiometry")
-        grid_parameters = radiometry.azimuth_slant_range_grid(
-            measurement_ds, coordinate_conversion, grouping_area_factor
-        )
-        check_dem_resolution(
-            dem_ecef,
-            slant_range_spacing_m=grid_parameters["slant_range_spacing_m"],
-            azimuth_spacing_m=grid_parameters["azimuth_spacing_m"],
-        )
-        weights = radiometry.gamma_weights_nearest(
+        if correct_radiometry == "gamma_bilinear":
+            gamma_weights = radiometry.gamma_weights_bilinear
+        elif correct_radiometry == "gamma_nearest":
+            gamma_weights = radiometry.gamma_weights_nearest
+
+        weights = gamma_weights(
             dem_ecef,
             acquisition,
             **grid_parameters,

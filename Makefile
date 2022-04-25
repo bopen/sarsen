@@ -19,7 +19,7 @@ doc-test:
 	python -m pytest -v README.md
 
 code-quality:
-	flake8 . --max-complexity=10 --max-line-length=127 --extend-ignore E203
+	flake8 . --max-complexity=11 --max-line-length=127 --extend-ignore E203
 	mypy --strict .
 
 code-style:

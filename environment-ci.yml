@@ -21,7 +21,7 @@ dependencies:
   - scipy
   - types-setuptools
   - xarray >= 0.20.2
-  - xarray-sentinel
+  - xarray-sentinel >= 0.9.0
   - xmlschema
   - zarr
   - pip:

@@ -179,14 +179,14 @@ def azimuth_slant_range_grid(
     if coordinate_conversion:
         slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
         slant_range_spacing_m = (
-            measurement_ds.attrs["sar:pixel_spacing_range"]
+            measurement_ds.attrs["range_pixel_spacing"]
             * np.sin(measurement_ds.attrs["incidence_angle_mid_swath"])
             * grouping_area_factor[1]
         )
     else:
         slant_range_time0 = measurement_ds.slant_range_time.values[0]
         slant_range_spacing_m = (
-            measurement_ds.attrs["sar:pixel_spacing_range"] * grouping_area_factor[1]
+            measurement_ds.attrs["range_pixel_spacing"] * grouping_area_factor[1]
         ) * grouping_area_factor[1]
 
     slant_range_time_interval_s = (
@@ -200,7 +200,7 @@ def azimuth_slant_range_grid(
         "azimuth_time0": measurement_ds.azimuth_time.values[0],  # ignore type
         "azimuth_time_interval_s": measurement_ds.attrs["azimuth_time_interval"]
         * grouping_area_factor[0],
-        "azimuth_spacing_m": measurement_ds.attrs["sar:pixel_spacing_azimuth"]
+        "azimuth_spacing_m": measurement_ds.attrs["azimuth_pixel_spacing"]
         * grouping_area_factor[0],
     }
     return grid_parameters
