@@ -63,7 +63,7 @@ def compute_gamma_area(
     return gamma_area
 
 
-def gamma_weights(
+def gamma_weights_bilinear(
     dem_ecef: xr.DataArray,
     dem_coords: xr.Dataset,
     slant_range_time0: float,
@@ -131,6 +131,40 @@ def gamma_weights(
     )
 
     tot_area = tot_area_00 + tot_area_01 + tot_area_10 + tot_area_11
+
+    normalized_area = tot_area / (azimuth_spacing_m * slant_range_spacing_m)
+    return normalized_area
+
+
+def gamma_weights_nearest(
+    dem_ecef: xr.DataArray,
+    dem_coords: xr.Dataset,
+    slant_range_time0: float,
+    azimuth_time0: np.datetime64,
+    slant_range_time_interval_s: float,
+    azimuth_time_interval_s: float,
+    slant_range_spacing_m: float = 1,
+    azimuth_spacing_m: float = 1,
+) -> xr.DataArray:
+
+    area = compute_gamma_area(dem_ecef, dem_coords.dem_direction)
+
+    # compute dem image coordinates
+    azimuth_index = np.round(
+        (dem_coords.azimuth_time - azimuth_time0) / ONE_SECOND / azimuth_time_interval_s
+    ).astype(int)
+
+    slant_range_index = np.round(
+        (dem_coords.slant_range_time - slant_range_time0) / slant_range_time_interval_s
+    ).astype(int)
+
+    logger.info("compute gamma areas 1/4")
+
+    tot_area = sum_weights(
+        area,
+        azimuth_index=azimuth_index,
+        slant_range_index=slant_range_index,
+    )
 
     normalized_area = tot_area / (azimuth_spacing_m * slant_range_spacing_m)
     return normalized_area

@@ -65,7 +65,7 @@ def backward_geocode_sentinel1(
     orbit_group: T.Optional[str] = None,
     calibration_group: T.Optional[str] = None,
     output_urlpath: str = "GRD.tif",
-    correct_radiometry: bool = False,
+    correct_radiometry: T.Optional[str] = None,
     interp_method: str = "nearest",
     multilook: T.Optional[T.Tuple[int, int]] = None,
     grouping_area_factor: T.Tuple[float, float] = (3.0, 13.0),
@@ -74,6 +74,12 @@ def backward_geocode_sentinel1(
 ) -> xr.DataArray:
     if correct_radiometry and "chunks" in kwargs:
         raise ValueError("chunks are not supported if ´correct_radiometry´ is True")
+    allowed_correct_radiometry = [None, "gamma_bilinear", "gamma_nearest"]
+    if correct_radiometry not in allowed_correct_radiometry:
+        raise ValueError(
+            f"'correct_radiometry={correct_radiometry}' not supported, "
+            f"correct_radiometry allowed values are: {allowed_correct_radiometry}"
+        )
 
     orbit_group = orbit_group or f"{measurement_group}/orbit"
     calibration_group = calibration_group or f"{measurement_group}/calibration"
@@ -146,7 +152,7 @@ def backward_geocode_sentinel1(
         **interp_kwargs,
     )
 
-    if correct_radiometry:
+    if correct_radiometry == "gamma_bilinear":
         logger.info("correct radiometry")
         grid_parameters = radiometry.azimuth_slant_range_grid(
             measurement_ds, coordinate_conversion, grouping_area_factor
@@ -156,7 +162,24 @@ def backward_geocode_sentinel1(
             slant_range_spacing_m=grid_parameters["slant_range_spacing_m"],
             azimuth_spacing_m=grid_parameters["azimuth_spacing_m"],
         )
-        weights = radiometry.gamma_weights(
+        weights = radiometry.gamma_weights_bilinear(
+            dem_ecef,
+            acquisition,
+            **grid_parameters,
+        )
+        geocoded = geocoded / weights
+
+    elif correct_radiometry == "gamma_nearest":
+        logger.info("correct radiometry")
+        grid_parameters = radiometry.azimuth_slant_range_grid(
+            measurement_ds, coordinate_conversion, grouping_area_factor
+        )
+        check_dem_resolution(
+            dem_ecef,
+            slant_range_spacing_m=grid_parameters["slant_range_spacing_m"],
+            azimuth_spacing_m=grid_parameters["azimuth_spacing_m"],
+        )
+        weights = radiometry.gamma_weights_nearest(
             dem_ecef,
             acquisition,
             **grid_parameters,
