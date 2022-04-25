@@ -1,18 +1,7 @@
-import os.path
-
 import numpy as np
-import pytest
 import xarray as xr
 
 from sarsen import scene
-
-DATA_PATH = os.path.join(os.path.dirname(__file__), "data")
-
-
-@pytest.fixture
-def dem_raster() -> xr.DataArray:
-    dem_path = os.path.join(DATA_PATH, "Rome-30m-DEM.tif")
-    return scene.open_dem_raster(dem_path)
 
 
 def test_convert_to_dem_3d(dem_raster: xr.DataArray) -> None:

@@ -1,5 +1,9 @@
+import os
+
 import pytest
 import xarray as xr
+
+DATA_PATH = os.path.join(os.path.dirname(__file__), "data")
 
 
 @pytest.fixture
@@ -40,3 +44,18 @@ def orbit_ds() -> xr.Dataset:
         },
     )
     return xr.decode_cf(ds)  # type: ignore
+
+
+@pytest.fixture
+def dem_raster() -> xr.DataArray:
+    from sarsen import scene
+
+    dem_path = os.path.join(DATA_PATH, "Rome-30m-DEM.tif")
+    return scene.open_dem_raster(dem_path)
+
+
+@pytest.fixture
+def dem_ecef(dem_raster: xr.DataArray) -> xr.DataArray:
+    from sarsen import scene
+
+    return scene.convert_to_dem_ecef(dem_raster)
