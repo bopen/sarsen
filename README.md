@@ -38,6 +38,26 @@ Non-objectives / Caveat emptor items:
 - No attempt is made to support UTC leap seconds. Observations that include a leap second may
   crash the code or silently return wrong results.
 
+## Sar Terrain Correction 
+
+The typical side-looking SAR system acquires data with uniform sampling in azimuth and slant range,
+where the azimuth and range represents the time when a given target is acquired and the absolute 
+sensor-to-target distance, respectively. 
+Because of this, the near range appears compressed with respect to the far range. Furthermore, 
+any deviation of the target elevation from a smooth geoid results in additional local geometric and radiometric 
+distortions known as foreshortening, layover and shadow.
+
+- Radar foreshortening: Terrain surfaces sloping towards the radar appear shortened relative to those sloping away from the radar.
+  These regions are much brighter than other places on the SAR image.
+- Radar layover: It's an extreme case of foreshortening occurring when the terrain slope is greater than the angle of the incident signal.
+- Radar shadows: They occur when ground points at the same azimuth but different slant ranges are aligned in the direction of the line-of-sight. 
+This is usually due to a back slope with an angle steeper than the viewing angle. 
+When this happens, the radar signal never reaches the farthest points, and thus there is no measurement, meaning that this lack of information is unrecoverable.
+
+The geometric terrain correction (GTC) corrects the distortions due to the target elevation.
+The radiometric terrain correction (RTC) also compensates for the backscatter modulation generated 
+by the topography of the scene. 
+
 ## Install
 
 The easiest way to install *sarsen* is in a *conda* environment.
@@ -75,12 +95,26 @@ Currently it is possible to produce 50km x 50km RTC images at a 10m resolution o
 The python API has entry points to the same commands and it also gives access to several lower level
 algorithms, but internal APIs should not be considered stable:
 
+The following code applies the geometric terrain correction to the VV polarization of 
+"S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE" product:
 ```python
 from sarsen import apps
 gtc = apps.backward_geocode_sentinel1(
   "S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE",
   measurement_group="IW/VV",
   dem_urlpath="South-of-Redmond-10m_UTM.tif",
+)
+```
+
+The radiometric correction can be activated using the key `correct_radiometry`:
+:
+```python
+from sarsen import apps
+rtc = apps.backward_geocode_sentinel1(
+  "S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE",
+  measurement_group="IW/VV",
+  dem_urlpath="South-of-Redmond-10m_UTM.tif",
+  correct_radiometry="gamma_nearest"
 )
 ```
 
