@@ -66,8 +66,11 @@ The following commands create a new environment, activate it, install the packag
 ```shell
     conda create -n SARSEN
     conda activate SARSEN
-    conda install -c conda-forge dask sarsen
+    conda install -c conda-forge dask proj-data sarsen
 ```
+
+Note that the `proj-data` package is rather large (500+Mb) and it is only needed to handle input DEM whose
+vertical coordinate is not on a known ellipsoid, for example *SRTM DEM* with heigths over the *EGM96 geoid*.
 
 ## Command line usage
 
@@ -125,13 +128,9 @@ rtc = apps.terrain_correction(
 This is the list of the reference documents:
 
 - the geometric terrain-correction algorithms are based on:
-  "Guide to Sentinel-1 Geocoding" UZH-S1-GC-AD 1.10 26.03.2019 -
-  https://sentinel.esa.int/documents/247904/0/Guide-to-Sentinel-1-Geocoding.pdf/e0450150-b4e9-4b2d-9b32-dadf989d3bd3
+  ["Guide to Sentinel-1 Geocoding" UZH-S1-GC-AD 1.10 26.03.2019](https://sentinel.esa.int/documents/247904/0/Guide-to-Sentinel-1-Geocoding.pdf/e0450150-b4e9-4b2d-9b32-dadf989d3bd3)
 - the radiometric terrain-correction algorithms are based on:
-  D. Small, "Flattening Gamma: Radiometric Terrain Correction for SAR Imagery,"
-  in IEEE Transactions on Geoscience and Remote Sensing, vol. 49, no. 8,
-  pp. 3081-3093, Aug. 2011, doi: 10.1109/TGRS.2011.2120616 -
-  https://www.geo.uzh.ch/microsite/rsl-documents/research/publications/peer-reviewed-articles/201108-TGRS-Small-tcGamma-3809999360/201108-TGRS-Small-tcGamma.pdf
+  [D. Small, "Flattening Gamma: Radiometric Terrain Correction for SAR Imagery," in IEEE Transactions on Geoscience and Remote Sensing, vol. 49, no. 8, pp. 3081-3093, Aug. 2011, doi: 10.1109/TGRS.2011.2120616](https://www.geo.uzh.ch/microsite/rsl-documents/research/publications/peer-reviewed-articles/201108-TGRS-Small-tcGamma-3809999360/201108-TGRS-Small-tcGamma.pdf)
 
 ## Contributing
 
