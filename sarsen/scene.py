@@ -100,4 +100,4 @@ def compute_dem_oriented_area(
     )  # ensure direction out of DEM
     dem_oriented_area: xr.DataArray = cross_1 * sign_1 + cross_2 * sign_2
 
-    return dem_oriented_area
+    return dem_oriented_area.rename("dem_oriented_area")

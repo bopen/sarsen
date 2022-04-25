@@ -12,10 +12,7 @@ DATA_PATH = os.path.join(os.path.dirname(__file__), "data")
 @pytest.fixture
 def dem_raster() -> xr.DataArray:
     dem_path = os.path.join(DATA_PATH, "Rome-30m-DEM.tif")
-    dem_da: xr.DataArray
-    dem_da = xr.open_dataarray(dem_path, engine="rasterio")  # type: ignore
-    dem_da = dem_da.squeeze(drop=True)
-    return dem_da
+    return scene.open_dem_raster(dem_path)
 
 
 def test_convert_to_dem_3d(dem_raster: xr.DataArray) -> None:
@@ -45,3 +42,12 @@ def test_transform_dem_3d(dem_raster: xr.DataArray) -> None:
     assert np.allclose(
         res.sel(x=12.5, y=42, method="nearest"), expected, rtol=0, atol=0.001
     )
+
+
+def test_compute_dem_oriented_area(dem_raster: xr.DataArray) -> None:
+    dem_3d = scene.convert_to_dem_3d(dem_raster)
+
+    res = scene.compute_dem_oriented_area(dem_3d)
+
+    assert set(res.dims) == {"axis", "y", "x"}
+    assert res.name == "dem_oriented_area"
