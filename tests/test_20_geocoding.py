@@ -2,8 +2,9 @@ import typing as T
 
 import numpy as np
 import numpy.typing as npt
+import xarray as xr
 
-from sarsen import geocoding
+from sarsen import geocoding, orbit
 
 
 def test_secant_method() -> None:
@@ -34,3 +35,31 @@ def test_secant_method() -> None:
 
     assert res.shape == t_start.shape
     assert np.all(res == np.timedelta64(-27, "ns"))
+
+
+def test_zero_doppler_plane_distance(
+    dem_ecef: xr.DataArray, orbit_ds: xr.Dataset
+) -> None:
+    orbit_interpolator = orbit.OrbitPolyfitIterpolator.from_position(orbit_ds.position)
+
+    res0, res1 = geocoding.zero_doppler_plane_distance(
+        dem_ecef,
+        orbit_interpolator.position(),
+        orbit_interpolator.velocity(),
+        orbit_ds.azimuth_time,
+    )
+
+    assert isinstance(res0, xr.DataArray)
+    assert isinstance(res1, xr.DataArray)
+
+
+def test_backward_geocode(dem_ecef: xr.DataArray, orbit_ds: xr.Dataset) -> None:
+    orbit_interpolator = orbit.OrbitPolyfitIterpolator.from_position(orbit_ds.position)
+
+    res = geocoding.backward_geocode(
+        dem_ecef,
+        orbit_interpolator.position(),
+        orbit_interpolator.velocity(),
+    )
+
+    assert isinstance(res, xr.Dataset)
