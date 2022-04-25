@@ -38,7 +38,7 @@ Non-objectives / Caveat emptor items:
 - No attempt is made to support UTC leap seconds. Observations that include a leap second may
   crash the code or silently return wrong results.
 
-## Sar Terrain Correction
+## SAR terrain-correction
 
 The typical side-looking SAR system acquires data with uniform sampling in azimuth and slant range,
 where the azimuth and range represents the time when a given target is acquired and the absolute
