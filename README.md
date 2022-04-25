@@ -8,7 +8,7 @@ This Open Source project is sponsored by B-Open - https://www.bopen.eu.
 
 ## Features and limitations
 
-Sarsen is a Python library and command line tool with the following functionalities:
+*Sarsen* is a Python library and command line tool with the following functionalities:
 
 - provides algorithms to terrain-correct satellite SAR data
   - geometric terrain correction (geocoding)
@@ -26,11 +26,11 @@ Sarsen is a Python library and command line tool with the following functionalit
     [*rasterio*](https://rasterio.readthedocs.io) / [*GDAL*](https://gdal.org)
 - supports larger-than-memory and distributed data access and processing via *Dask*
 
-Overall, the software is in the **alpha** phase and the usual caveats apply.
+Overall, the software is in the **beta** phase and the usual caveats apply.
 
 Current limitations and work-in-progress items:
 
-- little-to-no documentation. See #6.
+- little documentation. See #6.
 - radiometric terrain-correction algorithm slow and memory hungry. See #7.
 
 Non-objectives / Caveat emptor items:
