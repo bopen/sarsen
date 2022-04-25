@@ -92,19 +92,23 @@ def backward_geocode_sentinel1(
     :param calibration_group: overridez the calibration group name
     :param output_urlpath: output path or url
     :param correct_radiometry: default `None`. It can take the values: `None`, 'gamma_bilinear', 'gamma_nearest'.
-    If `correct_radiometry=None` the radiometric terrain correction is not applied. `correct_radiometry=gamma_bilinear` applies the gamma flattening
-    classic algorithm using a bilinear interpolation to compute the weights. if `correct_radiometry=gamma_nearest` applies the gamma flattening
-    using nearest instead bilinear interpolation to compute the weights, 'gamma_nearest' significantly
-    reduces the processing
+    If `correct_radiometry=None` the radiometric terrain correction is not applied.
+    `correct_radiometry=gamma_bilinear` applies the gamma flattening
+    classic algorithm using a bilinear interpolation to compute the weights.
+    If `correct_radiometry=gamma_nearest` applies the gamma flattening using nearest instead of
+    bilinear interpolation to compute the weights, 'gamma_nearest' significantly reduces the processing
     :param interp_method: interpolation method for product resampling.
     The interpolation methods are the methods supported by ``xarray.DataArray.interp``
     :param multilook: multilook factor. If `None` the multilook is not applied
     :param grouping_area_factor: is a tuple of floats greater than 1. The default is `(1, 1)`.
-    The `grouping_area_factor`  can be increased (i) to speed up the processing or (ii) when the input DEM resolution is low. The Gamma Flattening usually
-    works properly if the pixel size of the input DEM is much smaller than the pixel size of the input Sentinel-1 product.
-    Otherwise, the output may have radiometric distortions. This problem can be avoided by increasing the `grouping_area_factor`.
+    The `grouping_area_factor`  can be increased (i) to speed up the processing or
+    (ii) when the input DEM resolution is low.
+    The Gamma Flattening usually works properly if the pixel size of the input DEM is much smaller
+    than the pixel size of the input Sentinel-1 product. Otherwise, the output may have radiometric distortions.
+    This problem can be avoided by increasing the `grouping_area_factor`.
     Be aware that `grouping_area_factor` too high may degrade the final result
-    :param open_dem_raster_kwargs: additional keyword arguments passed on to ``xarray.open_dataset`` to open the `dem_urlpath`
+    :param open_dem_raster_kwargs: additional keyword arguments passed on to ``xarray.open_dataset``
+    to open the `dem_urlpath`
     :param kwargs: additional keyword arguments passed on to ``xarray.open_dataset`` to open the `product_urlpath`
     """
 
