@@ -69,7 +69,7 @@ def check_dem_resolution(
         )
 
 
-def backward_geocode_sentinel1(
+def terrain_correction(
     product_urlpath: str,
     measurement_group: str,
     dem_urlpath: str,

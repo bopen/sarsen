@@ -100,7 +100,7 @@ The following code applies the geometric terrain correction to the VV polarizati
 
 ```python
 from sarsen import apps
-gtc = apps.backward_geocode_sentinel1(
+gtc = apps.terrain_correction(
   "S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE",
   measurement_group="IW/VV",
   dem_urlpath="South-of-Redmond-10m_UTM.tif",
@@ -112,7 +112,7 @@ The radiometric correction can be activated using the key `correct_radiometry`:
 
 ```python
 from sarsen import apps
-rtc = apps.backward_geocode_sentinel1(
+rtc = apps.terrain_correction(
   "S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE",
   measurement_group="IW/VV",
   dem_urlpath="South-of-Redmond-10m_UTM.tif",
