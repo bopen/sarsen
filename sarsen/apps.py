@@ -53,7 +53,7 @@ def terrain_correction(
     dem_urlpath: str,
     orbit_group: T.Optional[str] = None,
     calibration_group: T.Optional[str] = None,
-    output_urlpath: str = "GRD.tif",
+    output_urlpath: str = "GTC.tif",
     correct_radiometry: T.Optional[str] = None,
     interp_method: str = "nearest",
     multilook: T.Optional[T.Tuple[int, int]] = None,

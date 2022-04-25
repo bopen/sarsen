@@ -30,8 +30,8 @@ Overall, the software is in the **beta** phase and the usual caveats apply.
 
 Current limitations and work-in-progress items:
 
-- little documentation. See #6.
-- radiometric terrain-correction algorithm slow and memory hungry. See #7.
+- documentation needs improvement. See #6.
+- the performance of the radiometric terrain-correction can probably be optimised. See #7.
 
 Non-objectives / Caveat emptor items:
 
@@ -131,6 +131,11 @@ This is the list of the reference documents:
   ["Guide to Sentinel-1 Geocoding" UZH-S1-GC-AD 1.10 26.03.2019](https://sentinel.esa.int/documents/247904/0/Guide-to-Sentinel-1-Geocoding.pdf/e0450150-b4e9-4b2d-9b32-dadf989d3bd3)
 - the radiometric terrain-correction algorithms are based on:
   [D. Small, "Flattening Gamma: Radiometric Terrain Correction for SAR Imagery," in IEEE Transactions on Geoscience and Remote Sensing, vol. 49, no. 8, pp. 3081-3093, Aug. 2011, doi: 10.1109/TGRS.2011.2120616](https://www.geo.uzh.ch/microsite/rsl-documents/research/publications/peer-reviewed-articles/201108-TGRS-Small-tcGamma-3809999360/201108-TGRS-Small-tcGamma.pdf)
+
+## Project resources
+
+[![on-push](https://github.com/bopen/sarsen/actions/workflows/on-push.yml/badge.svg)](https://github.com/bopen/sarsen/actions/workflows/on-push.yml)
+[![codecov](https://codecov.io/gh/bopen/sarsen/branch/main/graph/badge.svg?token=62S9EXDF0V)](https://codecov.io/gh/bopen/sarsen)
 
 ## Contributing
 
