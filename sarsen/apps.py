@@ -14,6 +14,10 @@ def simulate_acquisition(
     position_ecef: xr.DataArray,
     dem_ecef: xr.DataArray,
 ) -> xr.Dataset:
+    """
+    Given the dem in ecef coordinates and the satellite position in ecef coordinates,
+    it computes the image coordinates of the DEM.
+    """
 
     logger.info("interpolate orbit")
 
@@ -34,6 +38,10 @@ def interpolate_measurement(
     interp_method: str = "nearest",
     **interp_kwargs: T.Any,
 ) -> xr.DataArray:
+    """
+    Interpolates input image. If multilook is not `None`, before the interpolation applies the multilook.
+    """
+
     if multilook:
         image = image.rolling(
             azimuth_time=multilook[0], slant_range_time=multilook[1]
@@ -49,6 +57,9 @@ def check_dem_resolution(
     slant_range_spacing_m: float,
     azimuth_spacing_m: float,
 ) -> None:
+    """
+    Raise a warning if DEM pixel size is bigger that alf input product pixel size.
+    """
     dem_area = abs(dem_ecef.x[1] - dem_ecef.x[0]) * abs(dem_ecef.y[1] - dem_ecef.y[0])
     grouping_area = slant_range_spacing_m * azimuth_spacing_m
     if grouping_area / dem_area < 2**2:
@@ -72,6 +83,31 @@ def backward_geocode_sentinel1(
     open_dem_raster_kwargs: T.Dict[str, T.Any] = {},
     **kwargs: T.Any,
 ) -> xr.DataArray:
+    """
+    Applies the terrain-correction to sentinel-1 SLC and GRD products
+    :param product_urlpath: input product path or url
+    :param measurement_group: group of the measurement to be used, for example: "IW/VV"
+    :param dem_urlpath: dem path or url
+    :param orbit_group: overrides the orbit group name
+    :param calibration_group: overridez the calibration group name
+    :param output_urlpath: output path or url
+    :param correct_radiometry: default `None`. It can take the values: `None`, 'gamma_bilinear', 'gamma_nearest'.
+    If `correct_radiometry=None` the radiometric terrain correction is not applied. `correct_radiometry=gamma_bilinear` applies the gamma flattening
+    classic algorithm using a bilinear interpolation to compute the weights. if `correct_radiometry=gamma_nearest` applies the gamma flattening
+    using nearest instead bilinear interpolation to compute the weights, 'gamma_nearest' significantly
+    reduces the processing
+    :param interp_method: interpolation method for product resampling.
+    The interpolation methods are the methods supported by ``xarray.DataArray.interp``
+    :param multilook: multilook factor. If `None` the multilook is not applied
+    :param grouping_area_factor: is a tuple of floats greater than 1. The default is `(1, 1)`.
+    The `grouping_area_factor`  can be increased (i) to speed up the processing or (ii) when the input DEM resolution is low. The Gamma Flattening usually
+    works properly if the pixel size of the input DEM is much smaller than the pixel size of the input Sentinel-1 product.
+    Otherwise, the output may have radiometric distortions. This problem can be avoided by increasing the `grouping_area_factor`.
+    Be aware that `grouping_area_factor` too high may degrade the final result
+    :param open_dem_raster_kwargs: additional keyword arguments passed on to ``xarray.open_dataset`` to open the `dem_urlpath`
+    :param kwargs: additional keyword arguments passed on to ``xarray.open_dataset`` to open the `product_urlpath`
+    """
+
     if correct_radiometry and "chunks" in kwargs:
         raise ValueError("chunks are not supported if ´correct_radiometry´ is True")
     allowed_correct_radiometry = [None, "gamma_bilinear", "gamma_nearest"]
