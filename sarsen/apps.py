@@ -47,21 +47,6 @@ def interpolate_measurement(
     return geocoded
 
 
-def check_dem_resolution(
-    dem_ecef: xr.DataArray,
-    slant_range_spacing_m: float,
-    azimuth_spacing_m: float,
-) -> None:
-    """Raise a warning if DEM pixel size is bigger that half input product pixel size."""
-    dem_area = abs(dem_ecef.x[1] - dem_ecef.x[0]) * abs(dem_ecef.y[1] - dem_ecef.y[0])
-    grouping_area = slant_range_spacing_m * azimuth_spacing_m
-    if grouping_area / dem_area < 2**2:
-        logger.warning(
-            "DEM resolution is too low, "
-            "consider to over-sample the input DEM or to a use an higher ´grouping_area_factor´"
-        )
-
-
 def terrain_correction(
     product_urlpath: str,
     measurement_group: str,
@@ -189,11 +174,6 @@ def terrain_correction(
         logger.info("correct radiometry")
         grid_parameters = radiometry.azimuth_slant_range_grid(
             measurement_ds, coordinate_conversion, grouping_area_factor
-        )
-        check_dem_resolution(
-            dem_ecef,
-            slant_range_spacing_m=grid_parameters["slant_range_spacing_m"],
-            azimuth_spacing_m=grid_parameters["azimuth_spacing_m"],
         )
 
         if correct_radiometry == "gamma_bilinear":
