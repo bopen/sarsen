@@ -19,6 +19,12 @@ def test_OrbitPolyfitIterpolator_datetime64(orbit_ds: xr.Dataset) -> None:
     assert res.dims == ("azimuth_time", "axis")
     assert np.allclose(res, expected_velocity, rtol=0, atol=0.02)
 
+    res = orbit_interpolator.position()
+    assert res.dims == ("azimuth_time", "axis")
+
+    res = orbit_interpolator.velocity()
+    assert res.dims == ("azimuth_time", "axis")
+
 
 def test_OrbitPolyfitIterpolator_timedelta64(orbit_ds: xr.Dataset) -> None:
     position = orbit_ds.data_vars["position"]
