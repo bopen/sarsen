@@ -89,9 +89,6 @@ def terrain_correction(
     to open the `dem_urlpath`
     :param kwargs: additional keyword arguments passed on to ``xarray.open_dataset`` to open the `product_urlpath`
     """
-
-    if correct_radiometry and "chunks" in kwargs:
-        raise ValueError("chunks are not supported when 'correct_radiometry' is set")
     allowed_correct_radiometry = [None, "gamma_bilinear", "gamma_nearest"]
     if correct_radiometry not in allowed_correct_radiometry:
         raise ValueError(
@@ -182,8 +179,8 @@ def terrain_correction(
             gamma_weights = radiometry.gamma_weights_nearest
 
         weights = gamma_weights(
-            dem_ecef,
-            acquisition,
+            dem_ecef.compute(),
+            acquisition.compute(),
             **grid_parameters,
         )
         geocoded = geocoded / weights
