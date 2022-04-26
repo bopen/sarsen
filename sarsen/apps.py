@@ -187,6 +187,9 @@ def terrain_correction(
 
     logger.info("save output")
 
+    geocoded.attrs.update(beta_nought.attrs)
+    geocoded.x.attrs.update(dem_raster.x.attrs)
+    geocoded.y.attrs.update(dem_raster.y.attrs)
     geocoded.rio.set_crs(dem_raster.rio.crs)
     geocoded.rio.to_raster(
         output_urlpath,
