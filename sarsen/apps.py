@@ -69,12 +69,11 @@ def terrain_correction(
     :param orbit_group: overrides the orbit group name
     :param calibration_group: overridez the calibration group name
     :param output_urlpath: output path or url
-    :param correct_radiometry: default `None`. It can take the values: `None`, 'gamma_bilinear', 'gamma_nearest'.
-    If `correct_radiometry=None` the radiometric terrain correction is not applied.
-    `correct_radiometry=gamma_bilinear` applies the gamma flattening
-    classic algorithm using a bilinear interpolation to compute the weights.
-    If `correct_radiometry=gamma_nearest` applies the gamma flattening using nearest instead of
-    bilinear interpolation to compute the weights, 'gamma_nearest' significantly reduces the processing
+    :param correct_radiometry: default `None`. If `correct_radiometry=None`the radiometric terrain
+    correction is not applied. `correct_radiometry=gamma_bilinear` applies the gamma flattening classic
+    algorithm using bilinear interpolation to compute the weights. `correct_radiometry=gamma_nearest`
+    applies the gamma flattening using nearest neighbours instead of bilinear interpolation.
+    'gamma_nearest' significantly reduces the processing time
     :param interp_method: interpolation method for product resampling.
     The interpolation methods are the methods supported by ``xarray.DataArray.interp``
     :param multilook: multilook factor. If `None` the multilook is not applied
