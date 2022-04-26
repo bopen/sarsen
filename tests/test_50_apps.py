@@ -1,9 +1,12 @@
 import pathlib
 
+import dask
 import py
 import xarray as xr
 
 from sarsen import apps
+
+dask.config.set(scheduler="single-threaded")
 
 DATA_FOLDER = pathlib.Path(__file__).parent / "data"
 
