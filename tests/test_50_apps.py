@@ -3,6 +3,7 @@ import pathlib
 import dask
 import py
 import xarray as xr
+import pytest
 
 from sarsen import apps
 
@@ -17,6 +18,7 @@ GRD_IW = (
 DEM_RASTER = DATA_FOLDER / "Rome-30m-DEM.tif"
 
 
+@pytest.mark.xfail
 def test_terrain_correction_gtc(tmpdir: py.path.local) -> None:
     out = str(tmpdir.join("GTC.tif"))
     res = apps.terrain_correction(
@@ -30,6 +32,7 @@ def test_terrain_correction_gtc(tmpdir: py.path.local) -> None:
     assert isinstance(res, xr.DataArray)
 
 
+@pytest.mark.xfail
 def test_terrain_correction_fast_rtc(tmpdir: py.path.local) -> None:
     out = str(tmpdir.join("RTC.tif"))
 
@@ -45,6 +48,7 @@ def test_terrain_correction_fast_rtc(tmpdir: py.path.local) -> None:
     assert isinstance(res, xr.DataArray)
 
 
+@pytest.mark.xfail
 def test_terrain_correction_rtc(tmpdir: py.path.local) -> None:
     out = str(tmpdir.join("RTC.tif"))
 
