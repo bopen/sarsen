@@ -1,13 +1,11 @@
+import os
 import pathlib
 
-import dask
 import py
-import xarray as xr
 import pytest
+import xarray as xr
 
 from sarsen import apps
-
-dask.config.set(scheduler="single-threaded")
 
 DATA_FOLDER = pathlib.Path(__file__).parent / "data"
 
@@ -18,7 +16,7 @@ GRD_IW = (
 DEM_RASTER = DATA_FOLDER / "Rome-30m-DEM.tif"
 
 
-@pytest.mark.xfail
+@pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="too much memory")
 def test_terrain_correction_gtc(tmpdir: py.path.local) -> None:
     out = str(tmpdir.join("GTC.tif"))
     res = apps.terrain_correction(
@@ -32,7 +30,7 @@ def test_terrain_correction_gtc(tmpdir: py.path.local) -> None:
     assert isinstance(res, xr.DataArray)
 
 
-@pytest.mark.xfail
+@pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="too much memory")
 def test_terrain_correction_fast_rtc(tmpdir: py.path.local) -> None:
     out = str(tmpdir.join("RTC.tif"))
 
@@ -48,7 +46,7 @@ def test_terrain_correction_fast_rtc(tmpdir: py.path.local) -> None:
     assert isinstance(res, xr.DataArray)
 
 
-@pytest.mark.xfail
+@pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="too much memory")
 def test_terrain_correction_rtc(tmpdir: py.path.local) -> None:
     out = str(tmpdir.join("RTC.tif"))
 

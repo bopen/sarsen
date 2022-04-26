@@ -15,7 +15,10 @@ def open_dem_raster(dem_urlpath: str, **kwargs: T.Any) -> xr.DataArray:
     dem_raster = xr.open_dataarray(dem_urlpath, engine="rasterio", **kwargs)  # type: ignore
     if dem_raster.y.diff("y").values[0] < 0:
         dem_raster = dem_raster.isel(y=slice(None, None, -1))
-    return dem_raster.squeeze(drop=True)  # type: ignore
+    dem_raster.attrs["long_name"] = "elevation"
+    dem_raster.attrs["units"] = "m"
+    dem_raster = dem_raster.rename("dem").squeeze(drop=True)
+    return dem_raster  # type: ignore
 
 
 def convert_to_dem_3d(dem_raster: xr.DataArray, dim: str = "axis") -> xr.DataArray:
