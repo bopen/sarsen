@@ -17,7 +17,11 @@ DEM_RASTER = DATA_FOLDER / "Rome-30m-DEM.tif"
 def test_terrain_correction_gtc(tmpdir: py.path.local) -> None:
     out = str(tmpdir.join("GTC.tif"))
     res = apps.terrain_correction(
-        str(GRD_IW), "IW/VV", str(DEM_RASTER), output_urlpath=out
+        str(GRD_IW),
+        "IW/VV",
+        str(DEM_RASTER),
+        output_urlpath=out,
+        chunks={"slant_range_time": 2048},
     )
 
     assert isinstance(res, xr.DataArray)
