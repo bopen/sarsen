@@ -45,8 +45,8 @@ def sum_weights(
 
     stacked_geocoded_x_y.data = flat_sum.sel(z=stacked_geocoded.indexes["z"]).data
 
-    weights_sum: xr.DataArray = stacked_geocoded_x_y.unstack("z").rename(
-        z_level_0="slant_range_index", z_level_1="azimuth_index"
+    weights_sum: xr.DataArray = stacked_geocoded_x_y.unstack("z").drop_vars(
+        ("z_level_0", "z_level_1")
     )
 
     return weights_sum
