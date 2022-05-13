@@ -18,14 +18,13 @@ def sum_weights(
     multilook: T.Optional[T.Tuple[int, int]] = None,
 ) -> xr.DataArray:
     geocoded = initial_weights.assign_coords(
-        slant_range_index=slant_range_index, azimuth_index=azimuth_index
+        # Use z_level names for backward compatibility with xarray<=2022.03.0
+        z_level_0=slant_range_index,
+        z_level_1=azimuth_index,
     )  # type: ignore
 
-    stacked_geocoded = (
-        geocoded.stack(z=("y", "x"))
-        .reset_index("z")
-        .set_index(z=("azimuth_index", "slant_range_index"))
-    )
+    stacked_geocoded_x_y = geocoded.stack(z=("y", "x"))
+    stacked_geocoded = stacked_geocoded_x_y.set_index(z=("z_level_0", "z_level_1"))
 
     grouped = stacked_geocoded.groupby("z")
 
@@ -44,11 +43,11 @@ def sum_weights(
             .stack(z=("z_level_0", "z_level_1"))
         )
 
-    stacked_sum = flat_sum.sel(z=stacked_geocoded.indexes["z"]).assign_coords(
-        stacked_geocoded.coords
-    )
+    stacked_geocoded_x_y.data = flat_sum.sel(z=stacked_geocoded.indexes["z"]).data
 
-    weights_sum: xr.DataArray = stacked_sum.set_index(z=("y", "x")).unstack("z")
+    weights_sum: xr.DataArray = stacked_geocoded_x_y.unstack("z").rename(
+        z_level_0="slant_range_index", z_level_1="azimuth_index"
+    )
 
     return weights_sum
 
