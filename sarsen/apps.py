@@ -50,7 +50,7 @@ def interpolate_measurement(
         azimuth_time=azimuth_time, method=interp_method, **interp_kwargs
     )
 
-    return geocoded
+    return geocoded.drop_vars(["azimuth_time", "pixel", "ground_range", "line"])
 
 
 def terrain_correction(
