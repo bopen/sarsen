@@ -7,6 +7,7 @@ dependencies:
   - gdal
   - matplotlib
   - mamba
+  - memory_profiler
   - notebook
   - pip
   - planetary-computer
