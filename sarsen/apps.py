@@ -59,6 +59,7 @@ def terrain_correction(
     multilook: T.Optional[T.Tuple[int, int]] = None,
     grouping_area_factor: T.Tuple[float, float] = (3.0, 13.0),
     open_dem_raster_kwargs: T.Dict[str, T.Any] = {},
+    chunks: T.Optional[T.Union[int, T.Dict[str, int]]] = None,
     **kwargs: T.Any,
 ) -> xr.DataArray:
     """Apply the terrain-correction to sentinel-1 SLC and GRD products.
@@ -101,8 +102,12 @@ def terrain_correction(
     logger.info(f"open data {product_urlpath!r}")
 
     try:
-        measurement_ds = xr.open_dataset(
-            product_urlpath, engine="sentinel-1", group=measurement_group, **kwargs  # type: ignore
+        measurement_ds = xr.open_dataset(  # type: ignore
+            product_urlpath,
+            engine="sentinel-1",
+            group=measurement_group,
+            chunks=chunks,
+            **kwargs,
         )
     except FileNotFoundError:
         # re-try with Planetary Computer option
@@ -124,15 +129,32 @@ def terrain_correction(
 
     logger.info("pre-process DEM")
 
-    dem_ecef = scene.convert_to_dem_ecef(dem_raster)
+    dem_ecef = xr.map_blocks(scene.convert_to_dem_ecef, dem_raster)
 
     logger.info("simulate acquisition")
 
-    acquisition = simulate_acquisition(dem_ecef, position_ecef)
+    acquisition_template = xr.Dataset(
+        data_vars={
+            "azimuth_time": xr.full_like(dem_raster, 0, dtype="datetime64[ns]"),
+            "slant_range_time": dem_raster,
+            "dem_direction": dem_ecef,
+        }
+    ).drop_vars(dem_raster.rio.grid_mapping)
+    acquisition = xr.map_blocks(
+        simulate_acquisition,
+        dem_ecef.drop_vars(dem_ecef.rio.grid_mapping),
+        kwargs={"position_ecef": position_ecef},
+        template=acquisition_template,
+    )
 
     logger.info("calibrate radiometry")
 
-    beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
+    beta_nought = xr.map_blocks(
+        xarray_sentinel.calibrate_intensity,
+        measurement,
+        args=(beta_nought_lut,),
+        template=measurement,
+    )
 
     logger.info("interpolate image")
     coordinate_conversion = None
