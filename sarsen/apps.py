@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 def simulate_acquisition(
-    position_ecef: xr.DataArray,
     dem_ecef: xr.DataArray,
+    position_ecef: xr.DataArray,
 ) -> xr.Dataset:
     """Compute the image coordinates of the DEM given the satellite orbit."""
 
@@ -128,7 +128,7 @@ def terrain_correction(
 
     logger.info("simulate acquisition")
 
-    acquisition = simulate_acquisition(position_ecef, dem_ecef)
+    acquisition = simulate_acquisition(dem_ecef, position_ecef)
 
     logger.info("calibrate radiometry")
 
