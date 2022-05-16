@@ -30,9 +30,12 @@ def simulate_acquisition(
 
 
 def interpolate_measurement(
+    azimuth_time: xr.DataArray,
+    range: xr.DataArray,
     image: xr.DataArray,
     multilook: T.Optional[T.Tuple[int, int]] = None,
     interp_method: str = "nearest",
+    interp_dim: str = "slant_range_time",
     **interp_kwargs: T.Any,
 ) -> xr.DataArray:
     """Interpolate the input image with optional multilook."""
@@ -42,7 +45,10 @@ def interpolate_measurement(
             azimuth_time=multilook[0], slant_range_time=multilook[1]
         ).mean()
 
-    geocoded = image.interp(method=interp_method, **interp_kwargs)
+    interp_kwargs[interp_dim] = range
+    geocoded = image.interp(
+        azimuth_time=azimuth_time, method=interp_method, **interp_kwargs
+    )
 
     return geocoded
 
@@ -172,9 +178,11 @@ def terrain_correction(
             kwargs={"coordinate_conversion": coordinate_conversion},
             template=acquisition.slant_range_time,
         )
-        interp_kwargs = {"ground_range": ground_range}
+        interp_arg = ground_range
+        interp_dim = "ground_range"
     elif measurement_ds.attrs["product_type"] == "SLC":
-        interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
+        interp_arg = acquisition.slant_range_time
+        interp_dim = "slant_range_time"
         if measurement_ds.attrs["mode"] == "IW":
             beta_nought = xarray_sentinel.mosaic_slc_iw(beta_nought)
     else:
@@ -183,11 +191,12 @@ def terrain_correction(
         )
 
     geocoded = interpolate_measurement(
+        acquisition.azimuth_time,
+        interp_arg,
         beta_nought,
         multilook=multilook,
-        azimuth_time=acquisition.azimuth_time,
         interp_method=interp_method,
-        **interp_kwargs,
+        interp_dim=interp_dim,
     )
 
     if correct_radiometry is not None:
