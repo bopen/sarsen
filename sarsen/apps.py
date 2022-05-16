@@ -152,7 +152,7 @@ def terrain_correction(
     beta_nought = xr.map_blocks(
         xarray_sentinel.calibrate_intensity,
         measurement,
-        args=(beta_nought_lut,),
+        kwargs={"calibration_lut": beta_nought_lut},
         template=measurement,
     )
 
@@ -165,10 +165,12 @@ def terrain_correction(
             group=f"{measurement_group}/coordinate_conversion",
             **kwargs,
         )  # type: ignore
-        ground_range = xarray_sentinel.slant_range_time_to_ground_range(
+        ground_range = xr.map_blocks(
+            xarray_sentinel.slant_range_time_to_ground_range,
             acquisition.azimuth_time,
-            acquisition.slant_range_time,
-            coordinate_conversion,
+            args=(acquisition.slant_range_time,),
+            kwargs={"coordinate_conversion": coordinate_conversion},
+            template=acquisition.slant_range_time,
         )
         interp_kwargs = {"ground_range": ground_range}
     elif measurement_ds.attrs["product_type"] == "SLC":
