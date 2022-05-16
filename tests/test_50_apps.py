@@ -24,7 +24,7 @@ def test_terrain_correction_gtc(tmpdir: py.path.local) -> None:
         "IW/VV",
         str(DEM_RASTER),
         output_urlpath=out,
-        chunks={"slant_range_time": 1000, "azimuth_time": 1000},
+        chunks=1028,
     )
 
     assert isinstance(res, xr.DataArray)
@@ -40,7 +40,7 @@ def test_terrain_correction_fast_rtc(tmpdir: py.path.local) -> None:
         str(DEM_RASTER),
         correct_radiometry="gamma_nearest",
         output_urlpath=out,
-        chunks={"slant_range_time": 1000, "azimuth_time": 1000},
+        chunks=1028,
     )
 
     assert isinstance(res, xr.DataArray)
@@ -56,7 +56,53 @@ def test_terrain_correction_rtc(tmpdir: py.path.local) -> None:
         str(DEM_RASTER),
         correct_radiometry="gamma_bilinear",
         output_urlpath=out,
-        chunks={"slant_range_time": 1000, "azimuth_time": 1000},
+        chunks=1028,
+    )
+
+    assert isinstance(res, xr.DataArray)
+
+
+def test_terrain_correction_gtc_dask(tmpdir: py.path.local) -> None:
+    out = str(tmpdir.join("GTC.tif"))
+    res = apps.terrain_correction(
+        str(GRD_IW),
+        "IW/VV",
+        str(DEM_RASTER),
+        output_urlpath=out,
+        chunks=1028,
+        open_dem_raster_kwargs={"chunks": 1024},
+    )
+
+    assert isinstance(res, xr.DataArray)
+
+
+def test_terrain_correction_fast_rtc_dask(tmpdir: py.path.local) -> None:
+    out = str(tmpdir.join("RTC.tif"))
+
+    res = apps.terrain_correction(
+        str(GRD_IW),
+        "IW/VV",
+        str(DEM_RASTER),
+        correct_radiometry="gamma_nearest",
+        output_urlpath=out,
+        chunks=1028,
+        open_dem_raster_kwargs={"chunks": 1024},
+    )
+
+    assert isinstance(res, xr.DataArray)
+
+
+def test_terrain_correction_rtc_dask(tmpdir: py.path.local) -> None:
+    out = str(tmpdir.join("RTC.tif"))
+
+    res = apps.terrain_correction(
+        str(GRD_IW),
+        "IW/VV",
+        str(DEM_RASTER),
+        correct_radiometry="gamma_bilinear",
+        output_urlpath=out,
+        chunks=1028,
+        open_dem_raster_kwargs={"chunks": 1024},
     )
 
     assert isinstance(res, xr.DataArray)
