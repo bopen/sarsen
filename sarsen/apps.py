@@ -162,12 +162,7 @@ def terrain_correction(
 
     logger.info("calibrate radiometry")
 
-    beta_nought = xr.map_blocks(
-        xarray_sentinel.calibrate_intensity,
-        measurement,
-        kwargs={"calibration_lut": beta_nought_lut},
-        template=measurement,
-    )
+    beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
 
     logger.info("interpolate image")
 
