@@ -101,7 +101,7 @@ def terrain_correction(
     logger.info(f"open data {product_urlpath!r}")
 
     try:
-        measurement_ds = xr.open_dataset(
+        measurement = xr.open_dataarray(
             product_urlpath, engine="sentinel-1", group=measurement_group, **kwargs  # type: ignore
         )
     except FileNotFoundError:
@@ -109,11 +109,9 @@ def terrain_correction(
         kwargs = {
             "override_product_files": "{dirname}/{prefix}{swath}-{polarization}{ext}"
         }
-        measurement_ds = xr.open_dataset(
+        measurement = xr.open_dataarray(
             product_urlpath, engine="sentinel-1", group=measurement_group, **kwargs  # type: ignore
         )
-
-    measurement = measurement_ds.measurement
 
     dem_raster = scene.open_dem_raster(dem_urlpath, **open_dem_raster_kwargs)
 
@@ -136,7 +134,7 @@ def terrain_correction(
 
     logger.info("interpolate image")
     coordinate_conversion = None
-    if measurement_ds.attrs["product_type"] == "GRD":
+    if measurement.attrs["product_type"] == "GRD":
         coordinate_conversion = xr.open_dataset(
             product_urlpath,
             engine="sentinel-1",
@@ -149,13 +147,13 @@ def terrain_correction(
             coordinate_conversion,
         )
         interp_kwargs = {"ground_range": ground_range}
-    elif measurement_ds.attrs["product_type"] == "SLC":
+    elif measurement.attrs["product_type"] == "SLC":
         interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
-        if measurement_ds.attrs["mode"] == "IW":
+        if measurement.attrs["mode"] == "IW":
             beta_nought = xarray_sentinel.mosaic_slc_iw(beta_nought)
     else:
         raise ValueError(
-            f"unsupported product_type {measurement_ds.attrs['product_type']}"
+            f"unsupported product_type {measurement.attrs['product_type']}"
         )
 
     geocoded = interpolate_measurement(
@@ -169,7 +167,7 @@ def terrain_correction(
     if correct_radiometry is not None:
         logger.info("correct radiometry")
         grid_parameters = radiometry.azimuth_slant_range_grid(
-            measurement_ds, coordinate_conversion, grouping_area_factor
+            measurement, coordinate_conversion, grouping_area_factor
         )
 
         if correct_radiometry == "gamma_bilinear":
