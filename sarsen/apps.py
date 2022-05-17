@@ -120,6 +120,14 @@ def terrain_correction(
     calibration = xr.open_dataset(product_urlpath, engine="sentinel-1", group=calibration_group, **kwargs)  # type: ignore
     beta_nought_lut = calibration.betaNought
 
+    if measurement.attrs["product_type"] == "GRD":
+        coordinate_conversion = xr.open_dataset(
+            product_urlpath,
+            engine="sentinel-1",
+            group=f"{measurement_group}/coordinate_conversion",
+            **kwargs,
+        )  # type: ignore
+
     logger.info("pre-process DEM")
 
     dem_ecef = scene.convert_to_dem_ecef(dem_raster)
@@ -133,14 +141,7 @@ def terrain_correction(
     beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
 
     logger.info("interpolate image")
-    coordinate_conversion = None
     if measurement.attrs["product_type"] == "GRD":
-        coordinate_conversion = xr.open_dataset(
-            product_urlpath,
-            engine="sentinel-1",
-            group=f"{measurement_group}/coordinate_conversion",
-            **kwargs,
-        )  # type: ignore
         ground_range = xarray_sentinel.slant_range_time_to_ground_range(
             acquisition.azimuth_time,
             acquisition.slant_range_time,
