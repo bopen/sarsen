@@ -167,12 +167,10 @@ def terrain_correction(
     logger.info("interpolate image")
 
     if measurement.attrs["product_type"] == "GRD":
-        ground_range = xr.map_blocks(
-            xarray_sentinel.slant_range_time_to_ground_range,
+        ground_range = xarray_sentinel.slant_range_time_to_ground_range(
             acquisition.azimuth_time,
-            args=(acquisition.slant_range_time,),
-            kwargs={"coordinate_conversion": coordinate_conversion},
-            template=template_raster,
+            acquisition.slant_range_time,
+            coordinate_conversion,
         )
         interp_arg = ground_range
         interp_dim = "ground_range"
