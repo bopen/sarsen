@@ -56,9 +56,9 @@ def transform_dem_3d(
     return dem_3d_crs
 
 
-def convert_to_dem_ecef(dem_raster: xr.DataArray) -> xr.DataArray:
+def convert_to_dem_ecef(dem_raster: xr.DataArray, **kwargs: T.Any) -> xr.DataArray:
     dem_3d = convert_to_dem_3d(dem_raster)
-    return transform_dem_3d(dem_3d, target_crs=ECEF_CRS)
+    return transform_dem_3d(dem_3d, **kwargs)
 
 
 def compute_dem_oriented_area(
