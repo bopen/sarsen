@@ -150,11 +150,11 @@ def gamma_weights_nearest(
     area = compute_gamma_area(dem_ecef, dem_coords.dem_direction)
 
     # compute dem image coordinates
-    azimuth_index = np.round(  # type: ignore
+    azimuth_index = np.round(
         (dem_coords.azimuth_time - azimuth_time0) / ONE_SECOND / azimuth_time_interval_s
     ).astype(int)
 
-    slant_range_index = np.round(  # type: ignore
+    slant_range_index = np.round(
         (dem_coords.slant_range_time - slant_range_time0) / slant_range_time_interval_s
     ).astype(int)
 

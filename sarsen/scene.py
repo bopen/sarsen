@@ -70,14 +70,14 @@ def compute_dem_oriented_area(
             ((dem_ecef.x.shift(x=-1) + dem_ecef.x) / 2)[:-1].data,
             [dem_ecef.x[-1] + (dem_ecef.x[-1] - dem_ecef.x[-2]) / 2],
         ]
-    )  # type: ignore
+    )
     y_corners: npt.ArrayLike = np.concatenate(
         [
             [dem_ecef.y[0] + (dem_ecef.y[0] - dem_ecef.y[1]) / 2],
             ((dem_ecef.y.shift(y=-1) + dem_ecef.y) / 2)[:-1].data,
             [dem_ecef.y[-1] + (dem_ecef.y[-1] - dem_ecef.y[-2]) / 2],
         ]
-    )  # type: ignore
+    )
     dem_ecef_corners = dem_ecef.interp(
         {"x": x_corners, "y": y_corners},
         method="linear",
