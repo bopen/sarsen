@@ -19,8 +19,8 @@ def sum_weights(
 ) -> xr.DataArray:
     geocoded = initial_weights.assign_coords(
         # Use z_level names for backward compatibility with xarray<=2022.03.0
-        z_level_0=slant_range_index,
-        z_level_1=azimuth_index,
+        z_level_0=azimuth_index,
+        z_level_1=slant_range_index,
     )  # type: ignore
 
     stacked_geocoded_x_y = geocoded.stack(z=("y", "x"))
