@@ -109,7 +109,7 @@ def terrain_correction(
 
     try:
         measurement = xr.open_dataarray(
-            product_urlpath, engine="sentinel-1", group=measurement_group, **kwargs  # type: ignore
+            product_urlpath, engine="sentinel-1", group=measurement_group, chunks=chunks, **kwargs  # type: ignore
         )
     except FileNotFoundError:
         # re-try with Planetary Computer option
@@ -117,7 +117,7 @@ def terrain_correction(
             "override_product_files": "{dirname}/{prefix}{swath}-{polarization}{ext}"
         }
         measurement = xr.open_dataarray(
-            product_urlpath, engine="sentinel-1", group=measurement_group, **kwargs  # type: ignore
+            product_urlpath, engine="sentinel-1", group=measurement_group, chunks=chunks, **kwargs  # type: ignore
         )
 
     dem_raster = scene.open_dem_raster(dem_urlpath, **open_dem_raster_kwargs)
@@ -138,19 +138,24 @@ def terrain_correction(
     logger.info("pre-process DEM")
 
     dem_ecef = xr.map_blocks(scene.convert_to_dem_ecef, dem_raster)
+    dem_ecef = dem_ecef.drop_vars(dem_ecef.rio.grid_mapping)
+
+    # clean dask templates
+    template_raster = dem_raster.drop_vars(dem_raster.rio.grid_mapping)
+    template_3d = dem_ecef
 
     logger.info("simulate acquisition")
 
     acquisition_template = xr.Dataset(
         data_vars={
-            "azimuth_time": xr.full_like(dem_raster, 0, dtype="datetime64[ns]"),
-            "slant_range_time": dem_raster,
-            "dem_direction": dem_ecef,
+            "azimuth_time": xr.full_like(template_raster, 0, dtype="datetime64[ns]"),
+            "slant_range_time": template_raster,
+            "dem_direction": template_3d,
         }
-    ).drop_vars(dem_raster.rio.grid_mapping)
+    )
     acquisition = xr.map_blocks(
         simulate_acquisition,
-        dem_ecef.drop_vars(dem_ecef.rio.grid_mapping),
+        dem_ecef,
         kwargs={"position_ecef": position_ecef},
         template=acquisition_template,
     )
@@ -172,7 +177,7 @@ def terrain_correction(
             acquisition.azimuth_time,
             args=(acquisition.slant_range_time,),
             kwargs={"coordinate_conversion": coordinate_conversion},
-            template=acquisition.slant_range_time,
+            template=template_raster,
         )
         interp_arg = ground_range
         interp_dim = "ground_range"
@@ -193,7 +198,7 @@ def terrain_correction(
         multilook=multilook,
         interp_method=interp_method,
         interp_dim=interp_dim,
-    )
+    ).chunk(dem_raster.chunksizes)
 
     if correct_radiometry is not None:
         logger.info("correct radiometry")
@@ -206,10 +211,12 @@ def terrain_correction(
         elif correct_radiometry == "gamma_nearest":
             gamma_weights = radiometry.gamma_weights_nearest
 
-        weights = gamma_weights(
-            dem_ecef.compute(),
-            acquisition.compute(),
-            **grid_parameters,
+        weights = xr.map_blocks(
+            gamma_weights,
+            dem_ecef,
+            args=(acquisition,),
+            kwargs=grid_parameters,
+            template=template_raster,
         )
         geocoded = geocoded / weights
 
