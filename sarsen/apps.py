@@ -108,17 +108,8 @@ def terrain_correction(
     logger.info(f"open data {product_urlpath!r}")
 
     try:
-<<<<<<< HEAD
-        measurement_ds = xr.open_dataset(  # type: ignore
-            product_urlpath,
-            engine="sentinel-1",
-            group=measurement_group,
-            chunks=chunks,
-            **kwargs,
-=======
         measurement = xr.open_dataarray(
             product_urlpath, engine="sentinel-1", group=measurement_group, **kwargs  # type: ignore
->>>>>>> origin/main
         )
     except FileNotFoundError:
         # re-try with Planetary Computer option
