@@ -174,39 +174,21 @@ def terrain_correction(
     )
 
     logger.info("interpolate image")
-<<<<<<< HEAD
-    coordinate_conversion = None
+
     if measurement_ds.attrs["product_type"] == "GRD":
-        coordinate_conversion = xr.open_dataset(
-            product_urlpath,
-            engine="sentinel-1",
-            group=f"{measurement_group}/coordinate_conversion",
-            **kwargs,
-        )  # type: ignore
         ground_range = xr.map_blocks(
             xarray_sentinel.slant_range_time_to_ground_range,
-=======
-    if measurement.attrs["product_type"] == "GRD":
-        ground_range = xarray_sentinel.slant_range_time_to_ground_range(
->>>>>>> origin/main
             acquisition.azimuth_time,
             args=(acquisition.slant_range_time,),
             kwargs={"coordinate_conversion": coordinate_conversion},
             template=acquisition.slant_range_time,
         )
-<<<<<<< HEAD
         interp_arg = ground_range
         interp_dim = "ground_range"
     elif measurement_ds.attrs["product_type"] == "SLC":
         interp_arg = acquisition.slant_range_time
         interp_dim = "slant_range_time"
         if measurement_ds.attrs["mode"] == "IW":
-=======
-        interp_kwargs = {"ground_range": ground_range}
-    elif measurement.attrs["product_type"] == "SLC":
-        interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
-        if measurement.attrs["mode"] == "IW":
->>>>>>> origin/main
             beta_nought = xarray_sentinel.mosaic_slc_iw(beta_nought)
     else:
         raise ValueError(
