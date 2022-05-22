@@ -10,6 +10,61 @@ from . import geocoding, orbit, radiometry, scene
 logger = logging.getLogger(__name__)
 
 
+def open_dataset_autodetect(
+    product_urlpath: str,
+    group: T.Optional[str] = None,
+    chunks: T.Optional[T.Union[int, T.Dict[str, int]]] = None,
+    **kwargs: T.Any,
+) -> T.Tuple[xr.Dataset, T.Dict[str, T.Any]]:
+    try:
+        ds = xr.open_dataset(
+            product_urlpath, engine="sentinel-1", group=group, chunks=chunks, **kwargs  # type: ignore
+        )
+    except FileNotFoundError:
+        # re-try with Planetary Computer option
+        kwargs[
+            "override_product_files"
+        ] = "{dirname}/{prefix}{swath}-{polarization}{ext}"
+        ds = xr.open_dataset(
+            product_urlpath, engine="sentinel-1", group=group, chunks=chunks, **kwargs  # type: ignore
+        )
+    return ds, kwargs
+
+
+def product_info(
+    product_urlpath: str,
+    **kwargs: T.Any,
+) -> T.Dict[str, T.Any]:
+    """Get information about the Sentinel-1 product."""
+    root_ds = xr.open_dataset(product_urlpath, engine="sentinel-1", **kwargs)  # type: ignore
+
+    measurement_groups = [g for g in root_ds.attrs["subgroups"] if g.count("/") == 1]
+
+    gcp_group = measurement_groups[0] + "/gcp"
+
+    gcp, kwargs = open_dataset_autodetect(product_urlpath, group=gcp_group, **kwargs)
+
+    bbox = [
+        gcp.attrs["geospatial_lon_min"],
+        gcp.attrs["geospatial_lat_min"],
+        gcp.attrs["geospatial_lon_max"],
+        gcp.attrs["geospatial_lat_max"],
+    ]
+
+    product_info = {
+        "product_type": root_ds.attrs["product_type"],
+        "mode": root_ds.attrs["mode"],
+        "swaths": root_ds.attrs["swaths"],
+        "transmitter_receiver_polarisations": root_ds.attrs[
+            "transmitter_receiver_polarisations"
+        ],
+        "measurement_groups": measurement_groups,
+        "bbox": bbox,
+    }
+
+    return product_info
+
+
 def simulate_acquisition(
     dem_ecef: xr.DataArray,
     position_ecef: xr.DataArray,
@@ -59,6 +114,7 @@ def terrain_correction(
     multilook: T.Optional[T.Tuple[int, int]] = None,
     grouping_area_factor: T.Tuple[float, float] = (3.0, 13.0),
     open_dem_raster_kwargs: T.Dict[str, T.Any] = {},
+    chunks: T.Optional[T.Union[int, T.Dict[str, int]]] = None,
     **kwargs: T.Any,
 ) -> xr.DataArray:
     """Apply the terrain-correction to sentinel-1 SLC and GRD products.
@@ -100,18 +156,13 @@ def terrain_correction(
 
     logger.info(f"open data {product_urlpath!r}")
 
-    try:
-        measurement = xr.open_dataarray(
-            product_urlpath, engine="sentinel-1", group=measurement_group, **kwargs  # type: ignore
-        )
-    except FileNotFoundError:
-        # re-try with Planetary Computer option
-        kwargs = {
-            "override_product_files": "{dirname}/{prefix}{swath}-{polarization}{ext}"
-        }
-        measurement = xr.open_dataarray(
-            product_urlpath, engine="sentinel-1", group=measurement_group, **kwargs  # type: ignore
-        )
+    measurement_ds, kwargs = open_dataset_autodetect(
+        product_urlpath,
+        group=measurement_group,
+        chunks=chunks,
+        **kwargs,  #  type: ignore
+    )
+    measurement = measurement_ds["measurement"]
 
     dem_raster = scene.open_dem_raster(dem_urlpath, **open_dem_raster_kwargs)
 
