@@ -8,6 +8,16 @@ app = typer.Typer()
 
 
 @app.command()
+def info(
+    product_urlpath: str,
+) -> None:
+    """Print information about the Sentinel-1 product."""
+    product_info = apps.product_info(product_urlpath)
+    for key, value in product_info.items():
+        print(f"{key}: {value}")
+
+
+@app.command()
 def gtc(
     product_urlpath: str,
     measurement_group: str,
