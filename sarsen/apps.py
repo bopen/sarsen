@@ -2,6 +2,7 @@ import logging
 import typing as T
 
 import numpy as np
+import rioxarray
 import xarray as xr
 import xarray_sentinel
 
@@ -50,7 +51,55 @@ def interpolate_measurement(
         azimuth_time=azimuth_time, method=interp_method, **interp_kwargs
     )
 
-    return geocoded
+    return geocoded.drop_vars(["azimuth_time", "ground_range", "pixel", "line"])
+
+
+def terrain_correction_block(
+    dem_raster,
+    position_ecef,
+    correct_radiometry,
+    measurement_attrs,
+    slant_range_time0,
+    azimuth_time0,
+    coordinate_conversion,
+    grouping_area_factor,
+):
+    dem_ecef = scene.convert_to_dem_ecef(dem_raster)
+    dem_ecef = dem_ecef.drop_vars(dem_ecef.rio.grid_mapping)
+    acquisition = simulate_acquisition(dem_ecef, position_ecef)
+
+    if measurement_attrs["product_type"] == "GRD":
+        ground_range = xarray_sentinel.slant_range_time_to_ground_range(
+            acquisition.azimuth_time,
+            acquisition.slant_range_time,
+            coordinate_conversion,
+        )
+        acquisition["ground_range"] = ground_range
+
+    if correct_radiometry is not None:
+        logger.info("correct radiometry")
+        grid_parameters = radiometry.azimuth_slant_range_grid(
+            measurement_attrs,
+            slant_range_time0,
+            azimuth_time0,
+            coordinate_conversion,
+            grouping_area_factor,
+        )
+
+        if correct_radiometry == "gamma_bilinear":
+            gamma_weights = radiometry.gamma_weights_bilinear
+        elif correct_radiometry == "gamma_nearest":
+            gamma_weights = radiometry.gamma_weights_nearest
+
+        weights = gamma_weights(
+            dem_ecef,
+            acquisition,
+            **grid_parameters,
+        )
+        acquisition["weights"] = weights
+
+    acquisition = acquisition.drop_vars(["dem_direction", "axis"])
+    return acquisition
 
 
 def terrain_correction(
@@ -120,12 +169,23 @@ def terrain_correction(
             product_urlpath, engine="sentinel-1", group=measurement_group, chunks=chunks, **kwargs  # type: ignore
         )
 
+    logger.info(f"open data {dem_urlpath!r} {rioxarray.__version__}")
+
     dem_raster = scene.open_dem_raster(dem_urlpath, **open_dem_raster_kwargs)
 
     orbit_ecef = xr.open_dataset(product_urlpath, engine="sentinel-1", group=orbit_group, **kwargs)  # type: ignore
     position_ecef = orbit_ecef.position
     calibration = xr.open_dataset(product_urlpath, engine="sentinel-1", group=calibration_group, **kwargs)  # type: ignore
     beta_nought_lut = calibration.betaNought
+
+    # clean dask templates
+    template_raster = xr.zeros_like(dem_raster.drop_vars(dem_raster.rio.grid_mapping))
+    template_acquisition = xr.Dataset(
+        data_vars={
+            "azimuth_time": template_raster.astype("datetime64[ns]"),
+            "slant_range_time": template_raster,
+        }
+    )
 
     if measurement.attrs["product_type"] == "GRD":
         coordinate_conversion = xr.open_dataset(
@@ -134,45 +194,41 @@ def terrain_correction(
             group=f"{measurement_group}/coordinate_conversion",
             **kwargs,
         )  # type: ignore
+        slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
+        template_acquisition["ground_range"] = template_raster
+    else:
+        slant_range_time0 = measurement.slant_range_time.values[0]
+
+    if correct_radiometry is not None:
+        template_acquisition["weights"] = template_raster
 
     logger.info("pre-process DEM")
 
-    dem_ecef = xr.map_blocks(scene.convert_to_dem_ecef, dem_raster)
-    dem_ecef = dem_ecef.drop_vars(dem_ecef.rio.grid_mapping)
-
-    # clean dask templates
-    template_raster = dem_raster.drop_vars(dem_raster.rio.grid_mapping)
-    template_3d = dem_ecef
-
     logger.info("simulate acquisition")
 
-    acquisition_template = xr.Dataset(
-        data_vars={
-            "azimuth_time": xr.full_like(template_raster, 0, dtype="datetime64[ns]"),
-            "slant_range_time": template_raster,
-            "dem_direction": template_3d,
-        }
-    )
-    acquisition = xr.map_blocks(
-        simulate_acquisition,
-        dem_ecef,
-        kwargs={"position_ecef": position_ecef},
-        template=acquisition_template,
-    )
-
     logger.info("calibrate radiometry")
+
+    acquisition = xr.map_blocks(
+        terrain_correction_block,
+        dem_raster,
+        kwargs={
+            "position_ecef": position_ecef,
+            "correct_radiometry": correct_radiometry,
+            "measurement_attrs": measurement.attrs,
+            "slant_range_time0": slant_range_time0,
+            "azimuth_time0": measurement.azimuth_time.values[0],
+            "coordinate_conversion": coordinate_conversion,
+            "grouping_area_factor": grouping_area_factor,
+        },
+        template=template_acquisition,
+    )
 
     beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
 
     logger.info("interpolate image")
 
     if measurement.attrs["product_type"] == "GRD":
-        ground_range = xarray_sentinel.slant_range_time_to_ground_range(
-            acquisition.azimuth_time,
-            acquisition.slant_range_time,
-            coordinate_conversion,
-        )
-        interp_arg = ground_range
+        interp_arg = acquisition.ground_range
         interp_dim = "ground_range"
     elif measurement.attrs["product_type"] == "SLC":
         interp_arg = acquisition.slant_range_time
@@ -184,34 +240,21 @@ def terrain_correction(
             f"unsupported product_type {measurement.attrs['product_type']}"
         )
 
-    geocoded = interpolate_measurement(
+    geocoded = xr.map_blocks(
+        interpolate_measurement,
         acquisition.azimuth_time,
-        interp_arg,
-        beta_nought,
-        multilook=multilook,
-        interp_method=interp_method,
-        interp_dim=interp_dim,
-    ).chunk(dem_raster.chunksizes)
+        args=(interp_arg,),
+        kwargs=dict(
+            image=beta_nought,
+            multilook=multilook,
+            interp_method=interp_method,
+            interp_dim=interp_dim,
+        ),
+        template=template_raster,
+    )
 
     if correct_radiometry is not None:
-        logger.info("correct radiometry")
-        grid_parameters = radiometry.azimuth_slant_range_grid(
-            measurement, coordinate_conversion, grouping_area_factor
-        )
-
-        if correct_radiometry == "gamma_bilinear":
-            gamma_weights = radiometry.gamma_weights_bilinear
-        elif correct_radiometry == "gamma_nearest":
-            gamma_weights = radiometry.gamma_weights_nearest
-
-        weights = xr.map_blocks(
-            gamma_weights,
-            dem_ecef,
-            args=(acquisition,),
-            kwargs=grid_parameters,
-            template=template_raster,
-        )
-        geocoded = geocoded / weights
+        geocoded = geocoded / acquisition.weights
 
     logger.info("save output")
 
@@ -225,8 +268,6 @@ def terrain_correction(
         tiled=True,
         blockxsize=512,
         blockysize=512,
-        compress="ZSTD",
-        num_threads="ALL_CPUS",
     )
 
     return geocoded

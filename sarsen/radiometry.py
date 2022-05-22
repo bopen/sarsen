@@ -171,22 +171,22 @@ def gamma_weights_nearest(
 
 
 def azimuth_slant_range_grid(
-    measurement_ds: xr.DataArray,
+    attrs: T.Dict[str, T.Any],
+    slant_range_time0: float,
+    azimuth_time0: float,
     coordinate_conversion: T.Optional[xr.DataArray] = None,
     grouping_area_factor: T.Tuple[float, float] = (1.0, 1.0),
 ) -> T.Dict[str, T.Any]:
 
     if coordinate_conversion:
-        slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
         slant_range_spacing_m = (
-            measurement_ds.attrs["range_pixel_spacing"]
-            * np.sin(measurement_ds.attrs["incidence_angle_mid_swath"])
+            attrs["range_pixel_spacing"]
+            * np.sin(attrs["incidence_angle_mid_swath"])
             * grouping_area_factor[1]
         )
     else:
-        slant_range_time0 = measurement_ds.slant_range_time.values[0]
         slant_range_spacing_m = (
-            measurement_ds.attrs["range_pixel_spacing"] * grouping_area_factor[1]
+            attrs["range_pixel_spacing"] * grouping_area_factor[1]
         ) * grouping_area_factor[1]
 
     slant_range_time_interval_s = (
@@ -197,10 +197,9 @@ def azimuth_slant_range_grid(
         "slant_range_time0": slant_range_time0,
         "slant_range_time_interval_s": slant_range_time_interval_s,
         "slant_range_spacing_m": slant_range_spacing_m,
-        "azimuth_time0": measurement_ds.azimuth_time.values[0],  # ignore type
-        "azimuth_time_interval_s": measurement_ds.attrs["azimuth_time_interval"]
+        "azimuth_time0": azimuth_time0,
+        "azimuth_time_interval_s": attrs["azimuth_time_interval"]
         * grouping_area_factor[0],
-        "azimuth_spacing_m": measurement_ds.attrs["azimuth_pixel_spacing"]
-        * grouping_area_factor[0],
+        "azimuth_spacing_m": attrs["azimuth_pixel_spacing"] * grouping_area_factor[0],
     }
     return grid_parameters
