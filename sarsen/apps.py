@@ -125,7 +125,6 @@ def terrain_correction_block(
         dem_ecef = scene.convert_to_dem_ecef(dem_raster)
     dem_ecef = dem_ecef.drop_vars(dem_ecef.rio.grid_mapping)
     acquisition = simulate_acquisition(dem_ecef, position_ecef)
-    acquisition = acquisition.drop_vars(["dem_direction", "axis"])
 
     if measurement_attrs["product_type"] == "GRD":
         ground_range = xarray_sentinel.slant_range_time_to_ground_range(
@@ -134,7 +133,6 @@ def terrain_correction_block(
             coordinate_conversion,
         )
         acquisition["ground_range"] = ground_range.drop_vars("azimuth_time")
-        acquisition = acquisition.drop_vars("slant_range_time")
 
     if correct_radiometry is not None:
         logger.info("correct radiometry")
@@ -158,6 +156,7 @@ def terrain_correction_block(
         )
         acquisition["weights"] = weights
 
+    acquisition = acquisition.drop_vars(["slant_range_time", "dem_direction", "axis"])
     return acquisition
 
 
