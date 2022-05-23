@@ -29,7 +29,7 @@ def test_secant_method() -> None:
 
     assert res[0] == np.timedelta64(-27, "ns")
 
-    t_start = np.ones((2, 2)) * np.timedelta64(-100, "ns")  # type: ignore
+    t_start = np.ones((2, 2), dtype="timedelta64[ns]") * 100  # type: ignore
 
     res, _, _, _ = geocoding.secant_method(ufunc, -t_start, t_start, diff_ufunc=0.1)
 
