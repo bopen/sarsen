@@ -112,13 +112,13 @@ def interpolate_measurement(
 def terrain_correction_block(
     dem_raster: xr.DataArray,
     position_ecef: xr.DataArray,
-    correct_radiometry: bool,
+    correct_radiometry: T.Optional[str],
     measurement_attrs: T.Dict[str, T.Any],
     slant_range_time0: float,
     azimuth_time0: float,
     coordinate_conversion: xr.Dataset,
     grouping_area_factor: T.Tuple[float, float],
-):
+) -> xr.Dataset:
     print(dem_raster.x[0].values, dem_raster.y[0].values)
     try:
         dem_ecef = scene.convert_to_dem_ecef(dem_raster)
@@ -141,7 +141,7 @@ def terrain_correction_block(
             measurement_attrs,
             slant_range_time0,
             azimuth_time0,
-            coordinate_conversion,
+            measurement_attrs["product_type"] == "GRD",
             grouping_area_factor,
         )
 
@@ -223,7 +223,7 @@ def terrain_correction(
     )
     measurement = measurement_ds["measurement"]
 
-    logger.info(f"open data {dem_urlpath!r} {rioxarray.__version__}")
+    logger.info(f"open data {dem_urlpath!r} {rioxarray.__version__}")  # type: ignore
 
     dem_raster = scene.open_dem_raster(dem_urlpath, **open_dem_raster_kwargs)
 
@@ -244,10 +244,10 @@ def terrain_correction(
     if measurement.attrs["product_type"] == "GRD":
         coordinate_conversion = xr.open_dataset(
             product_urlpath,
-            engine="sentinel-1",
+            engine="sentinel-1",  # type: ignore
             group=f"{measurement_group}/coordinate_conversion",
             **kwargs,
-        )  # type: ignore
+        )
         slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
         template_acquisition["ground_range"] = template_raster
     else:

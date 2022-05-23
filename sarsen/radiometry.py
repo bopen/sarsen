@@ -177,11 +177,11 @@ def azimuth_slant_range_grid(
     attrs: T.Dict[str, T.Any],
     slant_range_time0: float,
     azimuth_time0: float,
-    coordinate_conversion: T.Optional[xr.DataArray] = None,
+    is_SLC: bool = False,
     grouping_area_factor: T.Tuple[float, float] = (3.0, 3.0),
 ) -> T.Dict[str, T.Any]:
 
-    if coordinate_conversion:
+    if is_SLC:
         slant_range_spacing_m = (
             attrs["range_pixel_spacing"]
             * np.sin(attrs["incidence_angle_mid_swath"])

@@ -48,7 +48,7 @@ def transform_dem_3d(
         dem_3d.sel({dim: 1}).values.flat,
         dem_3d.sel({dim: 2}).values.flat,
     )
-    dem_3d_crs: xr.DataArray = xr.zeros_like(dem_3d)
+    dem_3d_crs: xr.DataArray = xr.zeros_like(dem_3d)  # type: ignore
     shape = dem_3d_crs.loc[{dim: 0}].shape
     dem_3d_crs.loc[{dim: 0}] = np.reshape(x, shape)
     dem_3d_crs.loc[{dim: 1}] = np.reshape(y, shape)
