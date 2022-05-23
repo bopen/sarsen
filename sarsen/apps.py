@@ -110,14 +110,14 @@ def interpolate_measurement(
 
 
 def terrain_correction_block(
-    dem_raster,
-    position_ecef,
-    correct_radiometry,
-    measurement_attrs,
-    slant_range_time0,
-    azimuth_time0,
-    coordinate_conversion,
-    grouping_area_factor,
+    dem_raster: xr.DataArray,
+    position_ecef: xr.DataArray,
+    correct_radiometry: bool,
+    measurement_attrs: T.Dict[str, T.Any],
+    slant_range_time0: float,
+    azimuth_time0: float,
+    coordinate_conversion: xr.Dataset,
+    grouping_area_factor: T.Tuple[float, float],
 ):
     print(dem_raster.x[0].values, dem_raster.y[0].values)
     try:
@@ -133,7 +133,7 @@ def terrain_correction_block(
             acquisition.slant_range_time,
             coordinate_conversion,
         )
-        acquisition["ground_range"] = ground_range
+        acquisition["ground_range"] = ground_range.drop_vars("azimuth_time")
 
     if correct_radiometry is not None:
         logger.info("correct radiometry")
