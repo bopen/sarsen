@@ -175,7 +175,7 @@ def azimuth_slant_range_grid(
     slant_range_time0: float,
     azimuth_time0: float,
     coordinate_conversion: T.Optional[xr.DataArray] = None,
-    grouping_area_factor: T.Tuple[float, float] = (1.0, 1.0),
+    grouping_area_factor: T.Tuple[float, float] = (3.0, 3.0),
 ) -> T.Dict[str, T.Any]:
 
     if coordinate_conversion:
