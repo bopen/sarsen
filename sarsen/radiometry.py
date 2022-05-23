@@ -172,8 +172,8 @@ def gamma_weights_nearest(
 
 
 def azimuth_slant_range_grid(
-    measurement_ds: xr.DataArray,
-    coordinate_conversion: T.Optional[xr.DataArray] = None,
+    measurement_ds: xr.Dataset,
+    coordinate_conversion: T.Optional[xr.Dataset] = None,
     grouping_area_factor: T.Tuple[float, float] = (1.0, 1.0),
 ) -> T.Dict[str, T.Any]:
 

@@ -142,7 +142,7 @@ def terrain_correction(
             engine="sentinel-1",
             group=f"{measurement_group}/coordinate_conversion",
             **kwargs,
-        )  # type: ignore
+        )
         ground_range = xarray_sentinel.slant_range_time_to_ground_range(
             acquisition.azimuth_time,
             acquisition.slant_range_time,
