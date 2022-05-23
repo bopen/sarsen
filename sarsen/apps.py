@@ -120,7 +120,10 @@ def terrain_correction_block(
     grouping_area_factor,
 ):
     print(dem_raster.x[0].values, dem_raster.y[0].values)
-    dem_ecef = scene.convert_to_dem_ecef(dem_raster)
+    try:
+        dem_ecef = scene.convert_to_dem_ecef(dem_raster)
+    except:
+        dem_ecef = scene.convert_to_dem_ecef(dem_raster)
     dem_ecef = dem_ecef.drop_vars(dem_ecef.rio.grid_mapping)
     acquisition = simulate_acquisition(dem_ecef, position_ecef)
 
@@ -169,7 +172,7 @@ def terrain_correction(
     interp_method: str = "nearest",
     multilook: T.Optional[T.Tuple[int, int]] = None,
     grouping_area_factor: T.Tuple[float, float] = (3.0, 13.0),
-    open_dem_raster_kwargs: T.Dict[str, T.Any] = {},
+    open_dem_raster_kwargs: T.Dict[str, T.Any] = {"chunks": 2048},
     chunks: T.Optional[T.Union[int, T.Dict[str, int]]] = None,
     **kwargs: T.Any,
 ) -> xr.DataArray:
@@ -306,6 +309,10 @@ def terrain_correction(
 
     if correct_radiometry is not None:
         geocoded = geocoded / acquisition.weights
+
+    logger.info("save output")
+
+    geocoded.load()
 
     logger.info("save output")
 
