@@ -122,7 +122,7 @@ def terrain_correction_block(
     print(dem_raster.x[0].values, dem_raster.y[0].values)
     try:
         dem_ecef = scene.convert_to_dem_ecef(dem_raster)
-    except:
+    except Exception:
         dem_ecef = scene.convert_to_dem_ecef(dem_raster)
     dem_ecef = dem_ecef.drop_vars(dem_ecef.rio.grid_mapping)
     acquisition = simulate_acquisition(dem_ecef, position_ecef)
@@ -326,6 +326,8 @@ def terrain_correction(
         tiled=True,
         blockxsize=512,
         blockysize=512,
+        compress="ZSTD",
+        num_threads="ALL_CPUS",
     )
 
     return geocoded
