@@ -18,7 +18,7 @@ def open_dem_raster(dem_urlpath: str, **kwargs: T.Any) -> xr.DataArray:
     dem_raster.attrs["long_name"] = "elevation"
     dem_raster.attrs["units"] = "m"
     dem_raster = dem_raster.rename("dem").squeeze(drop=True)
-    return dem_raster  # type: ignore
+    return dem_raster
 
 
 def convert_to_dem_3d(dem_raster: xr.DataArray, dim: str = "axis") -> xr.DataArray:
