@@ -59,6 +59,7 @@ def test_terrain_correction_rtc(tmpdir: py.path.local) -> None:
     assert isinstance(res, xr.DataArray)
 
 
+@pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="too much memory")
 def test_terrain_correction_gtc_dask(tmpdir: py.path.local) -> None:
     out = str(tmpdir.join("GTC.tif"))
     res = apps.terrain_correction(
@@ -72,6 +73,7 @@ def test_terrain_correction_gtc_dask(tmpdir: py.path.local) -> None:
     assert isinstance(res, xr.DataArray)
 
 
+@pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="too much memory")
 def test_terrain_correction_fast_rtc_dask(tmpdir: py.path.local) -> None:
     out = str(tmpdir.join("RTC.tif"))
 
@@ -87,6 +89,7 @@ def test_terrain_correction_fast_rtc_dask(tmpdir: py.path.local) -> None:
     assert isinstance(res, xr.DataArray)
 
 
+@pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="too much memory")
 def test_terrain_correction_rtc_dask(tmpdir: py.path.local) -> None:
     out = str(tmpdir.join("RTC.tif"))
 

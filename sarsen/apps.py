@@ -119,13 +119,13 @@ def terrain_correction_block(
     coordinate_conversion: xr.Dataset,
     grouping_area_factor: T.Tuple[float, float],
 ) -> xr.Dataset:
-    print(dem_raster.x[0].values, dem_raster.y[0].values)
     try:
         dem_ecef = scene.convert_to_dem_ecef(dem_raster)
     except Exception:
         dem_ecef = scene.convert_to_dem_ecef(dem_raster)
     dem_ecef = dem_ecef.drop_vars(dem_ecef.rio.grid_mapping)
     acquisition = simulate_acquisition(dem_ecef, position_ecef)
+    acquisition = acquisition.drop_vars(["dem_direction", "axis"])
 
     if measurement_attrs["product_type"] == "GRD":
         ground_range = xarray_sentinel.slant_range_time_to_ground_range(
@@ -134,6 +134,7 @@ def terrain_correction_block(
             coordinate_conversion,
         )
         acquisition["ground_range"] = ground_range.drop_vars("azimuth_time")
+        acquisition = acquisition.drop_vars("slant_range_time")
 
     if correct_radiometry is not None:
         logger.info("correct radiometry")
@@ -157,7 +158,6 @@ def terrain_correction_block(
         )
         acquisition["weights"] = weights
 
-    acquisition = acquisition.drop_vars(["dem_direction", "axis"])
     return acquisition
 
 
@@ -237,7 +237,6 @@ def terrain_correction(
     template_acquisition = xr.Dataset(
         data_vars={
             "azimuth_time": template_raster.astype("datetime64[ns]"),
-            "slant_range_time": template_raster,
         }
     )
 
@@ -252,13 +251,10 @@ def terrain_correction(
         template_acquisition["ground_range"] = template_raster
     else:
         slant_range_time0 = measurement.slant_range_time.values[0]
+        template_acquisition["slant_range_time"] = template_raster
 
     if correct_radiometry is not None:
         template_acquisition["weights"] = template_raster
-
-    logger.info("pre-process DEM")
-
-    logger.info("simulate acquisition")
 
     logger.info("calibrate radiometry")
 
@@ -278,9 +274,6 @@ def terrain_correction(
     )
 
     beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
-
-    logger.info("interpolate image")
-
     if measurement.attrs["product_type"] == "GRD":
         interp_arg = acquisition.ground_range
         interp_dim = "ground_range"
@@ -309,10 +302,6 @@ def terrain_correction(
 
     if correct_radiometry is not None:
         geocoded = geocoded / acquisition.weights
-
-    logger.info("save output")
-
-    geocoded.load()
 
     logger.info("save output")
 
