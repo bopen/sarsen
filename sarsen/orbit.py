@@ -80,11 +80,10 @@ class OrbitPolyfitIterpolator:
         if time is None:
             time = self.azimuth_time_range(**kwargs)
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
-        epoch_time = time.assign_coords({time.name: time - self.epoch})  # type: ignore
 
         velocity_coefficients = polyder(self.coefficients) * S_TO_NS
 
         velocity: xr.DataArray
-        velocity = xr.polyval(epoch_time.coords[time.name], velocity_coefficients)  # type: ignore
+        velocity = xr.polyval(time - self.epoch, velocity_coefficients)  # type: ignore
         velocity = velocity.assign_coords({time.name: time})  # type: ignore
         return velocity.rename("velocity")
