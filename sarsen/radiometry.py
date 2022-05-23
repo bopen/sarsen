@@ -17,14 +17,13 @@ def sum_weights(
     slant_range_index: xr.DataArray,
     multilook: T.Optional[T.Tuple[int, int]] = None,
 ) -> xr.DataArray:
+
     geocoded = initial_weights.assign_coords(
         slant_range_index=slant_range_index, azimuth_index=azimuth_index
     )  # type: ignore
 
-    stacked_geocoded = (
-        geocoded.stack(z=("y", "x"))
-        .reset_index("z")
-        .set_index(z=("azimuth_index", "slant_range_index"))
+    stacked_geocoded = geocoded.stack(z=("y", "x")).set_index(
+        z=("azimuth_index", "slant_range_index")
     )
 
     grouped = stacked_geocoded.groupby("z")
@@ -35,20 +34,24 @@ def sum_weights(
         flat_sum = (
             flat_sum.unstack("z")
             .rolling(
-                z_level_0=multilook[0],
-                z_level_1=multilook[1],
+                azimuth_index=multilook[0],
+                slant_range_index=multilook[1],
                 center=True,
                 min_periods=multilook[0] * multilook[1] // 2 + 1,
             )
             .mean()
-            .stack(z=("z_level_0", "z_level_1"))
+            .stack(z=("azimuth_index", "slant_range_index"))
         )
 
     stacked_sum = flat_sum.sel(z=stacked_geocoded.indexes["z"]).assign_coords(
         stacked_geocoded.coords
     )
 
-    weights_sum: xr.DataArray = stacked_sum.set_index(z=("y", "x")).unstack("z")
+    weights_sum: xr.DataArray = (
+        stacked_sum.reset_index(["azimuth_index", "slant_range_index"], drop=True)
+        .set_index(z=("y", "x"))
+        .unstack("z")
+    )
 
     return weights_sum
 
@@ -172,7 +175,7 @@ def gamma_weights_nearest(
 
 def azimuth_slant_range_grid(
     measurement_ds: xr.DataArray,
-    coordinate_conversion: T.Optional[xr.DataArray] = None,
+    coordinate_conversion: T.Optional[xr.Dataset] = None,
     grouping_area_factor: T.Tuple[float, float] = (1.0, 1.0),
 ) -> T.Dict[str, T.Any]:
 

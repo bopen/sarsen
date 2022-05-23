@@ -177,7 +177,7 @@ def terrain_correction(
             engine="sentinel-1",
             group=f"{measurement_group}/coordinate_conversion",
             **kwargs,
-        )  # type: ignore
+        )
 
     logger.info("pre-process DEM")
 
