@@ -26,7 +26,9 @@ def sum_weights(
         z=("azimuth_index", "slant_range_index")
     )
 
-    flat_sum = stacked_geocoded.groupby("z").sum()
+    grouped = stacked_geocoded.groupby("z")
+
+    flat_sum = grouped.sum()
 
     if multilook:
         flat_sum = (
@@ -172,7 +174,7 @@ def gamma_weights_nearest(
 
 
 def azimuth_slant_range_grid(
-    measurement_ds: xr.Dataset,
+    measurement_ds: xr.DataArray,
     coordinate_conversion: T.Optional[xr.Dataset] = None,
     grouping_area_factor: T.Tuple[float, float] = (1.0, 1.0),
 ) -> T.Dict[str, T.Any]:

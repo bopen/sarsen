@@ -68,10 +68,9 @@ class OrbitPolyfitIterpolator:
         if time is None:
             time = self.azimuth_time_range(**kwargs)
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
-        epoch_time = time.assign_coords({time.name: time - self.epoch})  # type: ignore
 
         position: xr.DataArray
-        position = xr.polyval(epoch_time.coords[time.name], self.coefficients)  # type: ignore
+        position = xr.polyval(time - self.epoch, self.coefficients)  # type: ignore
         position = position.assign_coords({time.name: time})  # type: ignore
         return position.rename("position")
 
