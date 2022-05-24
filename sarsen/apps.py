@@ -108,10 +108,8 @@ def terrain_correction_block(
     )
     measurement = measurement_ds["measurement"]
 
-    try:
-        dem_ecef = scene.convert_to_dem_ecef(dem_raster)
-    except Exception:
-        dem_ecef = scene.convert_to_dem_ecef(dem_raster)
+    dem_ecef = scene.convert_to_dem_ecef(dem_raster)
+
     dem_ecef = dem_ecef.drop_vars(dem_ecef.rio.grid_mapping)
     acquisition = simulate_acquisition(dem_ecef, position_ecef)
 
@@ -145,7 +143,7 @@ def terrain_correction_block(
         )
         acquisition["weights"] = weights
 
-    acquisition = acquisition.drop_vars(["slant_range_time", "dem_direction", "axis"])
+    acquisition = acquisition.drop_vars(["dem_direction", "axis"])
 
     if measurement.attrs["product_type"] == "GRD":
         interp_arg = acquisition.ground_range
@@ -154,7 +152,9 @@ def terrain_correction_block(
         interp_arg = acquisition.slant_range_time
         interp_dim = "slant_range_time"
     else:
-        raise ValueError(f"unsupported product_type {image.attrs['product_type']}")
+        raise ValueError(
+            f"unsupported product_type {measurement.attrs['product_type']}"
+        )
 
     image = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
 
@@ -166,10 +166,13 @@ def terrain_correction_block(
         method="nearest",
         **{interp_dim: interp_arg},
     ).compute()
-    geocoded = geocoded.drop_vars(["azimuth_time", "ground_range", "pixel", "line"])
 
     if correct_radiometry is not None:
         geocoded = geocoded / acquisition.weights
+
+    for coord_name in geocoded.coords:
+        if coord_name not in ["x", "y"]:
+            geocoded = geocoded.drop_vars(coord_name)
 
     return geocoded
 
