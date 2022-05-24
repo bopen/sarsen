@@ -75,12 +75,15 @@ def test_terrain_correction_rtc(
     assert isinstance(res, xr.DataArray)
 
 
+@pytest.mark.parametrize("data_path,group", zip(DATA_PATHS, GROUPS))
 @pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="too much memory")
-def test_terrain_correction_gtc_dask(tmpdir: py.path.local) -> None:
+def test_terrain_correction_gtc_dask(
+    tmpdir: py.path.local, data_path: pathlib.Path, group: str
+) -> None:
     out = str(tmpdir.join("GTC.tif"))
     res = apps.terrain_correction(
-        str(GRD_IW),
-        "IW/VV",
+        str(data_path),
+        group,
         str(DEM_RASTER),
         output_urlpath=out,
         open_dem_raster_kwargs={"chunks": 1024},
@@ -90,12 +93,14 @@ def test_terrain_correction_gtc_dask(tmpdir: py.path.local) -> None:
 
 
 @pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="too much memory")
-def test_terrain_correction_fast_rtc_dask(tmpdir: py.path.local) -> None:
+def test_terrain_correction_fast_rtc_dask(
+    tmpdir: py.path.local, data_path: pathlib.Path, group: str
+) -> None:
     out = str(tmpdir.join("RTC.tif"))
 
     res = apps.terrain_correction(
-        str(GRD_IW),
-        "IW/VV",
+        str(data_path),
+        group,
         str(DEM_RASTER),
         correct_radiometry="gamma_nearest",
         output_urlpath=out,
@@ -106,12 +111,14 @@ def test_terrain_correction_fast_rtc_dask(tmpdir: py.path.local) -> None:
 
 
 @pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="too much memory")
-def test_terrain_correction_rtc_dask(tmpdir: py.path.local) -> None:
+def test_terrain_correction_rtc_dask(
+    tmpdir: py.path.local, data_path: pathlib.Path, group: str
+) -> None:
     out = str(tmpdir.join("RTC.tif"))
 
     res = apps.terrain_correction(
-        str(GRD_IW),
-        "IW/VV",
+        str(data_path),
+        group,
         str(DEM_RASTER),
         correct_radiometry="gamma_bilinear",
         output_urlpath=out,
