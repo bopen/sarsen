@@ -178,6 +178,8 @@ def terrain_correction(
             group=f"{measurement_group}/coordinate_conversion",
             **kwargs,
         )
+    else:
+        coordinate_conversion = None
 
     logger.info("pre-process DEM")
 
