@@ -118,7 +118,9 @@ def terrain_correction_block(
     azimuth_time0: float,
     coordinate_conversion: xr.Dataset,
     grouping_area_factor: T.Tuple[float, float],
-) -> xr.Dataset:
+    image: xr.DataArray = xr.DataArray(),
+    **interp_kwargs: T.Any,
+) -> xr.DataArray:
     try:
         dem_ecef = scene.convert_to_dem_ecef(dem_raster)
     except Exception:
@@ -156,8 +158,27 @@ def terrain_correction_block(
         )
         acquisition["weights"] = weights
 
+    del dem_ecef
+
     acquisition = acquisition.drop_vars(["slant_range_time", "dem_direction", "axis"])
-    return acquisition
+
+    if image.attrs["product_type"] == "GRD":
+        interp_arg = acquisition.ground_range
+        interp_kwargs["interp_dim"] = "ground_range"
+    elif image.attrs["product_type"] == "SLC":
+        interp_arg = acquisition.slant_range_time
+        interp_kwargs["interp_dim"] = "slant_range_time"
+    else:
+        raise ValueError(f"unsupported product_type {image.attrs['product_type']}")
+
+    geocoded = interpolate_measurement(
+        acquisition.azimuth_time, interp_arg, image, **interp_kwargs
+    )
+
+    if correct_radiometry is not None:
+        geocoded = geocoded / acquisition.weights
+
+    return geocoded
 
 
 def terrain_correction(
@@ -202,6 +223,11 @@ def terrain_correction(
     to open the `dem_urlpath`
     :param kwargs: additional keyword arguments passed on to ``xarray.open_dataset`` to open the `product_urlpath`
     """
+    # from dask.distributed import Client
+
+    # client = Client(processes=False)
+    # print(client.dashboard_link)
+
     allowed_correct_radiometry = [None, "gamma_bilinear", "gamma_nearest"]
     if correct_radiometry not in allowed_correct_radiometry:
         raise ValueError(
@@ -231,14 +257,6 @@ def terrain_correction(
     calibration = xr.open_dataset(product_urlpath, engine="sentinel-1", group=calibration_group, **kwargs)  # type: ignore
     beta_nought_lut = calibration.betaNought
 
-    # clean dask templates
-    template_raster = xr.zeros_like(dem_raster.drop_vars(dem_raster.rio.grid_mapping))
-    template_acquisition = xr.Dataset(
-        data_vars={
-            "azimuth_time": template_raster.astype("datetime64[ns]"),
-        }
-    )
-
     if measurement.attrs["product_type"] == "GRD":
         coordinate_conversion = xr.open_dataset(
             product_urlpath,
@@ -247,17 +265,17 @@ def terrain_correction(
             **kwargs,
         )
         slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
-        template_acquisition["ground_range"] = template_raster
     else:
         slant_range_time0 = measurement.slant_range_time.values[0]
-        template_acquisition["slant_range_time"] = template_raster
-
-    if correct_radiometry is not None:
-        template_acquisition["weights"] = template_raster
 
     logger.info("calibrate radiometry")
 
-    acquisition = xr.map_blocks(
+    beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
+
+    if measurement.attrs["product_type"] == "SLC" and measurement.attrs["mode"] == "IW":
+        beta_nought = xarray_sentinel.mosaic_slc_iw(beta_nought)
+
+    geocoded = xr.map_blocks(
         terrain_correction_block,
         dem_raster,
         kwargs={
@@ -268,39 +286,12 @@ def terrain_correction(
             "azimuth_time0": measurement.azimuth_time.values[0],
             "coordinate_conversion": coordinate_conversion,
             "grouping_area_factor": grouping_area_factor,
+            "image": beta_nought,
+            "multilook": multilook,
+            "interp_method": interp_method,
         },
-        template=template_acquisition,
+        template=dem_raster.drop_vars(dem_raster.rio.grid_mapping),
     )
-
-    beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
-    if measurement.attrs["product_type"] == "GRD":
-        interp_arg = acquisition.ground_range
-        interp_dim = "ground_range"
-    elif measurement.attrs["product_type"] == "SLC":
-        interp_arg = acquisition.slant_range_time
-        interp_dim = "slant_range_time"
-        if measurement.attrs["mode"] == "IW":
-            beta_nought = xarray_sentinel.mosaic_slc_iw(beta_nought)
-    else:
-        raise ValueError(
-            f"unsupported product_type {measurement.attrs['product_type']}"
-        )
-
-    geocoded = xr.map_blocks(
-        interpolate_measurement,
-        acquisition.azimuth_time,
-        args=(interp_arg,),
-        kwargs=dict(
-            image=beta_nought,
-            multilook=multilook,
-            interp_method=interp_method,
-            interp_dim=interp_dim,
-        ),
-        template=template_raster,
-    )
-
-    if correct_radiometry is not None:
-        geocoded = geocoded / acquisition.weights
 
     logger.info("save output")
 
