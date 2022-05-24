@@ -188,9 +188,7 @@ def azimuth_slant_range_grid(
             * grouping_area_factor[1]
         )
     else:
-        slant_range_spacing_m = (
-            attrs["range_pixel_spacing"] * grouping_area_factor[1]
-        ) * grouping_area_factor[1]
+        slant_range_spacing_m = attrs["range_pixel_spacing"] * grouping_area_factor[1]
 
     slant_range_time_interval_s = (
         slant_range_spacing_m * 2 / geocoding.SPEED_OF_LIGHT  # ignore type
