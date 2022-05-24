@@ -3,15 +3,19 @@ channels:
 dependencies:
   - attrs
   - black = 22.3.0
+  - bottleneck
   - click
   - dask
   - flake8
+  - flox
   - fsspec
   - isort
   - make
   - mdformat
   - mypy
   - nomkl
+  - numba
+  - numexpr
   - numpy >= 1.22.0
   - pip
   - pytest
@@ -26,4 +30,5 @@ dependencies:
   - zarr
   - pip:
       - mdformat-gfm
+      - numbagg
       - git+https://github.com/pydata/xarray.git
