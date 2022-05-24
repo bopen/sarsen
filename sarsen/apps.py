@@ -118,9 +118,20 @@ def terrain_correction_block(
     azimuth_time0: float,
     coordinate_conversion: xr.Dataset,
     grouping_area_factor: T.Tuple[float, float],
-    image: xr.DataArray = xr.DataArray(),
+    product_urlpath: str,
+    measurement_group: str,
+    kwargs: T.Dict[str, T.Any],
+    beta_nought_lut: xr.DataArray,
     **interp_kwargs: T.Any,
 ) -> xr.DataArray:
+    measurement_ds, kwargs = open_dataset_autodetect(
+        product_urlpath,
+        group=measurement_group,
+        chunks=2048,
+        **kwargs,  #  type: ignore
+    )
+    measurement = measurement_ds["measurement"]
+
     try:
         dem_ecef = scene.convert_to_dem_ecef(dem_raster)
     except Exception:
@@ -158,22 +169,30 @@ def terrain_correction_block(
         )
         acquisition["weights"] = weights
 
-    del dem_ecef
-
     acquisition = acquisition.drop_vars(["slant_range_time", "dem_direction", "axis"])
 
-    if image.attrs["product_type"] == "GRD":
+    if measurement.attrs["product_type"] == "GRD":
         interp_arg = acquisition.ground_range
-        interp_kwargs["interp_dim"] = "ground_range"
-    elif image.attrs["product_type"] == "SLC":
+        interp_dim = "ground_range"
+    elif measurement.attrs["product_type"] == "SLC":
         interp_arg = acquisition.slant_range_time
-        interp_kwargs["interp_dim"] = "slant_range_time"
+        interp_dim = "slant_range_time"
     else:
         raise ValueError(f"unsupported product_type {image.attrs['product_type']}")
 
-    geocoded = interpolate_measurement(
-        acquisition.azimuth_time, interp_arg, image, **interp_kwargs
+    image = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
+
+    if measurement.attrs["product_type"] == "SLC" and measurement.attrs["mode"] == "IW":
+        image = xarray_sentinel.mosaic_slc_iw(image)
+
+    geocoded = image.interp(
+        azimuth_time=acquisition.azimuth_time,
+        method="nearest",
+        **{interp_dim: interp_arg},
     )
+    geocoded = geocoded.drop_vars(
+        ["azimuth_time", "ground_range", "pixel", "line"]
+    ).compute()
 
     if correct_radiometry is not None:
         geocoded = geocoded / acquisition.weights
@@ -191,8 +210,8 @@ def terrain_correction(
     correct_radiometry: T.Optional[str] = None,
     interp_method: str = "nearest",
     multilook: T.Optional[T.Tuple[int, int]] = None,
-    grouping_area_factor: T.Tuple[float, float] = (3.0, 13.0),
-    open_dem_raster_kwargs: T.Dict[str, T.Any] = {"chunks": 2048},
+    grouping_area_factor: T.Tuple[float, float] = (3.0, 3.0),
+    open_dem_raster_kwargs: T.Dict[str, T.Any] = {"chunks": 1024},
     chunks: T.Optional[T.Union[int, T.Dict[str, int]]] = None,
     **kwargs: T.Any,
 ) -> xr.DataArray:
@@ -266,14 +285,10 @@ def terrain_correction(
         )
         slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
     else:
+        coordinate_conversion = None
         slant_range_time0 = measurement.slant_range_time.values[0]
 
     logger.info("calibrate radiometry")
-
-    beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
-
-    if measurement.attrs["product_type"] == "SLC" and measurement.attrs["mode"] == "IW":
-        beta_nought = xarray_sentinel.mosaic_slc_iw(beta_nought)
 
     geocoded = xr.map_blocks(
         terrain_correction_block,
@@ -286,7 +301,10 @@ def terrain_correction(
             "azimuth_time0": measurement.azimuth_time.values[0],
             "coordinate_conversion": coordinate_conversion,
             "grouping_area_factor": grouping_area_factor,
-            "image": beta_nought,
+            "product_urlpath": product_urlpath,
+            "measurement_group": measurement_group,
+            "kwargs": kwargs,
+            "beta_nought_lut": beta_nought_lut,
             "multilook": multilook,
             "interp_method": interp_method,
         },
@@ -295,7 +313,7 @@ def terrain_correction(
 
     logger.info("save output")
 
-    geocoded.attrs.update(beta_nought.attrs)
+    geocoded.attrs.update(measurement.attrs)
     geocoded.x.attrs.update(dem_raster.x.attrs)
     geocoded.y.attrs.update(dem_raster.y.attrs)
     geocoded.rio.set_crs(dem_raster.rio.crs)
@@ -303,8 +321,8 @@ def terrain_correction(
         output_urlpath,
         dtype=np.float32,
         tiled=True,
-        blockxsize=512,
-        blockysize=512,
+        blockxsize=1024,
+        blockysize=1024,
         compress="ZSTD",
         num_threads="ALL_CPUS",
     )
