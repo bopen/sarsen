@@ -85,30 +85,6 @@ def simulate_acquisition(
     return acquisition
 
 
-def interpolate_measurement(
-    azimuth_time: xr.DataArray,
-    range: xr.DataArray,
-    image: xr.DataArray,
-    multilook: T.Optional[T.Tuple[int, int]] = None,
-    interp_method: str = "nearest",
-    interp_dim: str = "slant_range_time",
-    **interp_kwargs: T.Any,
-) -> xr.DataArray:
-    """Interpolate the input image with optional multilook."""
-
-    if multilook:
-        image = image.rolling(
-            azimuth_time=multilook[0], slant_range_time=multilook[1]
-        ).mean()
-
-    interp_kwargs[interp_dim] = range
-    geocoded = image.interp(
-        azimuth_time=azimuth_time, method=interp_method, **interp_kwargs
-    )
-
-    return geocoded.drop_vars(["azimuth_time", "ground_range", "pixel", "line"])
-
-
 def terrain_correction_block(
     dem_raster: xr.DataArray,
     position_ecef: xr.DataArray,
@@ -207,7 +183,6 @@ def terrain_correction(
     output_urlpath: str = "GTC.tif",
     correct_radiometry: T.Optional[str] = None,
     interp_method: str = "nearest",
-    multilook: T.Optional[T.Tuple[int, int]] = None,
     grouping_area_factor: T.Tuple[float, float] = (3.0, 3.0),
     open_dem_raster_kwargs: T.Dict[str, T.Any] = {"chunks": 1024},
     chunks: T.Optional[T.Union[int, T.Dict[str, int]]] = None,
@@ -228,7 +203,6 @@ def terrain_correction(
     'gamma_nearest' significantly reduces the processing time
     :param interp_method: interpolation method for product resampling.
     The interpolation methods are the methods supported by ``xarray.DataArray.interp``
-    :param multilook: multilook factor. If `None` the multilook is not applied
     :param grouping_area_factor: is a tuple of floats greater than 1. The default is `(1, 1)`.
     The `grouping_area_factor`  can be increased (i) to speed up the processing or
     (ii) when the input DEM resolution is low.
@@ -303,7 +277,6 @@ def terrain_correction(
             "measurement_group": measurement_group,
             "kwargs": kwargs,
             "beta_nought_lut": beta_nought_lut,
-            "multilook": multilook,
             "interp_method": interp_method,
         },
         template=dem_raster.drop_vars(dem_raster.rio.grid_mapping),
