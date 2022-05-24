@@ -189,10 +189,8 @@ def terrain_correction_block(
         azimuth_time=acquisition.azimuth_time,
         method="nearest",
         **{interp_dim: interp_arg},
-    )
-    geocoded = geocoded.drop_vars(
-        ["azimuth_time", "ground_range", "pixel", "line"]
     ).compute()
+    geocoded = geocoded.drop_vars(["azimuth_time", "ground_range", "pixel", "line"])
 
     if correct_radiometry is not None:
         geocoded = geocoded / acquisition.weights
