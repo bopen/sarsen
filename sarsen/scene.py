@@ -62,7 +62,7 @@ def transform_dem_3d(
             dem_3d.sel({dim: 1}).values.flat,
             dem_3d.sel({dim: 2}).values.flat,
         )
-    dem_3d_crs: xr.DataArray = xr.zeros_like(dem_3d)  # type: ignore
+    dem_3d_crs: xr.DataArray = xr.zeros_like(dem_3d)
     shape = dem_3d_crs.loc[{dim: 0}].shape
     dem_3d_crs.loc[{dim: 0}] = np.reshape(x, shape)
     dem_3d_crs.loc[{dim: 1}] = np.reshape(y, shape)
@@ -75,9 +75,7 @@ def convert_to_dem_ecef(dem_raster: xr.DataArray, **kwargs: T.Any) -> xr.DataArr
     return transform_dem_3d(dem_3d, **kwargs)
 
 
-def compute_dem_oriented_area(
-    dem_ecef: xr.DataArray,
-) -> xr.DataArray:
+def compute_dem_oriented_area(dem_ecef: xr.DataArray) -> xr.DataArray:
     x_corners: npt.ArrayLike = np.concatenate(
         [
             [dem_ecef.x[0] + (dem_ecef.x[0] - dem_ecef.x[1]) / 2],
