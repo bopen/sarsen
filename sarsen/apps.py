@@ -107,10 +107,9 @@ def terrain_correction_block(
         **kwargs,  #  type: ignore
     )
     measurement = measurement_ds["measurement"]
-
     dem_ecef = scene.convert_to_dem_ecef(dem_raster)
-
     dem_ecef = dem_ecef.drop_vars(dem_ecef.rio.grid_mapping)
+
     acquisition = simulate_acquisition(dem_ecef, position_ecef)
 
     if measurement_attrs["product_type"] == "GRD":
@@ -146,11 +145,9 @@ def terrain_correction_block(
     acquisition = acquisition.drop_vars(["dem_direction", "axis"])
 
     if measurement.attrs["product_type"] == "GRD":
-        interp_arg = acquisition.ground_range
-        interp_dim = "ground_range"
+        interp_kwargs["ground_range"] = acquisition.ground_range
     elif measurement.attrs["product_type"] == "SLC":
-        interp_arg = acquisition.slant_range_time
-        interp_dim = "slant_range_time"
+        interp_kwargs["slant_range_time"] = acquisition.slant_range_time
     else:
         raise ValueError(
             f"unsupported product_type {measurement.attrs['product_type']}"
@@ -163,8 +160,7 @@ def terrain_correction_block(
 
     geocoded = image.interp(
         azimuth_time=acquisition.azimuth_time,
-        method="nearest",
-        **{interp_dim: interp_arg},
+        **interp_kwargs,
     ).compute()
 
     if correct_radiometry is not None:
@@ -280,7 +276,7 @@ def terrain_correction(
             "measurement_group": measurement_group,
             "kwargs": kwargs,
             "beta_nought_lut": beta_nought_lut,
-            "interp_method": interp_method,
+            "method": interp_method,
         },
         template=dem_raster.drop_vars(dem_raster.rio.grid_mapping),
     )
