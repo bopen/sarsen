@@ -103,10 +103,11 @@ def terrain_correction_block(
     measurement_ds, kwargs = open_dataset_autodetect(
         product_urlpath,
         group=measurement_group,
-        chunks=2048,
+        chunks=1024,
         **kwargs,  #  type: ignore
     )
     measurement = measurement_ds["measurement"]
+
     dem_ecef = scene.convert_to_dem_ecef(dem_raster)
     dem_ecef = dem_ecef.drop_vars(dem_ecef.rio.grid_mapping)
 
@@ -153,12 +154,12 @@ def terrain_correction_block(
             f"unsupported product_type {measurement.attrs['product_type']}"
         )
 
-    image = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
+    beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
 
     if measurement.attrs["product_type"] == "SLC" and measurement.attrs["mode"] == "IW":
-        image = xarray_sentinel.mosaic_slc_iw(image)
+        beta_nought = xarray_sentinel.mosaic_slc_iw(beta_nought)
 
-    geocoded = image.interp(
+    geocoded = beta_nought.interp(
         azimuth_time=acquisition.azimuth_time,
         **interp_kwargs,
     ).compute()
@@ -170,6 +171,7 @@ def terrain_correction_block(
         if coord_name not in ["x", "y"]:
             geocoded = geocoded.drop_vars(coord_name)
 
+    geocoded.attrs.update(beta_nought.attrs)
     return geocoded
 
 
@@ -183,8 +185,10 @@ def terrain_correction(
     correct_radiometry: T.Optional[str] = None,
     interp_method: str = "nearest",
     grouping_area_factor: T.Tuple[float, float] = (3.0, 3.0),
-    open_dem_raster_kwargs: T.Dict[str, T.Any] = {"chunks": 1024},
-    chunks: T.Optional[T.Union[int, T.Dict[str, int]]] = None,
+    open_dem_raster_kwargs: T.Dict[str, T.Any] = {},
+    chunks: T.Optional[int] = 1024,
+    enable_dask_distributed: bool = False,
+    client_kwargs: T.Dict[str, T.Any] = {"processes": False},
     **kwargs: T.Any,
 ) -> xr.DataArray:
     """Apply the terrain-correction to sentinel-1 SLC and GRD products.
@@ -213,11 +217,6 @@ def terrain_correction(
     to open the `dem_urlpath`
     :param kwargs: additional keyword arguments passed on to ``xarray.open_dataset`` to open the `product_urlpath`
     """
-    # from dask.distributed import Client
-
-    # client = Client(processes=False)
-    # print(client.dashboard_link)
-
     allowed_correct_radiometry = [None, "gamma_bilinear", "gamma_nearest"]
     if correct_radiometry not in allowed_correct_radiometry:
         raise ValueError(
@@ -228,19 +227,28 @@ def terrain_correction(
     orbit_group = orbit_group or f"{measurement_group}/orbit"
     calibration_group = calibration_group or f"{measurement_group}/calibration"
 
+    output_chunks = chunks if chunks is not None else 512
+
+    if enable_dask_distributed:
+        from dask.distributed import Client
+
+        client = Client(**client_kwargs)
+        print(f"Dask distributed dashboard at: {client.dashboard_link}")
+
     logger.info(f"open data {product_urlpath!r}")
 
     measurement_ds, kwargs = open_dataset_autodetect(
         product_urlpath,
         group=measurement_group,
-        chunks=chunks,
         **kwargs,  #  type: ignore
     )
     measurement = measurement_ds["measurement"]
 
     logger.info(f"open data {dem_urlpath!r} {rioxarray.__version__}")  # type: ignore
 
-    dem_raster = scene.open_dem_raster(dem_urlpath, **open_dem_raster_kwargs)
+    dem_raster = scene.open_dem_raster(
+        dem_urlpath, chunks=chunks, **open_dem_raster_kwargs
+    )
 
     orbit_ecef = xr.open_dataset(product_urlpath, engine="sentinel-1", group=orbit_group, **kwargs)  # type: ignore
     position_ecef = orbit_ecef.position
@@ -283,7 +291,6 @@ def terrain_correction(
 
     logger.info("save output")
 
-    geocoded.attrs.update(measurement.attrs)
     geocoded.x.attrs.update(dem_raster.x.attrs)
     geocoded.y.attrs.update(dem_raster.y.attrs)
     geocoded.rio.set_crs(dem_raster.rio.crs)
@@ -291,8 +298,8 @@ def terrain_correction(
         output_urlpath,
         dtype=np.float32,
         tiled=True,
-        blockxsize=1024,
-        blockysize=1024,
+        blockxsize=output_chunks,
+        blockysize=output_chunks,
         compress="ZSTD",
         num_threads="ALL_CPUS",
     )
