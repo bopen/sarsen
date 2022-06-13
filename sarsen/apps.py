@@ -262,7 +262,7 @@ def terrain_correction(
     if measurement.attrs["product_type"] == "GRD":
         coordinate_conversion = xr.open_dataset(
             product_urlpath,
-            engine="sentinel-1",  # type: ignore
+            engine="sentinel-1",
             group=f"{measurement_group}/coordinate_conversion",
             **kwargs,
         )
