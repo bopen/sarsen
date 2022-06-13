@@ -1,0 +1,28 @@
+channels:
+- conda-forge
+dependencies:
+- attrs
+- bottleneck
+- click
+- dask
+- flox
+- fsspec
+- make
+- mdformat
+- mypy
+- nomkl
+- numexpr
+- numpy >= 1.22.0
+- pip
+- pytest
+- pytest-cov
+- rasterio >= 1.2.4
+- rioxarray
+- scipy
+- typer
+- types-setuptools
+- xarray-sentinel >= 0.9.0
+- xmlschema
+- pip:
+  - mdformat-gfm
+  - git+https://github.com/pydata/xarray.git
