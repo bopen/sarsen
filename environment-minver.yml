@@ -12,16 +12,16 @@ dependencies:
 - mypy
 - nomkl
 - numexpr
-- numpy >= 1.22.0
+- numpy == 1.22.0
 - pip
 - pytest
 - pytest-cov
-- rasterio >= 1.2.4
+- rasterio == 1.2.4
 - rioxarray
 - scipy
 - typer
 - types-setuptools
-- xarray-sentinel >= 0.9.0
+- xarray-sentinel == 0.9.0
 - xmlschema
 - pip:
   - mdformat-gfm
