@@ -1,9 +1,12 @@
+import logging
 import typing as T
 
 import numpy as np
 import numpy.typing as npt
 import xarray as xr
 from rasterio import warp
+
+LOGGER = logging.getLogger(__name__)
 
 # Earth-Centered, Earth-Fixed Coordinate Reference System used to express satellite orbit
 # https://en.wikipedia.org/wiki/Earth-centered,_Earth-fixed_coordinate_system
@@ -41,13 +44,24 @@ def transform_dem_3d(
 ) -> xr.DataArray:
     if source_crs is None:
         source_crs = dem_3d.rio.crs
-    x, y, z = warp.transform(
-        source_crs,
-        target_crs,
-        dem_3d.sel({dim: 0}).values.flat,
-        dem_3d.sel({dim: 1}).values.flat,
-        dem_3d.sel({dim: 2}).values.flat,
-    )
+    try:
+        x, y, z = warp.transform(
+            source_crs,
+            target_crs,
+            dem_3d.sel({dim: 0}).values.flat,
+            dem_3d.sel({dim: 1}).values.flat,
+            dem_3d.sel({dim: 2}).values.flat,
+        )
+    except Exception:
+        # HACK: the very first call to warp.transform sometimes fails
+        LOGGER.warn("rasterio.warp.transform failed, retrying...")
+        x, y, z = warp.transform(
+            source_crs,
+            target_crs,
+            dem_3d.sel({dim: 0}).values.flat,
+            dem_3d.sel({dim: 1}).values.flat,
+            dem_3d.sel({dim: 2}).values.flat,
+        )
     dem_3d_crs: xr.DataArray = xr.zeros_like(dem_3d)
     shape = dem_3d_crs.loc[{dim: 0}].shape
     dem_3d_crs.loc[{dim: 0}] = np.reshape(x, shape)
@@ -56,14 +70,12 @@ def transform_dem_3d(
     return dem_3d_crs
 
 
-def convert_to_dem_ecef(dem_raster: xr.DataArray) -> xr.DataArray:
+def convert_to_dem_ecef(dem_raster: xr.DataArray, **kwargs: T.Any) -> xr.DataArray:
     dem_3d = convert_to_dem_3d(dem_raster)
-    return transform_dem_3d(dem_3d, target_crs=ECEF_CRS)
+    return transform_dem_3d(dem_3d, **kwargs)
 
 
-def compute_dem_oriented_area(
-    dem_ecef: xr.DataArray,
-) -> xr.DataArray:
+def compute_dem_oriented_area(dem_ecef: xr.DataArray) -> xr.DataArray:
     x_corners: npt.ArrayLike = np.concatenate(
         [
             [dem_ecef.x[0] + (dem_ecef.x[0] - dem_ecef.x[1]) / 2],
