@@ -1,39 +1,24 @@
-ENVIRONMENT := SARSEN
-COV_REPORT := html
+PROJECT := sarsen
 CONDA := conda
-CONDAFLAGS := -n $(ENVIRONMENT)
+CONDAFLAGS :=
+COV_REPORT := html
 
-default: fix-code-style unit-test code-quality
+default: qa test type-check
 
-fix-code-style:
-	black .
-	isort .
-	mdformat .
+qa:
+	pre-commit run --all-files
 
-test: unit-test  # doc-test
+test:
+	python -m pytest -vv --cov=. --cov-report=$(COV_REPORT)
 
-unit-test:
-	python -m pytest -v --cov=. --cov-report=$(COV_REPORT) tests/
+type-check:
+	python -m mypy --strict .
 
 doc-test:
 	python -m pytest -v README.md
 
-code-quality:
-	flake8 . --max-complexity=11 --max-line-length=127 --extend-ignore E203
-	mypy --strict .
-
-code-style:
-	black --check .
-	isort --check .
-	mdformat --check .
-
-# deploy
-
-conda-env-create:
-	$(CONDA) env create $(CONDAFLAGS) -f environment-ci.yml
-
 conda-env-update:
-	$(CONDA) env update $(CONDAFLAGS) -f environment-ci.yml
+	$(CONDA) env update $(CONDAFLAGS) -f environment.yml
 
 conda-env-update-all: conda-env-update
 	$(CONDA) env update $(CONDAFLAGS) -f environment-dev.yml

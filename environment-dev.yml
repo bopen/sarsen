@@ -1,19 +1,19 @@
 channels:
-  - conda-forge
+- conda-forge
 dependencies:
-  - adlfs
-  - build
-  - gcsfs
-  - gdal
-  - matplotlib
-  - mamba
-  - memory_profiler
-  - notebook
-  - pip
-  - planetary-computer
-  - proj-data
-  - scipy
-  - sentinelsat
-  - stackstac
-  - pip:
-      - elevation
+- adlfs
+- build
+- gcsfs
+- gdal
+- matplotlib
+- mamba
+- memory_profiler
+- notebook
+- pip
+- planetary-computer
+- proj-data
+- scipy
+- sentinelsat
+- stackstac
+- pip:
+  - elevation
