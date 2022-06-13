@@ -14,7 +14,10 @@ dependencies:
   - mdformat
   - mypy
   - nomkl
+<<<<<<< HEAD
   - numba
+=======
+>>>>>>> origin/main
   - numexpr
   - numpy >= 1.22.0
   - pip
