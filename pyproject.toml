@@ -6,12 +6,8 @@ requires = [
     "setuptools_scm_git_archive",
 ]
 
-[tool.setuptools_scm]
-write_to = "sarsen/version.py"
-write_to_template = '''
-# don't change, don't track in version control
-__version__ = "{version}"
-'''
+[mypy]
+plugins = "numpy.typing.mypy_plugin"
 
 [tool.coverage.run]
 branch = true
@@ -19,5 +15,9 @@ branch = true
 [tool.isort]
 profile = "black"
 
-[mypy]
-plugins = "numpy.typing.mypy_plugin"
+[tool.setuptools_scm]
+write_to = "sarsen/version.py"
+write_to_template = '''
+# don't change, don't track in version control
+__version__ = "{version}"
+'''
