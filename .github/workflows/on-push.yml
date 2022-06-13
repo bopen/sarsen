@@ -83,6 +83,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.8', '3.10']
+        extra: ['']
         include:
         - python-version: '3.8'
           extra: -minver
