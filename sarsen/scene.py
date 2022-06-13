@@ -15,7 +15,7 @@ ECEF_CRS = "EPSG:4978"
 
 
 def open_dem_raster(dem_urlpath: str, **kwargs: T.Any) -> xr.DataArray:
-    dem_raster = xr.open_dataarray(dem_urlpath, engine="rasterio", **kwargs)  # type: ignore
+    dem_raster = xr.open_dataarray(dem_urlpath, engine="rasterio", **kwargs)
     if dem_raster.y.diff("y").values[0] < 0:
         dem_raster = dem_raster.isel(y=slice(None, None, -1))
     dem_raster.attrs["long_name"] = "elevation"
@@ -32,7 +32,7 @@ def convert_to_dem_3d(dem_raster: xr.DataArray, dim: str = "axis") -> xr.DataArr
     if dem_3d.chunks is not None:
         dem_3d = dem_3d.chunk({dim: None})
 
-    dem_3d = dem_3d.assign_coords({dim: [0, 1, 2]})  # type: ignore
+    dem_3d = dem_3d.assign_coords({dim: [0, 1, 2]})
     return dem_3d.rename("dem_3d")
 
 
@@ -99,10 +99,10 @@ def compute_dem_oriented_area(dem_ecef: xr.DataArray) -> xr.DataArray:
     dx = dem_ecef_corners.diff("x", 1)
     dy = dem_ecef_corners.diff("y", 1)
 
-    dx1 = dx.isel(y=slice(1, None)).assign_coords(dem_ecef.coords)  # type: ignore
-    dy1 = dy.isel(x=slice(1, None)).assign_coords(dem_ecef.coords)  # type: ignore
-    dx2 = dx.isel(y=slice(None, -1)).assign_coords(dem_ecef.coords)  # type: ignore
-    dy2 = dy.isel(x=slice(None, -1)).assign_coords(dem_ecef.coords)  # type: ignore
+    dx1 = dx.isel(y=slice(1, None)).assign_coords(dem_ecef.coords)
+    dy1 = dy.isel(x=slice(1, None)).assign_coords(dem_ecef.coords)
+    dx2 = dx.isel(y=slice(None, -1)).assign_coords(dem_ecef.coords)
+    dy2 = dy.isel(x=slice(None, -1)).assign_coords(dem_ecef.coords)
 
     cross_1 = xr.cross(dx1, dy1, dim="axis") / 2
     sign_1 = np.sign(
