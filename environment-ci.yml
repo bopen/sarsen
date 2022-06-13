@@ -3,15 +3,18 @@ channels:
 dependencies:
   - attrs
   - black = 22.3.0
+  - bottleneck
   - click
   - dask
   - flake8
+  - flox
   - fsspec
   - isort
   - make
   - mdformat
   - mypy
   - nomkl
+  - numexpr
   - numpy >= 1.22.0
   - pip
   - pytest
