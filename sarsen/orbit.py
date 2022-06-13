@@ -44,7 +44,7 @@ class OrbitPolyfitIterpolator:
         if interval is None:
             interval = (time.values[0], time.values[-1])
 
-        data = position.assign_coords({dim: time - epoch})  # type: ignore
+        data = position.assign_coords({dim: time - epoch})
         polyfit_results = data.polyfit(dim=dim, deg=deg)
         # TODO: raise if the fit is not good enough
 
@@ -71,7 +71,7 @@ class OrbitPolyfitIterpolator:
 
         position: xr.DataArray
         position = xr.polyval(time - self.epoch, self.coefficients)  # type: ignore
-        position = position.assign_coords({time.name: time})  # type: ignore
+        position = position.assign_coords({time.name: time})
         return position.rename("position")
 
     def velocity(
@@ -85,5 +85,5 @@ class OrbitPolyfitIterpolator:
 
         velocity: xr.DataArray
         velocity = xr.polyval(time - self.epoch, velocity_coefficients)  # type: ignore
-        velocity = velocity.assign_coords({time.name: time})  # type: ignore
+        velocity = velocity.assign_coords({time.name: time})
         return velocity.rename("velocity")

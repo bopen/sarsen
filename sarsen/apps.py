@@ -18,7 +18,7 @@ def open_dataset_autodetect(
 ) -> T.Tuple[xr.Dataset, T.Dict[str, T.Any]]:
     try:
         ds = xr.open_dataset(
-            product_urlpath, engine="sentinel-1", group=group, chunks=chunks, **kwargs  # type: ignore
+            product_urlpath, engine="sentinel-1", group=group, chunks=chunks, **kwargs
         )
     except FileNotFoundError:
         # re-try with Planetary Computer option
@@ -26,7 +26,7 @@ def open_dataset_autodetect(
             "override_product_files"
         ] = "{dirname}/{prefix}{swath}-{polarization}{ext}"
         ds = xr.open_dataset(
-            product_urlpath, engine="sentinel-1", group=group, chunks=chunks, **kwargs  # type: ignore
+            product_urlpath, engine="sentinel-1", group=group, chunks=chunks, **kwargs
         )
     return ds, kwargs
 
@@ -36,7 +36,7 @@ def product_info(
     **kwargs: T.Any,
 ) -> T.Dict[str, T.Any]:
     """Get information about the Sentinel-1 product."""
-    root_ds = xr.open_dataset(product_urlpath, engine="sentinel-1", **kwargs)  # type: ignore
+    root_ds = xr.open_dataset(product_urlpath, engine="sentinel-1", **kwargs)
 
     measurement_groups = [g for g in root_ds.attrs["subgroups"] if g.count("/") == 1]
 
@@ -97,7 +97,7 @@ def interpolate_measurement(
             azimuth_time=multilook[0], slant_range_time=multilook[1]
         ).mean()
 
-    geocoded = image.interp(method=interp_method, **interp_kwargs)
+    geocoded = image.interp(method=interp_method, **interp_kwargs)  # type: ignore
 
     return geocoded
 
@@ -166,9 +166,13 @@ def terrain_correction(
 
     dem_raster = scene.open_dem_raster(dem_urlpath, **open_dem_raster_kwargs)
 
-    orbit_ecef = xr.open_dataset(product_urlpath, engine="sentinel-1", group=orbit_group, **kwargs)  # type: ignore
+    orbit_ecef = xr.open_dataset(
+        product_urlpath, engine="sentinel-1", group=orbit_group, **kwargs
+    )
     position_ecef = orbit_ecef.position
-    calibration = xr.open_dataset(product_urlpath, engine="sentinel-1", group=calibration_group, **kwargs)  # type: ignore
+    calibration = xr.open_dataset(
+        product_urlpath, engine="sentinel-1", group=calibration_group, **kwargs
+    )
     beta_nought_lut = calibration.betaNought
 
     if measurement.attrs["product_type"] == "GRD":
@@ -195,6 +199,7 @@ def terrain_correction(
 
     logger.info("interpolate image")
     if measurement.attrs["product_type"] == "GRD":
+        assert coordinate_conversion is not None
         ground_range = xarray_sentinel.slant_range_time_to_ground_range(
             acquisition.azimuth_time,
             acquisition.slant_range_time,

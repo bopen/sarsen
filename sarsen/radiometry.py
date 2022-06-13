@@ -20,7 +20,7 @@ def sum_weights(
 
     geocoded = initial_weights.assign_coords(
         slant_range_index=slant_range_index, azimuth_index=azimuth_index
-    )  # type: ignore
+    )
 
     stacked_geocoded = geocoded.stack(z=("y", "x")).set_index(
         z=("azimuth_index", "slant_range_index")
