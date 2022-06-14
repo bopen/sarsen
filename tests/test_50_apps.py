@@ -34,7 +34,6 @@ def test_terrain_correction_gtc(
         group,
         str(DEM_RASTER),
         output_urlpath=out,
-        chunks={"slant_range_time": 1000, "azimuth_time": 1000},
     )
 
     assert isinstance(res, xr.DataArray)
@@ -53,7 +52,6 @@ def test_terrain_correction_fast_rtc(
         str(DEM_RASTER),
         correct_radiometry="gamma_nearest",
         output_urlpath=out,
-        chunks={"slant_range_time": 1000, "azimuth_time": 1000},
     )
 
     assert isinstance(res, xr.DataArray)
@@ -72,7 +70,61 @@ def test_terrain_correction_rtc(
         str(DEM_RASTER),
         correct_radiometry="gamma_bilinear",
         output_urlpath=out,
-        chunks={"slant_range_time": 1000, "azimuth_time": 1000},
+    )
+
+    assert isinstance(res, xr.DataArray)
+
+
+@pytest.mark.parametrize("data_path,group", zip(DATA_PATHS, GROUPS))
+@pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="too much memory")
+def test_terrain_correction_gtc_dask(
+    tmpdir: py.path.local, data_path: pathlib.Path, group: str
+) -> None:
+    out = str(tmpdir.join("GTC.tif"))
+    res = apps.terrain_correction(
+        str(data_path),
+        group,
+        str(DEM_RASTER),
+        output_urlpath=out,
+        chunks=1024,
+    )
+
+    assert isinstance(res, xr.DataArray)
+
+
+@pytest.mark.parametrize("data_path,group", zip(DATA_PATHS, GROUPS))
+@pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="too much memory")
+def test_terrain_correction_fast_rtc_dask(
+    tmpdir: py.path.local, data_path: pathlib.Path, group: str
+) -> None:
+    out = str(tmpdir.join("RTC.tif"))
+
+    res = apps.terrain_correction(
+        str(data_path),
+        group,
+        str(DEM_RASTER),
+        correct_radiometry="gamma_nearest",
+        output_urlpath=out,
+        chunks=1024,
+    )
+
+    assert isinstance(res, xr.DataArray)
+
+
+@pytest.mark.parametrize("data_path,group", zip(DATA_PATHS, GROUPS))
+@pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="too much memory")
+def test_terrain_correction_rtc_dask(
+    tmpdir: py.path.local, data_path: pathlib.Path, group: str
+) -> None:
+    out = str(tmpdir.join("RTC.tif"))
+
+    res = apps.terrain_correction(
+        str(data_path),
+        group,
+        str(DEM_RASTER),
+        correct_radiometry="gamma_bilinear",
+        output_urlpath=out,
+        chunks=1024,
     )
 
     assert isinstance(res, xr.DataArray)
