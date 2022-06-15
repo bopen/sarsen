@@ -41,7 +41,7 @@ def rtc(
         product_urlpath,
         measurement_group,
         dem_urlpath,
-        correct_radiometry="nearest",
+        correct_radiometry="gamma_nearest",
         output_urlpath=output_urlpath,
         grouping_area_factor=grouping_area_factor,
     )
