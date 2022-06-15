@@ -205,8 +205,10 @@ def terrain_correction(
             acquisition.slant_range_time,
             coordinate_conversion,
         )
+        slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
         interp_kwargs = {"ground_range": ground_range}
     elif measurement.attrs["product_type"] == "SLC":
+        slant_range_time0 = measurement.slant_range_time.values[0]
         interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
         if measurement.attrs["mode"] == "IW":
             beta_nought = xarray_sentinel.mosaic_slc_iw(beta_nought)
@@ -226,7 +228,10 @@ def terrain_correction(
     if correct_radiometry is not None:
         logger.info("correct radiometry")
         grid_parameters = radiometry.azimuth_slant_range_grid(
-            measurement, coordinate_conversion, grouping_area_factor
+            measurement.attrs,
+            slant_range_time0,
+            measurement.azimuth_time.values[0],
+            grouping_area_factor,
         )
 
         if correct_radiometry == "gamma_bilinear":
