@@ -127,7 +127,6 @@ def terrain_correction_block(
             measurement_attrs,
             slant_range_time0,
             azimuth_time0,
-            measurement_attrs["product_type"] == "GRD",
             grouping_area_factor,
         )
 
