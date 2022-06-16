@@ -1,3 +1,4 @@
+import json
 import typing as T
 
 import typer
@@ -23,9 +24,21 @@ def gtc(
     measurement_group: str,
     dem_urlpath: str,
     output_urlpath: str = "GTC.tif",
+    enable_dask_distributed: bool = False,
+    client_kwargs_json: str = '{"processes": false}',
+    chunks: T.Optional[int] = 1024,
 ) -> None:
+    """Generate a geometrically terrain corrected (GTC) image from Sentinel-1 product."""
+    client_kwargs = json.loads(client_kwargs_json)
+    chunks = chunks if chunks > 0 else None
     apps.terrain_correction(
-        product_urlpath, measurement_group, dem_urlpath, output_urlpath=output_urlpath
+        product_urlpath,
+        measurement_group,
+        dem_urlpath,
+        output_urlpath=output_urlpath,
+        enable_dask_distributed=enable_dask_distributed,
+        client_kwargs=client_kwargs,
+        chunks=chunks,
     )
 
 
@@ -35,8 +48,14 @@ def rtc(
     measurement_group: str,
     dem_urlpath: str,
     output_urlpath: str = "RTC.tif",
-    grouping_area_factor: T.Tuple[float, float] = (3.0, 13.0),
+    enable_dask_distributed: bool = False,
+    client_kwargs_json: str = '{"processes": false}',
+    chunks: T.Optional[int] = 0,
+    grouping_area_factor: T.Tuple[float, float] = (3.0, 3.0),
 ) -> None:
+    """Generate a radiometrically terrain corrected (RTC) image from Sentinel-1 product."""
+    client_kwargs = json.loads(client_kwargs_json)
+    chunks = chunks if chunks > 0 else None
     apps.terrain_correction(
         product_urlpath,
         measurement_group,
@@ -44,6 +63,9 @@ def rtc(
         correct_radiometry="gamma_nearest",
         output_urlpath=output_urlpath,
         grouping_area_factor=grouping_area_factor,
+        enable_dask_distributed=enable_dask_distributed,
+        client_kwargs=client_kwargs,
+        chunks=chunks,
     )
 
 

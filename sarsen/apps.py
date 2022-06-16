@@ -112,9 +112,11 @@ def terrain_correction(
     correct_radiometry: T.Optional[str] = None,
     interp_method: str = "nearest",
     multilook: T.Optional[T.Tuple[int, int]] = None,
-    grouping_area_factor: T.Tuple[float, float] = (3.0, 13.0),
+    grouping_area_factor: T.Tuple[float, float] = (3.0, 3.0),
     open_dem_raster_kwargs: T.Dict[str, T.Any] = {},
-    chunks: T.Optional[T.Union[int, T.Dict[str, int]]] = None,
+    chunks: T.Optional[int] = 1024,
+    enable_dask_distributed: bool = False,
+    client_kwargs: T.Dict[str, T.Any] = {"processes": False},
     **kwargs: T.Any,
 ) -> xr.DataArray:
     """Apply the terrain-correction to sentinel-1 SLC and GRD products.
@@ -153,6 +155,14 @@ def terrain_correction(
 
     orbit_group = orbit_group or f"{measurement_group}/orbit"
     calibration_group = calibration_group or f"{measurement_group}/calibration"
+
+    output_chunks = chunks if chunks is not None else 512
+
+    if enable_dask_distributed:
+        from dask.distributed import Client
+
+        client = Client(**client_kwargs)
+        print(f"Dask distributed dashboard at: {client.dashboard_link}")
 
     logger.info(f"open data {product_urlpath!r}")
 
@@ -256,8 +266,8 @@ def terrain_correction(
         output_urlpath,
         dtype=np.float32,
         tiled=True,
-        blockxsize=512,
-        blockysize=512,
+        blockxsize=output_chunks,
+        blockysize=output_chunks,
         compress="ZSTD",
         num_threads="ALL_CPUS",
     )
