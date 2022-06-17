@@ -95,18 +95,6 @@ def simulate_acquisition(
     return acquisition
 
 
-def interpolate_measurement(
-    image: xr.DataArray,
-    interp_method: str = "nearest",
-    **interp_kwargs: T.Any,
-) -> xr.DataArray:
-    """Interpolate the input image with optional multilook."""
-
-    geocoded = image.interp(method=interp_method, **interp_kwargs)  # type: ignore
-
-    return geocoded
-
-
 def terrain_correction(
     product_urlpath: str,
     measurement_group: str,
@@ -116,7 +104,6 @@ def terrain_correction(
     output_urlpath: str = "GTC.tif",
     correct_radiometry: T.Optional[str] = None,
     interp_method: str = "nearest",
-    multilook: T.Optional[T.Tuple[int, int]] = None,
     grouping_area_factor: T.Tuple[float, float] = (3.0, 3.0),
     open_dem_raster_kwargs: T.Dict[str, T.Any] = {},
     chunks: T.Optional[int] = 1024,
@@ -247,7 +234,7 @@ def terrain_correction(
         },
         template=acquisition_template,
     )
-    acquisition = acquisition.persist()
+    # acquisition = acquisition.persist()
 
     logger.info("calibrate radiometry")
 
@@ -266,13 +253,10 @@ def terrain_correction(
         raise ValueError(
             f"unsupported product_type {measurement.attrs['product_type']}"
         )
+    beta_nought = beta_nought.drop_vars(["pixel", "line"])
 
-    geocoded = interpolate_measurement(
-        beta_nought,
-        multilook=multilook,
-        azimuth_time=acquisition.azimuth_time,
-        interp_method=interp_method,
-        **interp_kwargs,
+    geocoded = beta_nought.interp(
+        method=interp_method, azimuth_time=acquisition.azimuth_time, **interp_kwargs
     )
     beta_nought_attrs = beta_nought.attrs
 
