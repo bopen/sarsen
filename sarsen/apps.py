@@ -68,18 +68,24 @@ def product_info(
 def simulate_acquisition(
     dem_ecef: xr.DataArray,
     position_ecef: xr.DataArray,
+    coordinate_conversion: T.Optional[xr.Dataset],
 ) -> xr.Dataset:
     """Compute the image coordinates of the DEM given the satellite orbit."""
-
-    logger.info("interpolate orbit")
 
     orbit_interpolator = orbit.OrbitPolyfitIterpolator.from_position(position_ecef)
     position_ecef = orbit_interpolator.position()
     velocity_ecef = orbit_interpolator.velocity()
 
-    logger.info("geocode")
-
     acquisition = geocoding.backward_geocode(dem_ecef, position_ecef, velocity_ecef)
+
+    if coordinate_conversion is not None:
+        ground_range = xarray_sentinel.slant_range_time_to_ground_range(
+            acquisition.azimuth_time,
+            acquisition.slant_range_time,
+            coordinate_conversion,
+        )
+        acquisition["ground_range"] = ground_range.drop_vars("azimuth_time")
+        acquisition = acquisition.drop_vars("slant_range_time")
 
     return acquisition
 
@@ -158,23 +164,30 @@ def terrain_correction(
 
     output_chunks = chunks if chunks is not None else 512
 
+    to_raster_kwargs = {}
     if enable_dask_distributed:
-        from dask.distributed import Client
+        from dask.distributed import Client, Lock
 
         client = Client(**client_kwargs)
+        to_raster_kwargs["lock"] = Lock("rio", client=client)
+        to_raster_kwargs["compute"] = False
         print(f"Dask distributed dashboard at: {client.dashboard_link}")
+    else:
+        lock = None
 
     logger.info(f"open data {product_urlpath!r}")
 
     measurement_ds, kwargs = open_dataset_autodetect(
         product_urlpath,
         group=measurement_group,
-        chunks=chunks,
+        chunks=1024,
         **kwargs,  #  type: ignore
     )
     measurement = measurement_ds["measurement"]
 
-    dem_raster = scene.open_dem_raster(dem_urlpath, **open_dem_raster_kwargs)
+    dem_raster = scene.open_dem_raster(
+        dem_urlpath, chunks=chunks, **open_dem_raster_kwargs
+    )
 
     orbit_ecef = xr.open_dataset(
         product_urlpath, engine="sentinel-1", group=orbit_group, **kwargs
@@ -195,13 +208,44 @@ def terrain_correction(
     else:
         coordinate_conversion = None
 
+    logger.info("make templates")
+
+    template_raster = dem_raster.drop_vars(dem_raster.rio.grid_mapping)
+    template_3d = xr.concat(
+        [template_raster, template_raster, template_raster],
+        dim="axis",
+        coords="minimal",
+    )
+    template_3d = template_3d.assign_coords({"axis": [0, 1, 2]}).chunk({"axis": 3})
+
     logger.info("pre-process DEM")
 
-    dem_ecef = scene.convert_to_dem_ecef(dem_raster)
+    dem_ecef = xr.map_blocks(scene.convert_to_dem_ecef, dem_raster)
+    dem_ecef = dem_ecef.drop_vars(dem_ecef.rio.grid_mapping)
 
     logger.info("simulate acquisition")
 
-    acquisition = simulate_acquisition(dem_ecef, position_ecef)
+    acquisition_template = xr.Dataset(
+        data_vars={
+            "dem_direction": template_3d,
+            "azimuth_time": (template_raster * 0).astype("datetime64[ns]"),
+        }
+    )
+    if coordinate_conversion is None:
+        acquisition_template["slant_range_time"] = template_raster
+    else:
+        acquisition_template["ground_range"] = template_raster
+
+    acquisition = xr.map_blocks(
+        simulate_acquisition,
+        dem_ecef,
+        kwargs={
+            "position_ecef": position_ecef,
+            "coordinate_conversion": coordinate_conversion,
+        },
+        template=acquisition_template,
+    )
+    acquisition = acquisition.persist()
 
     logger.info("calibrate radiometry")
 
@@ -209,14 +253,8 @@ def terrain_correction(
 
     logger.info("interpolate image")
     if measurement.attrs["product_type"] == "GRD":
-        assert coordinate_conversion is not None
-        ground_range = xarray_sentinel.slant_range_time_to_ground_range(
-            acquisition.azimuth_time,
-            acquisition.slant_range_time,
-            coordinate_conversion,
-        )
         slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
-        interp_kwargs = {"ground_range": ground_range}
+        interp_kwargs = {"ground_range": acquisition.ground_range}
     elif measurement.attrs["product_type"] == "SLC":
         slant_range_time0 = measurement.slant_range_time.values[0]
         interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
@@ -250,19 +288,21 @@ def terrain_correction(
             gamma_weights = radiometry.gamma_weights_nearest
 
         weights = gamma_weights(
-            dem_ecef.compute(),
-            acquisition.compute(),
+            dem_ecef.load(),
+            acquisition,
             **grid_parameters,
         )
         geocoded = geocoded / weights
 
     logger.info("save output")
 
+    del acquisition
+
     geocoded.attrs.update(beta_nought.attrs)
     geocoded.x.attrs.update(dem_raster.x.attrs)
     geocoded.y.attrs.update(dem_raster.y.attrs)
     geocoded.rio.set_crs(dem_raster.rio.crs)
-    geocoded.rio.to_raster(
+    maybe_delayed = geocoded.rio.to_raster(
         output_urlpath,
         dtype=np.float32,
         tiled=True,
@@ -270,6 +310,11 @@ def terrain_correction(
         blockysize=output_chunks,
         compress="ZSTD",
         num_threads="ALL_CPUS",
+        **to_raster_kwargs,
     )
+
+    if enable_dask_distributed:
+        maybe_delayed.compute()
+        client.close()
 
     return geocoded
