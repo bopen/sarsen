@@ -1,9 +1,11 @@
 import json
+import logging
 import typing as T
 
 import typer
 
 from . import apps
+
 
 app = typer.Typer()
 
@@ -31,6 +33,7 @@ def gtc(
     """Generate a geometrically terrain corrected (GTC) image from Sentinel-1 product."""
     client_kwargs = json.loads(client_kwargs_json)
     chunks = chunks if chunks > 0 else None
+    logging.basicConfig(level=logging.INFO)
     apps.terrain_correction(
         product_urlpath,
         measurement_group,
@@ -56,6 +59,7 @@ def rtc(
     """Generate a radiometrically terrain corrected (RTC) image from Sentinel-1 product."""
     client_kwargs = json.loads(client_kwargs_json)
     chunks = chunks if chunks > 0 else None
+    logging.basicConfig(level=logging.INFO)
     apps.terrain_correction(
         product_urlpath,
         measurement_group,
