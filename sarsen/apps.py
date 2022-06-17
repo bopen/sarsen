@@ -2,6 +2,7 @@ import logging
 import typing as T
 
 import numpy as np
+import rioxarray
 import xarray as xr
 import xarray_sentinel
 
@@ -88,22 +89,18 @@ def simulate_acquisition(
         acquisition["ground_range"] = ground_range.drop_vars("azimuth_time")
         if correct_radiometry is None:
             acquisition = acquisition.drop_vars("slant_range_time")
+    if correct_radiometry is None:
+        acquisition = acquisition.drop_vars(["dem_direction", "axis"])
 
     return acquisition
 
 
 def interpolate_measurement(
     image: xr.DataArray,
-    multilook: T.Optional[T.Tuple[int, int]] = None,
     interp_method: str = "nearest",
     **interp_kwargs: T.Any,
 ) -> xr.DataArray:
     """Interpolate the input image with optional multilook."""
-
-    if multilook:
-        image = image.rolling(
-            azimuth_time=multilook[0], slant_range_time=multilook[1]
-        ).mean()
 
     geocoded = image.interp(method=interp_method, **interp_kwargs)  # type: ignore
 
@@ -154,6 +151,8 @@ def terrain_correction(
     to open the `dem_urlpath`
     :param kwargs: additional keyword arguments passed on to ``xarray.open_dataset`` to open the `product_urlpath`
     """
+    assert rioxarray.__version__
+
     allowed_correct_radiometry = [None, "gamma_bilinear", "gamma_nearest"]
     if correct_radiometry not in allowed_correct_radiometry:
         raise ValueError(
@@ -228,7 +227,6 @@ def terrain_correction(
     acquisition_template = xr.Dataset(
         data_vars={
             "slant_range_time": template_raster,
-            "dem_direction": template_3d,
             "azimuth_time": (template_raster * 0).astype("datetime64[ns]"),
         }
     )
@@ -236,6 +234,8 @@ def terrain_correction(
         acquisition_template["ground_range"] = template_raster
         if correct_radiometry is None:
             acquisition_template = acquisition_template.drop_vars("slant_range_time")
+    if correct_radiometry is not None:
+        acquisition_template["dem_direction"] = template_3d
 
     acquisition = xr.map_blocks(
         simulate_acquisition,
@@ -274,6 +274,9 @@ def terrain_correction(
         interp_method=interp_method,
         **interp_kwargs,
     )
+    beta_nought_attrs = beta_nought.attrs
+
+    del beta_nought
 
     if correct_radiometry is not None:
         logger.info("correct radiometry")
@@ -300,7 +303,7 @@ def terrain_correction(
 
     del acquisition
 
-    geocoded.attrs.update(beta_nought.attrs)
+    geocoded.attrs.update(beta_nought_attrs)
     geocoded.x.attrs.update(dem_raster.x.attrs)
     geocoded.y.attrs.update(dem_raster.y.attrs)
     geocoded.rio.set_crs(dem_raster.rio.crs)
@@ -316,6 +319,8 @@ def terrain_correction(
     )
 
     if enable_dask_distributed:
+        logger.info("do save output")
+
         maybe_delayed.compute()
         client.close()
 
