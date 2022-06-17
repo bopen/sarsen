@@ -69,6 +69,7 @@ def simulate_acquisition(
     dem_ecef: xr.DataArray,
     position_ecef: xr.DataArray,
     coordinate_conversion: T.Optional[xr.Dataset],
+    correct_radiometry: T.Optional[str],
 ) -> xr.Dataset:
     """Compute the image coordinates of the DEM given the satellite orbit."""
 
@@ -85,7 +86,8 @@ def simulate_acquisition(
             coordinate_conversion,
         )
         acquisition["ground_range"] = ground_range.drop_vars("azimuth_time")
-        acquisition = acquisition.drop_vars("slant_range_time")
+        if correct_radiometry is None:
+            acquisition = acquisition.drop_vars("slant_range_time")
 
     return acquisition
 
@@ -172,8 +174,6 @@ def terrain_correction(
         to_raster_kwargs["lock"] = Lock("rio", client=client)
         to_raster_kwargs["compute"] = False
         print(f"Dask distributed dashboard at: {client.dashboard_link}")
-    else:
-        lock = None
 
     logger.info(f"open data {product_urlpath!r}")
 
@@ -227,14 +227,15 @@ def terrain_correction(
 
     acquisition_template = xr.Dataset(
         data_vars={
+            "slant_range_time": template_raster,
             "dem_direction": template_3d,
             "azimuth_time": (template_raster * 0).astype("datetime64[ns]"),
         }
     )
-    if coordinate_conversion is None:
-        acquisition_template["slant_range_time"] = template_raster
-    else:
+    if coordinate_conversion is not None:
         acquisition_template["ground_range"] = template_raster
+        if correct_radiometry is None:
+            acquisition_template = acquisition_template.drop_vars("slant_range_time")
 
     acquisition = xr.map_blocks(
         simulate_acquisition,
@@ -242,6 +243,7 @@ def terrain_correction(
         kwargs={
             "position_ecef": position_ecef,
             "coordinate_conversion": coordinate_conversion,
+            "correct_radiometry": correct_radiometry,
         },
         template=acquisition_template,
     )

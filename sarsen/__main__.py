@@ -6,7 +6,6 @@ import typer
 
 from . import apps
 
-
 app = typer.Typer()
 
 
