@@ -1,6 +1,7 @@
 import logging
 import typing as T
 
+import flox.xarray
 import numpy as np
 import xarray as xr
 
@@ -17,40 +18,29 @@ def sum_weights(
     slant_range_index: xr.DataArray,
     multilook: T.Optional[T.Tuple[int, int]] = None,
 ) -> xr.DataArray:
-
     geocoded = initial_weights.assign_coords(
         slant_range_index=slant_range_index, azimuth_index=azimuth_index
     )
 
-    stacked_geocoded = geocoded.stack(z=("y", "x")).set_index(
-        z=("azimuth_index", "slant_range_index")
+    flat_sum: xr.DataArray = flox.xarray.xarray_reduce(
+        geocoded,
+        geocoded.slant_range_index,
+        geocoded.azimuth_index,
+        func="sum",
+        method="map-reduce",
     )
-
-    grouped = stacked_geocoded.groupby("z")
-
-    flat_sum = grouped.sum()
 
     if multilook:
-        flat_sum = (
-            flat_sum.unstack("z")
-            .rolling(
-                azimuth_index=multilook[0],
-                slant_range_index=multilook[1],
-                center=True,
-                min_periods=multilook[0] * multilook[1] // 2 + 1,
-            )
-            .mean()
-            .stack(z=("azimuth_index", "slant_range_index"))
-        )
+        flat_sum = flat_sum.rolling(
+            azimuth_index=multilook[0],
+            slant_range_index=multilook[1],
+            center=True,
+            min_periods=multilook[0] * multilook[1] // 2 + 1,
+        ).mean()
 
-    stacked_sum = flat_sum.sel(z=stacked_geocoded.indexes["z"]).assign_coords(
-        stacked_geocoded.coords
-    )
-
-    weights_sum: xr.DataArray = (
-        stacked_sum.reset_index(["azimuth_index", "slant_range_index"], drop=True)
-        .set_index(z=("y", "x"))
-        .unstack("z")
+    weights_sum = flat_sum.sel(
+        slant_range_index=slant_range_index,
+        azimuth_index=azimuth_index,
     )
 
     return weights_sum
@@ -161,7 +151,7 @@ def gamma_weights_nearest(
         (dem_coords.slant_range_time - slant_range_time0) / slant_range_time_interval_s
     ).astype(int)
 
-    logger.info("compute gamma areas 1/4")
+    logger.info("compute gamma areas 1/1")
 
     tot_area = sum_weights(
         area,
