@@ -196,8 +196,6 @@ def terrain_correction(
     else:
         coordinate_conversion = None
 
-    logger.info("make templates")
-
     template_raster = dem_raster.drop_vars(dem_raster.rio.grid_mapping)
     template_3d = xr.concat(
         [template_raster, template_raster, template_raster],
@@ -213,8 +211,6 @@ def terrain_correction(
     )
     dem_ecef = dem_ecef.drop_vars(dem_ecef.rio.grid_mapping)
 
-    logger.info("simulate acquisition")
-
     acquisition_template = xr.Dataset(
         data_vars={
             "slant_range_time": template_raster,
@@ -228,6 +224,8 @@ def terrain_correction(
     if correct_radiometry is not None:
         acquisition_template["dem_direction"] = template_3d
 
+    logger.info("simulate acquisition")
+
     acquisition = xr.map_blocks(
         simulate_acquisition,
         dem_ecef,
@@ -239,10 +237,6 @@ def terrain_correction(
         template=acquisition_template,
     )
 
-    logger.info("calibrate radiometry")
-
-    beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
-
     if measurement.attrs["product_type"] == "GRD":
         assert coordinate_conversion is not None
         slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
@@ -251,15 +245,14 @@ def terrain_correction(
         slant_range_time0 = measurement.slant_range_time.values[0]
         interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
         if measurement.attrs["mode"] == "IW":
-            beta_nought = xarray_sentinel.mosaic_slc_iw(beta_nought)
+            measurement = xarray_sentinel.mosaic_slc_iw(measurement)
     else:
         raise ValueError(
             f"unsupported product_type {measurement.attrs['product_type']}"
         )
-    beta_nought = beta_nought.drop_vars(["pixel", "line"])
 
     if correct_radiometry is not None:
-        logger.info("correct radiometry")
+        logger.info("simulate radiometry")
         grid_parameters = radiometry.azimuth_slant_range_grid(
             measurement.attrs,
             slant_range_time0,
@@ -274,33 +267,35 @@ def terrain_correction(
 
         acquisition = acquisition.persist()
 
-        with mock.patch(
-            "xarray.core.missing._localize", lambda obj, index: (obj, index)
-        ):
+        with mock.patch("xarray.core.missing._localize", lambda o, i: (o, i)):
             weights = gamma_weights(
                 dem_ecef,
                 acquisition,
                 **grid_parameters,
             )
 
-    logger.info("interpolate image")
+    logger.info("calibrate image")
+
+    beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
+    beta_nought = beta_nought.drop_vars(["pixel", "line"])
+
+    logger.info("terrain-correct image")
 
     # HACK: we monkey-patch away an optimisation in xr.DataArray.interp that actually makes
     #   the interpolation much slower when indeces are dask arrays.
-    with mock.patch("xarray.core.missing._localize", lambda obj, index: (obj, index)):
+    with mock.patch("xarray.core.missing._localize", lambda o, i: (o, i)):
         geocoded = beta_nought.interp(
             method=interp_method,  # type: ignore
             azimuth_time=acquisition.azimuth_time,
             **interp_kwargs,
         )
-    beta_nought_attrs = beta_nought.attrs
 
     if correct_radiometry is not None:
         geocoded = geocoded / weights
 
     logger.info("save output")
 
-    geocoded.attrs.update(beta_nought_attrs)
+    geocoded.attrs.update(beta_nought.attrs)
     geocoded.x.attrs.update(dem_raster.x.attrs)
     geocoded.y.attrs.update(dem_raster.y.attrs)
     geocoded.rio.set_crs(dem_raster.rio.crs)
@@ -316,8 +311,6 @@ def terrain_correction(
     )
 
     if enable_dask_distributed:
-        logger.info("do save output")
-
         maybe_delayed.compute()
         client.close()
 
