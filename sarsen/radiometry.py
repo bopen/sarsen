@@ -38,9 +38,10 @@ def sum_weights(
             min_periods=multilook[0] * multilook[1] // 2 + 1,
         ).mean()
 
-    weights_sum = flat_sum.sel(
+    weights_sum = flat_sum.interp(
         slant_range_index=slant_range_index,
         azimuth_index=azimuth_index,
+        method="nearest",
     )
 
     return weights_sum
