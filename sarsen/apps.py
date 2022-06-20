@@ -187,7 +187,7 @@ def terrain_correction(
 
     logger.info("pre-process DEM")
 
-    dem_ecef = scene.convert_to_dem_ecef(dem_raster)
+    dem_ecef = scene.convert_to_dem_ecef(dem_raster, source_crs=dem_raster.rio.crs)
 
     logger.info("simulate acquisition")
 

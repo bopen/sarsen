@@ -58,4 +58,4 @@ def dem_raster() -> xr.DataArray:
 def dem_ecef(dem_raster: xr.DataArray) -> xr.DataArray:
     from sarsen import scene
 
-    return scene.convert_to_dem_ecef(dem_raster)
+    return scene.convert_to_dem_ecef(dem_raster, source_crs=dem_raster.rio.crs)
