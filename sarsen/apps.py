@@ -139,7 +139,8 @@ def terrain_correction(
     to open the `dem_urlpath`
     :param kwargs: additional keyword arguments passed on to ``xarray.open_dataset`` to open the `product_urlpath`
     """
-    assert rioxarray.__version__
+    # rioxarray must be imported explicitly or accesses to `.rio` may fail in dask
+    assert rioxarray.__version__  # type: ignore
 
     allowed_correct_radiometry = [None, "gamma_bilinear", "gamma_nearest"]
     if correct_radiometry not in allowed_correct_radiometry:
@@ -243,6 +244,7 @@ def terrain_correction(
     beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
 
     if measurement.attrs["product_type"] == "GRD":
+        assert coordinate_conversion is not None
         slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
         interp_kwargs = {"ground_range": acquisition.ground_range}
     elif measurement.attrs["product_type"] == "SLC":
@@ -292,7 +294,9 @@ def terrain_correction(
     #   the interpolation much slower when indeces are dask arrays.
     with mock.patch("xarray.core.missing._localize", lambda obj, index: (obj, index)):
         geocoded = beta_nought.interp(
-            method=interp_method, azimuth_time=acquisition.azimuth_time, **interp_kwargs
+            method=interp_method,  # type: ignore
+            azimuth_time=acquisition.azimuth_time,
+            **interp_kwargs,
         )
     beta_nought_attrs = beta_nought.attrs
 
