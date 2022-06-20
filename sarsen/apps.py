@@ -90,8 +90,11 @@ def simulate_acquisition(
         acquisition["ground_range"] = ground_range.drop_vars("azimuth_time")
         if correct_radiometry is None:
             acquisition = acquisition.drop_vars("slant_range_time")
-    if correct_radiometry is None:
-        acquisition = acquisition.drop_vars(["dem_direction", "axis"])
+    if correct_radiometry is not None:
+        gamma_area = radiometry.compute_gamma_area(dem_ecef, acquisition.dem_direction)
+        acquisition["gamma_area"] = gamma_area
+
+    acquisition = acquisition.drop_vars(["dem_direction", "axis"])
 
     return acquisition
 
@@ -197,12 +200,6 @@ def terrain_correction(
         coordinate_conversion = None
 
     template_raster = dem_raster.drop_vars(dem_raster.rio.grid_mapping)
-    template_3d = xr.concat(
-        [template_raster, template_raster, template_raster],
-        dim="axis",
-        coords="minimal",
-    )
-    template_3d = template_3d.assign_coords({"axis": [0, 1, 2]}).chunk({"axis": 3})
 
     logger.info("pre-process DEM")
 
@@ -222,7 +219,7 @@ def terrain_correction(
         if correct_radiometry is None:
             acquisition_template = acquisition_template.drop_vars("slant_range_time")
     if correct_radiometry is not None:
-        acquisition_template["dem_direction"] = template_3d
+        acquisition_template["gamma_area"] = template_raster
 
     logger.info("simulate acquisition")
 
@@ -269,7 +266,6 @@ def terrain_correction(
 
         with mock.patch("xarray.core.missing._localize", lambda o, i: (o, i)):
             weights = gamma_weights(
-                dem_ecef,
                 acquisition,
                 **grid_parameters,
             )
