@@ -169,7 +169,7 @@ def terrain_correction(
         product_urlpath,
         group=measurement_group,
         chunks=1024,
-        **kwargs,  #  type: ignore
+        **kwargs,
     )
     measurement = measurement_ds["measurement"]
 
