@@ -258,11 +258,6 @@ def terrain_correction(
         )
     beta_nought = beta_nought.drop_vars(["pixel", "line"])
 
-    if enable_dask_distributed:
-        # the SAR product has a different chunk structure than the DEM and
-        # scattering it across the workers is supposed to improve memory and CPU usage
-        client.scatter(beta_nought)
-
     if correct_radiometry is not None:
         logger.info("correct radiometry")
         grid_parameters = radiometry.azimuth_slant_range_grid(
@@ -277,7 +272,7 @@ def terrain_correction(
         elif correct_radiometry == "gamma_nearest":
             gamma_weights = radiometry.gamma_weights_nearest
 
-        # acquisition = acquisition.persist()
+        acquisition = acquisition.persist()
 
         with mock.patch(
             "xarray.core.missing._localize", lambda obj, index: (obj, index)
