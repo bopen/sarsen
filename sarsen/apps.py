@@ -1,5 +1,6 @@
 import logging
 import typing as T
+from unittest import mock
 
 import numpy as np
 import rioxarray
@@ -234,7 +235,6 @@ def terrain_correction(
         },
         template=acquisition_template,
     )
-    # acquisition = acquisition.persist()
 
     logger.info("calibrate radiometry")
 
@@ -255,12 +255,18 @@ def terrain_correction(
         )
     beta_nought = beta_nought.drop_vars(["pixel", "line"])
 
-    geocoded = beta_nought.interp(
-        method=interp_method, azimuth_time=acquisition.azimuth_time, **interp_kwargs
-    )
-    beta_nought_attrs = beta_nought.attrs
+    if enable_dask_distributed:
+        # the SAR product has a different chunk structure than the DEM and
+        # scattering it across the workers is supposed to improve memory and CPU usage
+        client.scatter(beta_nought)
 
-    del beta_nought
+    # HACK: we monkey-patch away an optimisation in xr.DataArray.interp that actually makes
+    #   the interpolation much slower when indeces are dask arrays.
+    with mock.patch("xarray.core.missing._localize", lambda obj, index: (obj, index)):
+        geocoded = beta_nought.interp(
+            method=interp_method, azimuth_time=acquisition.azimuth_time, **interp_kwargs
+        )
+    beta_nought_attrs = beta_nought.attrs
 
     if correct_radiometry is not None:
         logger.info("correct radiometry")
@@ -277,15 +283,13 @@ def terrain_correction(
             gamma_weights = radiometry.gamma_weights_nearest
 
         weights = gamma_weights(
-            dem_ecef.load(),
+            dem_ecef,
             acquisition,
             **grid_parameters,
         )
         geocoded = geocoded / weights
 
     logger.info("save output")
-
-    del acquisition
 
     geocoded.attrs.update(beta_nought_attrs)
     geocoded.x.attrs.update(dem_raster.x.attrs)
