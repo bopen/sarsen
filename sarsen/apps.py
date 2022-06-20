@@ -111,10 +111,11 @@ def terrain_correction(
     output_urlpath: str = "GTC.tif",
     correct_radiometry: T.Optional[str] = None,
     interp_method: str = "nearest",
-    multilook: T.Optional[T.Tuple[int, int]] = None,
-    grouping_area_factor: T.Tuple[float, float] = (3.0, 13.0),
+    grouping_area_factor: T.Tuple[float, float] = (3.0, 3.0),
     open_dem_raster_kwargs: T.Dict[str, T.Any] = {},
-    chunks: T.Optional[T.Union[int, T.Dict[str, int]]] = None,
+    chunks: T.Optional[int] = None,
+    enable_dask_distributed: bool = False,
+    client_kwargs: T.Dict[str, T.Any] = {"processes": False},
     **kwargs: T.Any,
 ) -> xr.DataArray:
     """Apply the terrain-correction to sentinel-1 SLC and GRD products.
@@ -219,7 +220,6 @@ def terrain_correction(
 
     geocoded = interpolate_measurement(
         beta_nought,
-        multilook=multilook,
         azimuth_time=acquisition.azimuth_time,
         interp_method=interp_method,
         **interp_kwargs,
