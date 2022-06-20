@@ -2,6 +2,7 @@ import logging
 import typing as T
 
 import numpy as np
+import rioxarray
 import xarray as xr
 import xarray_sentinel
 
@@ -84,24 +85,6 @@ def simulate_acquisition(
     return acquisition
 
 
-def interpolate_measurement(
-    image: xr.DataArray,
-    multilook: T.Optional[T.Tuple[int, int]] = None,
-    interp_method: str = "nearest",
-    **interp_kwargs: T.Any,
-) -> xr.DataArray:
-    """Interpolate the input image with optional multilook."""
-
-    if multilook:
-        image = image.rolling(
-            azimuth_time=multilook[0], slant_range_time=multilook[1]
-        ).mean()
-
-    geocoded = image.interp(method=interp_method, **interp_kwargs)  # type: ignore
-
-    return geocoded
-
-
 def terrain_correction(
     product_urlpath: str,
     measurement_group: str,
@@ -145,6 +128,9 @@ def terrain_correction(
     to open the `dem_urlpath`
     :param kwargs: additional keyword arguments passed on to ``xarray.open_dataset`` to open the `product_urlpath`
     """
+    # rioxarray must be imported explicitly or accesses to `.rio` may fail in dask
+    assert rioxarray.__version__  # type: ignore
+
     allowed_correct_radiometry = [None, "gamma_bilinear", "gamma_nearest"]
     if correct_radiometry not in allowed_correct_radiometry:
         raise ValueError(
@@ -160,12 +146,14 @@ def terrain_correction(
     measurement_ds, kwargs = open_dataset_autodetect(
         product_urlpath,
         group=measurement_group,
-        chunks=chunks,
-        **kwargs,  #  type: ignore
+        chunks=1024,
+        **kwargs,
     )
     measurement = measurement_ds["measurement"]
 
-    dem_raster = scene.open_dem_raster(dem_urlpath, **open_dem_raster_kwargs)
+    dem_raster = scene.open_dem_raster(
+        dem_urlpath, chunks=chunks, **open_dem_raster_kwargs
+    )
 
     orbit_ecef = xr.open_dataset(
         product_urlpath, engine="sentinel-1", group=orbit_group, **kwargs
@@ -198,7 +186,6 @@ def terrain_correction(
 
     beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
 
-    logger.info("interpolate image")
     if measurement.attrs["product_type"] == "GRD":
         assert coordinate_conversion is not None
         ground_range = xarray_sentinel.slant_range_time_to_ground_range(
@@ -218,11 +205,12 @@ def terrain_correction(
             f"unsupported product_type {measurement.attrs['product_type']}"
         )
 
-    geocoded = interpolate_measurement(
-        beta_nought,
+    logger.info("interpolate image")
+
+    geocoded = beta_nought.interp(
+        method=interp_method,  # type: ignore
         azimuth_time=acquisition.azimuth_time,
-        interp_method=interp_method,
-        **interp_kwargs,
+        **interp_kwargs,  # type: ignore
     )
 
     if correct_radiometry is not None:
