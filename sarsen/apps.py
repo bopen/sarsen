@@ -207,12 +207,10 @@ def terrain_correction(
 
     logger.info("pre-process DEM")
 
-<<<<<<< HEAD
-    dem_ecef = xr.map_blocks(scene.convert_to_dem_ecef, dem_raster)
+    dem_ecef = xr.map_blocks(
+        scene.convert_to_dem_ecef, dem_raster, kwargs={"source_crs": dem_raster.rio.crs}
+    )
     dem_ecef = dem_ecef.drop_vars(dem_ecef.rio.grid_mapping)
-=======
-    dem_ecef = scene.convert_to_dem_ecef(dem_raster, source_crs=dem_raster.rio.crs)
->>>>>>> origin/main
 
     logger.info("simulate acquisition")
 
@@ -288,7 +286,7 @@ def terrain_correction(
 
         weights = gamma_weights(
             dem_ecef,
-            acquisition,
+            acquisition.persist(),
             **grid_parameters,
         )
         geocoded = geocoded / weights
