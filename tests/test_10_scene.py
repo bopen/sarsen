@@ -16,7 +16,7 @@ def test_transform_dem_3d(dem_raster: xr.DataArray) -> None:
     dem_3d = scene.convert_to_dem_3d(dem_raster)
 
     # from height over the geoid to height over the ellipsoid
-    res = scene.transform_dem_3d(dem_3d, "EPSG:4979", source_crs=dem_3d.rio.crs)
+    res = scene.transform_dem_3d(dem_3d, dem_3d.rio.crs, "EPSG:4979")
 
     assert res.dims == ("axis", "y", "x")
     # this assert fails if proj-data is not properly installed on the system
@@ -25,7 +25,7 @@ def test_transform_dem_3d(dem_raster: xr.DataArray) -> None:
     expected = [4634523.742, 1027449.178, 4245647.74]
 
     # from geographic to geocentric (ECEF)
-    res = scene.transform_dem_3d(dem_3d, "EPSG:4978")
+    res = scene.transform_dem_3d(dem_3d, dem_3d.rio.crs, "EPSG:4978")
 
     assert res.dims == ("axis", "y", "x")
     assert np.allclose(
