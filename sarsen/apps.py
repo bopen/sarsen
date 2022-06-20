@@ -242,7 +242,6 @@ def terrain_correction(
 
     beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
 
-    logger.info("interpolate image")
     if measurement.attrs["product_type"] == "GRD":
         slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
         interp_kwargs = {"ground_range": acquisition.ground_range}
@@ -262,14 +261,6 @@ def terrain_correction(
         # scattering it across the workers is supposed to improve memory and CPU usage
         client.scatter(beta_nought)
 
-    # HACK: we monkey-patch away an optimisation in xr.DataArray.interp that actually makes
-    #   the interpolation much slower when indeces are dask arrays.
-    with mock.patch("xarray.core.missing._localize", lambda obj, index: (obj, index)):
-        geocoded = beta_nought.interp(
-            method=interp_method, azimuth_time=acquisition.azimuth_time, **interp_kwargs
-        )
-    beta_nought_attrs = beta_nought.attrs
-
     if correct_radiometry is not None:
         logger.info("correct radiometry")
         grid_parameters = radiometry.azimuth_slant_range_grid(
@@ -284,11 +275,28 @@ def terrain_correction(
         elif correct_radiometry == "gamma_nearest":
             gamma_weights = radiometry.gamma_weights_nearest
 
-        weights = gamma_weights(
-            dem_ecef,
-            acquisition.persist(),
-            **grid_parameters,
+        # acquisition = acquisition.persist()
+
+        with mock.patch(
+            "xarray.core.missing._localize", lambda obj, index: (obj, index)
+        ):
+            weights = gamma_weights(
+                dem_ecef,
+                acquisition,
+                **grid_parameters,
+            )
+
+    logger.info("interpolate image")
+
+    # HACK: we monkey-patch away an optimisation in xr.DataArray.interp that actually makes
+    #   the interpolation much slower when indeces are dask arrays.
+    with mock.patch("xarray.core.missing._localize", lambda obj, index: (obj, index)):
+        geocoded = beta_nought.interp(
+            method=interp_method, azimuth_time=acquisition.azimuth_time, **interp_kwargs
         )
+    beta_nought_attrs = beta_nought.attrs
+
+    if correct_radiometry is not None:
         geocoded = geocoded / weights
 
     logger.info("save output")
