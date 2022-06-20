@@ -27,11 +27,11 @@ def gtc(
     output_urlpath: str = "GTC.tif",
     enable_dask_distributed: bool = False,
     client_kwargs_json: str = '{"processes": false}',
-    chunks: T.Optional[int] = 1024,
+    chunks: int = 1024,
 ) -> None:
     """Generate a geometrically terrain corrected (GTC) image from Sentinel-1 product."""
     client_kwargs = json.loads(client_kwargs_json)
-    chunks = chunks if chunks > 0 else None
+    real_chunks = chunks if chunks > 0 else None
     logging.basicConfig(level=logging.INFO)
     apps.terrain_correction(
         product_urlpath,
@@ -40,7 +40,7 @@ def gtc(
         output_urlpath=output_urlpath,
         enable_dask_distributed=enable_dask_distributed,
         client_kwargs=client_kwargs,
-        chunks=chunks,
+        chunks=real_chunks,
     )
 
 
@@ -52,12 +52,12 @@ def rtc(
     output_urlpath: str = "RTC.tif",
     enable_dask_distributed: bool = False,
     client_kwargs_json: str = '{"processes": false}',
-    chunks: T.Optional[int] = 0,
+    chunks: int = 0,
     grouping_area_factor: T.Tuple[float, float] = (3.0, 3.0),
 ) -> None:
     """Generate a radiometrically terrain corrected (RTC) image from Sentinel-1 product."""
     client_kwargs = json.loads(client_kwargs_json)
-    chunks = chunks if chunks > 0 else None
+    real_chunks = chunks if chunks > 0 else None
     logging.basicConfig(level=logging.INFO)
     apps.terrain_correction(
         product_urlpath,
@@ -68,7 +68,7 @@ def rtc(
         grouping_area_factor=grouping_area_factor,
         enable_dask_distributed=enable_dask_distributed,
         client_kwargs=client_kwargs,
-        chunks=chunks,
+        chunks=real_chunks,
     )
 
 
