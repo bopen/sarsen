@@ -26,14 +26,13 @@ This Open Source project is sponsored by B-Open - https://www.bopen.eu.
     [*rasterio*](https://rasterio.readthedocs.io) / [*GDAL*](https://gdal.org)
 - supports larger-than-memory and distributed data access and processing via *Dask*
   - efficient geometric terrain-correction for a full GRD
-  - efficient radiometric terrain-correction for a full GRD
+  - efficient radiometric terrain-correction for a full GRD (work in progress, see #7).
 
 Overall, the software is in the **beta** phase and the usual caveats apply.
 
-Current limitations and work-in-progress items:
+Current limitations:
 
 - documentation needs improvement. See #6.
-- the performance of the radiometric terrain-correction can probably be optimised. See #7.
 
 Non-objectives / Caveat emptor items:
 
