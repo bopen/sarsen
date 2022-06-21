@@ -37,14 +37,14 @@ Requirements status: :white_check_mark: for final and :construction: for draft
 01. :white_check_mark: _Internal geometric accuracy_:
     Interferometric accuracy (Can be tested on SLC products by comparing the coherence values with the ones obtained with SNAP)
 
-01. :construction: _Geometric accuracy:_
-    Comparable with the accuracy of Sentinel-1 RTC products on Azure Blob Storage (Acceptance criteria/process to be defined)
+01. :white_check_mark: _Geometric accuracy:_
+    Comparable with the accuracy of Sentinel-1 RTC products on Azure Blob Storage
 
 01. :white_check_mark: _Radiometric terrain correction_:
     Shall apply radiometric terrain corrections based on
     [D. Small, "Flattening Gamma: Radiometric Terrain Correction for SAR Imagery" in IEEE Transactions on Geoscience and Remote Sensing, vol. 49, no. 8, pp. 3081-3093, Aug. 2011, doi: 10.1109/TGRS.2011.2120616](https://www.doi.org/10.1109/TGRS.2011.2120616)
 
-01. :construction: _Radiometric accuracy_:
+01. :white_check_mark: _Radiometric accuracy_:
     Comparable with the accuracy of Sentinel-1 RTC products on Azure Blob Storage (Acceptance criteria/process to be defined)
 
 ## Efficiency
@@ -52,7 +52,7 @@ Requirements status: :white_check_mark: for final and :construction: for draft
 16. :white_check_mark: _Chunked data access_:
     Data access shall use chunking for all potentially large input files, in particular: SAR imagery and DEM files
 
-01. :construction: _Chunked processing_:
+01. :white_check_mark: _Chunked processing_:
     Performance critical algorithms shall be able to perform processing on chunks of input data
 
 01. :construction: _Parallel processing_:
