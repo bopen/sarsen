@@ -1,5 +1,5 @@
 import logging
-import typing as T
+from typing import Any
 
 import numpy as np
 import numpy.typing as npt
@@ -14,7 +14,7 @@ LOGGER = logging.getLogger(__name__)
 ECEF_CRS = "EPSG:4978"
 
 
-def open_dem_raster(dem_urlpath: str, **kwargs: T.Any) -> xr.DataArray:
+def open_dem_raster(dem_urlpath: str, **kwargs: Any) -> xr.DataArray:
     dem_raster = xr.open_dataarray(dem_urlpath, engine="rasterio", **kwargs)
     if dem_raster.y.diff("y").values[0] < 0:
         dem_raster = dem_raster.isel(y=slice(None, None, -1))
@@ -68,7 +68,7 @@ def transform_dem_3d(
     return dem_3d_crs
 
 
-def convert_to_dem_ecef(dem_raster: xr.DataArray, **kwargs: T.Any) -> xr.DataArray:
+def convert_to_dem_ecef(dem_raster: xr.DataArray, **kwargs: Any) -> xr.DataArray:
     dem_3d = convert_to_dem_3d(dem_raster)
     return transform_dem_3d(dem_3d, **kwargs)
 
