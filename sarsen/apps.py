@@ -1,5 +1,5 @@
 import logging
-import typing as T
+from typing import Any, Dict, Optional, Tuple, Union
 from unittest import mock
 
 import numpy as np
@@ -14,10 +14,10 @@ logger = logging.getLogger(__name__)
 
 def open_dataset_autodetect(
     product_urlpath: str,
-    group: T.Optional[str] = None,
-    chunks: T.Optional[T.Union[int, T.Dict[str, int]]] = None,
-    **kwargs: T.Any,
-) -> T.Tuple[xr.Dataset, T.Dict[str, T.Any]]:
+    group: Optional[str] = None,
+    chunks: Optional[Union[int, Dict[str, int]]] = None,
+    **kwargs: Any,
+) -> Tuple[xr.Dataset, Dict[str, Any]]:
     try:
         ds = xr.open_dataset(
             product_urlpath, engine="sentinel-1", group=group, chunks=chunks, **kwargs
@@ -35,8 +35,8 @@ def open_dataset_autodetect(
 
 def product_info(
     product_urlpath: str,
-    **kwargs: T.Any,
-) -> T.Dict[str, T.Any]:
+    **kwargs: Any,
+) -> Dict[str, Any]:
     """Get information about the Sentinel-1 product."""
     root_ds = xr.open_dataset(product_urlpath, engine="sentinel-1", **kwargs)
 
@@ -70,8 +70,8 @@ def product_info(
 def simulate_acquisition(
     dem_ecef: xr.DataArray,
     position_ecef: xr.DataArray,
-    coordinate_conversion: T.Optional[xr.Dataset],
-    correct_radiometry: T.Optional[str],
+    coordinate_conversion: Optional[xr.Dataset],
+    correct_radiometry: Optional[str],
 ) -> xr.Dataset:
     """Compute the image coordinates of the DEM given the satellite orbit."""
 
@@ -103,17 +103,17 @@ def terrain_correction(
     product_urlpath: str,
     measurement_group: str,
     dem_urlpath: str,
-    orbit_group: T.Optional[str] = None,
-    calibration_group: T.Optional[str] = None,
+    orbit_group: Optional[str] = None,
+    calibration_group: Optional[str] = None,
     output_urlpath: str = "GTC.tif",
-    correct_radiometry: T.Optional[str] = None,
+    correct_radiometry: Optional[str] = None,
     interp_method: str = "nearest",
-    grouping_area_factor: T.Tuple[float, float] = (3.0, 3.0),
-    open_dem_raster_kwargs: T.Dict[str, T.Any] = {},
-    chunks: T.Optional[int] = 1024,
+    grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
+    open_dem_raster_kwargs: Dict[str, Any] = {},
+    chunks: Optional[int] = 1024,
     enable_dask_distributed: bool = False,
-    client_kwargs: T.Dict[str, T.Any] = {"processes": False},
-    **kwargs: T.Any,
+    client_kwargs: Dict[str, Any] = {"processes": False},
+    **kwargs: Any,
 ) -> xr.DataArray:
     """Apply the terrain-correction to sentinel-1 SLC and GRD products.
 
