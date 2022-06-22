@@ -1,6 +1,6 @@
 import json
 import logging
-import typing as T
+from typing import Tuple
 
 import typer
 
@@ -53,7 +53,7 @@ def rtc(
     enable_dask_distributed: bool = False,
     client_kwargs_json: str = '{"processes": false}',
     chunks: int = 0,
-    grouping_area_factor: T.Tuple[float, float] = (3.0, 3.0),
+    grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
 ) -> None:
     """Generate a radiometrically terrain corrected (RTC) image from Sentinel-1 product."""
     client_kwargs = json.loads(client_kwargs_json)

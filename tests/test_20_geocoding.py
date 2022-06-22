@@ -1,4 +1,4 @@
-import typing as T
+from typing import Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -10,7 +10,7 @@ from sarsen import geocoding, orbit
 def test_secant_method() -> None:
     def ufunc(
         t: npt.ArrayLike,
-    ) -> T.Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         ft: npt.NDArray[np.float64] = np.asarray(t).astype("float64")
         retval = 1.0 + 0.015 * ft - 0.0001 * ft**2 + 0.00003 * ft**3
         return retval, retval
