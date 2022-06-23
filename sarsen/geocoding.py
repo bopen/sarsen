@@ -3,7 +3,7 @@
 See: https://sentinel.esa.int/documents/247904/0/Guide-to-Sentinel-1-Geocoding.pdf/e0450150-b4e9-4b2d-9b32-dadf989d3bd3
 """
 import functools
-import typing as T
+from typing import Callable, Optional, Tuple, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -11,17 +11,17 @@ import xarray as xr
 
 SPEED_OF_LIGHT = 299_792_458.0  # m / s
 
-TimedeltaArrayLike = T.TypeVar("TimedeltaArrayLike", bound=npt.ArrayLike)
-FloatArrayLike = T.TypeVar("FloatArrayLike", bound=npt.ArrayLike)
+TimedeltaArrayLike = TypeVar("TimedeltaArrayLike", bound=npt.ArrayLike)
+FloatArrayLike = TypeVar("FloatArrayLike", bound=npt.ArrayLike)
 
 
 def secant_method(
-    ufunc: T.Callable[[TimedeltaArrayLike], T.Tuple[FloatArrayLike, FloatArrayLike]],
+    ufunc: Callable[[TimedeltaArrayLike], Tuple[FloatArrayLike, FloatArrayLike]],
     t_prev: TimedeltaArrayLike,
     t_curr: TimedeltaArrayLike,
     diff_ufunc: float = 1.0,
     diff_t: np.timedelta64 = np.timedelta64(0, "ns"),
-) -> T.Tuple[TimedeltaArrayLike, TimedeltaArrayLike, FloatArrayLike, FloatArrayLike]:
+) -> Tuple[TimedeltaArrayLike, TimedeltaArrayLike, FloatArrayLike, FloatArrayLike]:
     """Return the root of ufunc calculated using the secant method."""
     # implementation modified from https://en.wikipedia.org/wiki/Secant_method
     f_prev, _ = ufunc(t_prev)
@@ -59,7 +59,7 @@ def zero_doppler_plane_distance(
     direction_ecef_sar: xr.DataArray,
     azimuth_time: TimedeltaArrayLike,
     dim: str = "axis",
-) -> T.Tuple[xr.DataArray, xr.DataArray]:
+) -> Tuple[xr.DataArray, xr.DataArray]:
     distance = dem_ecef - position_ecef_sar.interp(azimuth_time=azimuth_time)
     plane_distance = (
         distance * direction_ecef_sar.interp(azimuth_time=azimuth_time)
@@ -71,7 +71,7 @@ def backward_geocode(
     dem_ecef: xr.DataArray,
     position_ecef: xr.DataArray,
     velocity_ecef: xr.DataArray,
-    azimuth_time: T.Optional[xr.DataArray] = None,
+    azimuth_time: Optional[xr.DataArray] = None,
     dim: str = "axis",
     diff_ufunc: float = 1.0,
 ) -> xr.Dataset:

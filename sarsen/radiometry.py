@@ -1,5 +1,5 @@
 import logging
-import typing as T
+from typing import Any, Dict, Optional, Tuple
 
 import flox.xarray
 import numpy as np
@@ -16,7 +16,7 @@ def sum_weights(
     initial_weights: xr.DataArray,
     azimuth_index: xr.DataArray,
     slant_range_index: xr.DataArray,
-    multilook: T.Optional[T.Tuple[int, int]] = None,
+    multilook: Optional[Tuple[int, int]] = None,
 ) -> xr.DataArray:
     geocoded = initial_weights.assign_coords(
         slant_range_index=slant_range_index, azimuth_index=azimuth_index
@@ -157,11 +157,11 @@ def gamma_weights_nearest(
 
 
 def azimuth_slant_range_grid(
-    attrs: T.Dict[str, T.Any],
+    attrs: Dict[str, Any],
     slant_range_time0: float,
     azimuth_time0: float,
-    grouping_area_factor: T.Tuple[float, float] = (3.0, 3.0),
-) -> T.Dict[str, T.Any]:
+    grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
+) -> Dict[str, Any]:
 
     if attrs["product_type"] == "SLC":
         slant_range_spacing_m = (
@@ -176,7 +176,7 @@ def azimuth_slant_range_grid(
         slant_range_spacing_m * 2 / geocoding.SPEED_OF_LIGHT  # ignore type
     )
 
-    grid_parameters: T.Dict[str, T.Any] = {
+    grid_parameters: Dict[str, Any] = {
         "slant_range_time0": slant_range_time0,
         "slant_range_time_interval_s": slant_range_time_interval_s,
         "slant_range_spacing_m": slant_range_spacing_m,
