@@ -1,5 +1,6 @@
+import itertools
 import logging
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union, Callable
 from unittest import mock
 
 import numpy as np
@@ -67,6 +68,52 @@ def product_info(
     return product_info
 
 
+def gamma_on_overlapping_blocks(
+    data: xr.DataArray,
+    correct_radiometry: str,
+    chunks: int = 500,
+    bound: int = 30,
+    **kwargs,
+) -> xr.DataArray:
+
+    if correct_radiometry == "gamma_bilinear":
+        gamma_weights = radiometry.gamma_weights_bilinear
+    elif correct_radiometry == "gamma_nearest":
+        gamma_weights = radiometry.gamma_weights_nearest
+
+    blocks_x = []
+    for nx in np.arange((data.x.size - bound) // chunks + 1):
+        lx = max(nx * chunks - bound, 0)
+        lx_bound = (nx * chunks - lx)
+        rx = min(data.x.size, (nx + 1) * chunks + bound)
+        rx_bound = max(rx - (nx + 1) * chunks, 0)
+        if rx_bound > bound or rx_bound == 0:
+            rx_bound = None
+        else:
+            rx_bound = -rx_bound
+        blocks_y = []
+
+        for ny in np.arange((data.y.size - bound) // chunks + 1):
+            ly = max(ny * chunks - bound, 0)
+            ly_bound = (ny * chunks - ly)
+            ry = min(data.y.size, (ny + 1) * chunks + bound)
+            ry_bound = max(ry - (ny + 1) * chunks, 0)
+            if ry_bound > bound or ry_bound == 0:
+                ry_bound = None
+            else:
+                ry_bound = -ry_bound
+
+            block = data.isel(x=slice(lx, rx), y=slice(ly, ry))
+            out_block = gamma_weights(block, **kwargs)
+            out_block = out_block.isel(x=slice(lx_bound, rx_bound), y=slice(ly_bound, ry_bound))
+            blocks_y.append(out_block)
+
+        blocks_x.append(xr.concat(blocks_y, dim="y"))
+
+    return xr.concat(blocks_x, dim="x")
+
+
+
 def simulate_acquisition(
     dem_ecef: xr.DataArray,
     position_ecef: xr.DataArray,
@@ -111,6 +158,8 @@ def terrain_correction(
     grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
     open_dem_raster_kwargs: Dict[str, Any] = {},
     chunks: Optional[int] = 1024,
+    radiometry_chunks: Optional[int] = 3000,
+    radiometry_bound: Optional[int] = 30,
     enable_dask_distributed: bool = False,
     client_kwargs: Dict[str, Any] = {"processes": False},
     **kwargs: Any,
@@ -257,16 +306,15 @@ def terrain_correction(
             grouping_area_factor,
         )
 
-        if correct_radiometry == "gamma_bilinear":
-            gamma_weights = radiometry.gamma_weights_bilinear
-        elif correct_radiometry == "gamma_nearest":
-            gamma_weights = radiometry.gamma_weights_nearest
 
         acquisition = acquisition.persist()
 
         with mock.patch("xarray.core.missing._localize", lambda o, i: (o, i)):
-            weights = gamma_weights(
+            weights = gamma_on_overlapping_blocks(
                 acquisition,
+                correct_radiometry,
+                chunks=radiometry_chunks,
+                bound=radiometry_bound,
                 **grid_parameters,
             )
 
@@ -310,4 +358,4 @@ def terrain_correction(
         maybe_delayed.compute()
         client.close()
 
-    return geocoded
+    return acquisition
