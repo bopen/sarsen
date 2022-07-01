@@ -1,8 +1,9 @@
 import itertools
 import logging
-from typing import Any, Dict, Optional, Tuple, Union, Callable
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from unittest import mock
 
+import dask
 import numpy as np
 import rioxarray
 import xarray as xr
@@ -68,50 +69,107 @@ def product_info(
     return product_info
 
 
-def gamma_on_overlapping_blocks(
-    data: xr.DataArray,
-    correct_radiometry: str,
-    chunks: int = 500,
+def compute_chunks_1d(
+    dim_size: int,
+    chunks: int = 3000,
     bound: int = 30,
-    **kwargs,
+) -> Tuple[List[slice], List[slice], List[slice]]:
+    ext_slices = []
+    ext_slices_bound = []
+    int_slices = []
+
+    # -bound is needed to avoid to incorporate the last chunk, if smaller of bound in the previous chunk
+    if dim_size > bound:
+        number_of_chunks = int(np.ceil((dim_size - bound) / chunks))
+    else:
+        number_of_chunks = 1
+    for n in np.arange(number_of_chunks):
+        l_int = n * chunks
+        if n * chunks - bound > 0:
+            l_ext = n * chunks - bound
+        else:
+            l_ext = 0
+        l_bound = l_int - l_ext
+
+        if (n + 1) * chunks + bound < dim_size:
+            r_ext = (n + 1) * chunks + bound
+            r_int = (n + 1) * chunks
+            r_bound = chunks + l_bound
+        else:
+            r_ext = dim_size
+            r_int = dim_size
+            r_bound = r_ext - l_ext
+
+        ext_slices.append(slice(l_ext, r_ext))
+        ext_slices_bound.append(slice(l_bound, r_bound))
+        int_slices.append(slice(l_int, r_int))
+    return ext_slices, ext_slices_bound, int_slices
+
+
+def compute_product(
+    slices: List[List[slice]], dims_name: List[str]
+) -> List[Dict[str, slice]]:
+
+    product = []
+
+    for slices_ in itertools.product(*slices):
+        product.append({})
+        for dim, sl in zip(dims_name, slices_):
+            product[-1][dim] = sl
+    return product
+
+
+def compute_chunks(
+    dims: Dict[str, int] = {},
+    chunks: int = 2000,
+    bound: int = 30,
+) -> Tuple[List[Dict[str, slice]], List[Dict[str, slice]], List[Dict[str, slice]]]:
+    ext_slices_ = []
+    ext_slices_bound_ = []
+    int_slices_ = []
+    for dim_size in dims.values():
+        ec, ecb, ic = compute_chunks_1d(dim_size, chunks=chunks, bound=bound)
+        ext_slices_.append(ec)
+        ext_slices_bound_.append(ecb)
+        int_slices_.append(ic)
+
+    ext_slices = compute_product(ext_slices_, list(dims))
+    ext_slices_bound = compute_product(ext_slices_bound_, list(dims))
+    int_slices = compute_product(int_slices_, list(dims))
+    return ext_slices, ext_slices_bound, int_slices
+
+
+def execute_on_overlapping_blocks(
+    function: Callable[..., xr.DataArray],
+    obj: Union[xr.Dataset, xr.DataArray],
+    chunks: int = 3000,
+    bound: int = 30,
+    kwargs: Dict[Any, Any] = {},
+    template: Optional[xr.DataArray] = None,
 ) -> xr.DataArray:
 
-    if correct_radiometry == "gamma_bilinear":
-        gamma_weights = radiometry.gamma_weights_bilinear
-    elif correct_radiometry == "gamma_nearest":
-        gamma_weights = radiometry.gamma_weights_nearest
+    if isinstance(obj, xr.Dataset):
+        dims = obj.dims
+        if template is None:
+            raise ValueError(
+                "template argument is mandatory if obj is type of xr.Dataset"
+            )
+    elif isinstance(obj, xr.DataArray):
+        dims = obj.sizes
+        if template is None:
+            template = obj
 
-    blocks_x = []
-    for nx in np.arange((data.x.size - bound) // chunks + 1):
-        lx = max(nx * chunks - bound, 0)
-        lx_bound = (nx * chunks - lx)
-        rx = min(data.x.size, (nx + 1) * chunks + bound)
-        rx_bound = max(rx - (nx + 1) * chunks, 0)
-        if rx_bound > bound or rx_bound == 0:
-            rx_bound = None
-        else:
-            rx_bound = -rx_bound
-        blocks_y = []
-
-        for ny in np.arange((data.y.size - bound) // chunks + 1):
-            ly = max(ny * chunks - bound, 0)
-            ly_bound = (ny * chunks - ly)
-            ry = min(data.y.size, (ny + 1) * chunks + bound)
-            ry_bound = max(ry - (ny + 1) * chunks, 0)
-            if ry_bound > bound or ry_bound == 0:
-                ry_bound = None
-            else:
-                ry_bound = -ry_bound
-
-            block = data.isel(x=slice(lx, rx), y=slice(ly, ry))
-            out_block = gamma_weights(block, **kwargs)
-            out_block = out_block.isel(x=slice(lx_bound, rx_bound), y=slice(ly_bound, ry_bound))
-            blocks_y.append(out_block)
-
-        blocks_x.append(xr.concat(blocks_y, dim="y"))
-
-    return xr.concat(blocks_x, dim="x")
-
+    ext_chunks, ext_chunks_bounds, int_chunks = compute_chunks(
+        dims, chunks, bound
+    )  # type ignore
+    out = xr.DataArray(dask.array.empty_like(template.data), dims=template.dims)
+    for ext_chunk, ext_chunk_bounds, int_chunk in zip(
+        ext_chunks, ext_chunks_bounds, int_chunks
+    ):
+        out_chunk = function(obj.isel(**ext_chunk), **kwargs)
+        out.loc[int_chunk] = out_chunk.isel(ext_chunk_bounds)
+    out.coords.update(obj.coords)
+    return out
 
 
 def simulate_acquisition(
@@ -306,16 +364,21 @@ def terrain_correction(
             grouping_area_factor,
         )
 
+        if correct_radiometry == "gamma_bilinear":
+            gamma_weights = radiometry.gamma_weights_bilinear
+        elif correct_radiometry == "gamma_nearest":
+            gamma_weights = radiometry.gamma_weights_nearest
 
         acquisition = acquisition.persist()
 
         with mock.patch("xarray.core.missing._localize", lambda o, i: (o, i)):
-            weights = gamma_on_overlapping_blocks(
-                acquisition,
-                correct_radiometry,
+            weights = execute_on_overlapping_blocks(
+                obj=acquisition,
+                function=gamma_weights,
                 chunks=radiometry_chunks,
                 bound=radiometry_bound,
-                **grid_parameters,
+                kwargs=grid_parameters,
+                template=acquisition["gamma_area"],
             )
 
     logger.info("calibrate image")
@@ -358,4 +421,4 @@ def terrain_correction(
         maybe_delayed.compute()
         client.close()
 
-    return acquisition
+    return geocoded
