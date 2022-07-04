@@ -3,7 +3,7 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from unittest import mock
 
-import dask
+import dask.array as da
 import numpy as np
 import rioxarray
 import xarray as xr
@@ -110,7 +110,7 @@ def compute_product(
     slices: List[List[slice]], dims_name: List[str]
 ) -> List[Dict[str, slice]]:
 
-    product = []
+    product: List[Dict[str, slice]] = []
 
     for slices_ in itertools.product(*slices):
         product.append({})
@@ -148,25 +148,27 @@ def execute_on_overlapping_blocks(
     template: Optional[xr.DataArray] = None,
 ) -> xr.DataArray:
 
+    dims = {}
+    for d in obj.dims:
+        dims[str(d)] = len(obj[d])
+
     if isinstance(obj, xr.Dataset):
-        dims = obj.dims
         if template is None:
             raise ValueError(
                 "template argument is mandatory if obj is type of xr.Dataset"
             )
     elif isinstance(obj, xr.DataArray):
-        dims = obj.sizes
         if template is None:
             template = obj
 
     ext_chunks, ext_chunks_bounds, int_chunks = compute_chunks(
         dims, chunks, bound
     )  # type ignore
-    out = xr.DataArray(dask.array.empty_like(template.data), dims=template.dims)
+    out = xr.DataArray(da.empty_like(template.data), dims=template.dims)  # type: ignore
     for ext_chunk, ext_chunk_bounds, int_chunk in zip(
         ext_chunks, ext_chunks_bounds, int_chunks
     ):
-        out_chunk = function(obj.isel(**ext_chunk), **kwargs)
+        out_chunk = function(obj.isel(ext_chunk), **kwargs)
         out.loc[int_chunk] = out_chunk.isel(ext_chunk_bounds)
     out.coords.update(obj.coords)
     return out
@@ -216,8 +218,8 @@ def terrain_correction(
     grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
     open_dem_raster_kwargs: Dict[str, Any] = {},
     chunks: Optional[int] = 1024,
-    radiometry_chunks: Optional[int] = 3000,
-    radiometry_bound: Optional[int] = 30,
+    radiometry_chunks: int = 3000,
+    radiometry_bound: int = 30,
     enable_dask_distributed: bool = False,
     client_kwargs: Dict[str, Any] = {"processes": False},
     **kwargs: Any,

@@ -1,5 +1,6 @@
 import os
 import pathlib
+from typing import Callable
 
 import numpy as np
 import py
@@ -172,7 +173,7 @@ def test_compute_chunk_1d() -> None:
     assert ext_chunks_bound == [slice(0, 2)]
 
 
-def test_compute_chunks():
+def test_compute_chunks() -> None:
 
     ext_chunks, ext_chunks_bound, int_chunks = apps.compute_chunks(
         dims={"x": 10, "y": 21}, chunks=10, bound=2
@@ -187,9 +188,10 @@ def test_compute_chunks():
     assert {"x": slice(0, 10), "y": slice(2, 13)} in ext_chunks_bound
 
 
-def test_execute_on_overlapping_blocks():
+def test_execute_on_overlapping_blocks() -> None:
     arr = xr.DataArray(np.arange(22 * 31).reshape((22, 31)), dims=("x", "y"))
+    function: Callable[[xr.DataArray], xr.DataArray] = lambda x: x
     res = apps.execute_on_overlapping_blocks(
-        function=lambda x: x, obj=arr, chunks=10, bound=2
+        function=function, obj=arr, chunks=10, bound=2
     )
     res == arr
