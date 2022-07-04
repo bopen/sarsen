@@ -52,7 +52,7 @@ def rtc(
     output_urlpath: str = "RTC.tif",
     enable_dask_distributed: bool = False,
     client_kwargs_json: str = '{"processes": false}',
-    chunks: int = 0,
+    chunks: int = 1024,
     grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
 ) -> None:
     """Generate a radiometrically terrain corrected (RTC) image from Sentinel-1 product."""
