@@ -165,12 +165,12 @@ def execute_on_overlapping_blocks(
         dims, chunks, bound
     )  # type ignore
     out = xr.DataArray(da.empty_like(template.data), dims=template.dims)  # type: ignore
+    out.coords.update(obj.coords)
     for ext_chunk, ext_chunk_bounds, int_chunk in zip(
         ext_chunks, ext_chunks_bounds, int_chunks
     ):
         out_chunk = function(obj.isel(ext_chunk), **kwargs)
-        out.loc[int_chunk] = out_chunk.isel(ext_chunk_bounds)
-    out.coords.update(obj.coords)
+        out[int_chunk] = out_chunk.isel(ext_chunk_bounds)
     return out
 
 
