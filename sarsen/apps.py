@@ -215,7 +215,8 @@ def terrain_correction(
     output_urlpath: str = "GTC.tif",
     correct_radiometry: Optional[str] = None,
     interp_method: str = "nearest",
-    grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
+    grouping: Tuple[float, float] = (3.0, 3.0),
+    oversampling: Tuple[float, float] = (1, 1),
     open_dem_raster_kwargs: Dict[str, Any] = {},
     chunks: Optional[int] = 1024,
     radiometry_chunks: int = 3000,
@@ -240,7 +241,7 @@ def terrain_correction(
     :param interp_method: interpolation method for product resampling.
     The interpolation methods are the methods supported by ``xarray.DataArray.interp``
     :param multilook: multilook factor. If `None` the multilook is not applied
-    :param grouping_area_factor: is a tuple of floats greater than 1. The default is `(1, 1)`.
+    :param grouping: is a tuple of floats greater than 1. The default is `(1, 1)`.
     The `grouping_area_factor`  can be increased (i) to speed up the processing or
     (ii) when the input DEM resolution is low.
     The Gamma Flattening usually works properly if the pixel size of the input DEM is much smaller
@@ -363,13 +364,15 @@ def terrain_correction(
             measurement.attrs,
             slant_range_time0,
             measurement.azimuth_time.values[0],
-            grouping_area_factor,
+            grouping,
         )
 
         if correct_radiometry == "gamma_bilinear":
             gamma_weights = radiometry.gamma_weights_bilinear
         elif correct_radiometry == "gamma_nearest":
             gamma_weights = radiometry.gamma_weights_nearest
+
+        grid_parameters["oversampling"] = oversampling
 
         acquisition = acquisition.persist()
 
@@ -391,7 +394,7 @@ def terrain_correction(
     logger.info("terrain-correct image")
 
     # HACK: we monkey-patch away an optimisation in xr.DataArray.interp that actually makes
-    #   the interpolation much slower when indeces are dask arrays.
+    #   the interpolation much slower when indices are dask arrays.
     with mock.patch("xarray.core.missing._localize", lambda o, i: (o, i)):
         geocoded = beta_nought.interp(
             method=interp_method,  # type: ignore
