@@ -21,7 +21,7 @@ dependencies:
 - scipy
 - typer
 - types-setuptools
-- xarray-sentinel == 0.9.0
+- xarray-sentinel == 0.9.2
 - xmlschema
 - pip:
   - mdformat-gfm
