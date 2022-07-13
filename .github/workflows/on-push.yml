@@ -24,7 +24,7 @@ jobs:
         python-version: 3.x
 
   unit-tests:
-    name: unit-tests (3.9)
+    name: unit-tests (3.10)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -39,9 +39,9 @@ jobs:
         environment-name: DEVELOP
         channels: conda-forge
         cache-env: true
-        cache-env-key: ubuntu-latest-3.9
+        cache-env-key: ubuntu-latest-3.10
         extra-specs: |
-          python=3.9
+          python=3.10
     - name: Install package
       run: |
         python -m pip install --no-deps -e .
@@ -64,9 +64,9 @@ jobs:
         environment-name: DEVELOP
         channels: conda-forge
         cache-env: true
-        cache-env-key: ubuntu-latest-3.9
+        cache-env-key: ubuntu-latest-3.10
         extra-specs: |
-          python=3.9
+          python=3.10
     - name: Install package
       run: |
         python -m pip install --no-deps -e .
@@ -82,7 +82,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.8', '3.10']
+        python-version: ['3.8', '3.9']
         extra: ['']
         include:
         - python-version: '3.8'
