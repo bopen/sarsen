@@ -63,7 +63,8 @@ def product_info(
             "transmitter_receiver_polarisations"
         ],
         "measurement_groups": measurement_groups,
-        "bbox": bbox,
+        "geospatial_bounds": gcp.attrs["geospatial_bounds"],
+        "geospatial_bbox": bbox,
     }
 
     return product_info
@@ -71,8 +72,8 @@ def product_info(
 
 def compute_chunks_1d(
     dim_size: int,
-    chunks: int = 3000,
-    bound: int = 30,
+    chunks: int = 2048,
+    bound: int = 128,
 ) -> Tuple[List[slice], List[slice], List[slice]]:
     ext_slices = []
     ext_slices_bound = []
@@ -121,8 +122,8 @@ def compute_product(
 
 def compute_chunks(
     dims: Dict[str, int] = {},
-    chunks: int = 2000,
-    bound: int = 30,
+    chunks: int = 2048,
+    bound: int = 128,
 ) -> Tuple[List[Dict[str, slice]], List[Dict[str, slice]], List[Dict[str, slice]]]:
     ext_slices_ = []
     ext_slices_bound_ = []
@@ -142,8 +143,8 @@ def compute_chunks(
 def execute_on_overlapping_blocks(
     function: Callable[..., xr.DataArray],
     obj: Union[xr.Dataset, xr.DataArray],
-    chunks: int = 3000,
-    bound: int = 30,
+    chunks: int = 2048,
+    bound: int = 128,
     kwargs: Dict[Any, Any] = {},
     template: Optional[xr.DataArray] = None,
 ) -> xr.DataArray:
@@ -218,8 +219,8 @@ def terrain_correction(
     grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
     open_dem_raster_kwargs: Dict[str, Any] = {},
     chunks: Optional[int] = 1024,
-    radiometry_chunks: int = 3000,
-    radiometry_bound: int = 30,
+    radiometry_chunks: int = 2048,
+    radiometry_bound: int = 128,
     enable_dask_distributed: bool = False,
     client_kwargs: Dict[str, Any] = {"processes": False},
     **kwargs: Any,
