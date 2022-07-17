@@ -189,20 +189,27 @@ def simulate_acquisition(
 
     acquisition = geocoding.backward_geocode(dem_ecef, position_ecef, velocity_ecef)
 
+    slant_range = (acquisition.dem_distance**2).sum(dim="axis") ** 0.5
+    slant_range_time = 2.0 / geocoding.SPEED_OF_LIGHT * slant_range
+
+    acquisition["slant_range_time"] = slant_range_time
+
     if coordinate_conversion is not None:
         ground_range = xarray_sentinel.slant_range_time_to_ground_range(
             acquisition.azimuth_time,
-            acquisition.slant_range_time,
+            slant_range_time,
             coordinate_conversion,
         )
         acquisition["ground_range"] = ground_range.drop_vars("azimuth_time")
         if correct_radiometry is None:
             acquisition = acquisition.drop_vars("slant_range_time")
     if correct_radiometry is not None:
-        gamma_area = radiometry.compute_gamma_area(dem_ecef, acquisition.dem_direction)
+        gamma_area = radiometry.compute_gamma_area(
+            dem_ecef, acquisition.dem_distance / slant_range
+        )
         acquisition["gamma_area"] = gamma_area
 
-    acquisition = acquisition.drop_vars(["dem_direction", "axis"])
+    acquisition = acquisition.drop_vars(["dem_distance", "axis"])
 
     return acquisition
 

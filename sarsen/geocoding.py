@@ -91,13 +91,4 @@ def backward_geocode(
 
     # NOTE: dem_distance has the associated azimuth_time as a coordinate already
     _, _, _, dem_distance = secant_method(zero_doppler, t_prev, t_curr, diff_ufunc)
-    dem_slant_range = xr.dot(dem_distance, dem_distance, dims=dim) ** 0.5  # type: ignore
-    slant_range_time = 2.0 / SPEED_OF_LIGHT * dem_slant_range
-    dem_direction = dem_distance / dem_slant_range
-    simulation = xr.merge(
-        [
-            slant_range_time.rename("slant_range_time"),
-            dem_direction.rename("dem_direction"),
-        ]
-    )
-    return simulation.reset_coords("azimuth_time")
+    return dem_distance.rename("dem_distance").reset_coords("azimuth_time")
