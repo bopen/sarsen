@@ -209,7 +209,7 @@ def simulate_acquisition(
         )
         acquisition["gamma_area"] = gamma_area
 
-    acquisition = acquisition.drop_vars(["dem_distance", "axis"])
+    acquisition = acquisition.drop_vars(["dem_distance", "satellite_direction", "axis"])
 
     return acquisition
 
