@@ -28,7 +28,7 @@ def secant_method(
 
     # strong convergence, all points below one of the two thresholds
     while True:
-        f_curr, g_curr = ufunc(t_curr)
+        f_curr, payload_curr = ufunc(t_curr)
 
         # the `not np.any` construct let us accept `np.nan` as good values
         if not np.any((np.abs(f_curr) > diff_ufunc)):
@@ -50,7 +50,7 @@ def secant_method(
         if not np.any(np.abs(t_diff) > diff_t):
             break
 
-    return t_curr, t_prev, f_curr, g_curr
+    return t_curr, t_prev, f_curr, payload_curr
 
 
 def zero_doppler_plane_distance(
