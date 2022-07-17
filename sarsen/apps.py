@@ -309,7 +309,7 @@ def terrain_correction(
     else:
         coordinate_conversion = None
 
-    template_raster = dem_raster.drop_vars(dem_raster.rio.grid_mapping)
+    template_raster = dem_raster.drop_vars(dem_raster.rio.grid_mapping) * 0.0
 
     logger.info("pre-process DEM")
 
@@ -321,7 +321,7 @@ def terrain_correction(
     acquisition_template = xr.Dataset(
         data_vars={
             "slant_range_time": template_raster,
-            "azimuth_time": (template_raster * 0).astype("datetime64[ns]"),
+            "azimuth_time": template_raster.astype("datetime64[ns]"),
         }
     )
     if coordinate_conversion is not None:
@@ -381,7 +381,7 @@ def terrain_correction(
                 chunks=radiometry_chunks,
                 bound=radiometry_bound,
                 kwargs=grid_parameters,
-                template=acquisition["gamma_area"],
+                template=template_raster,
             )
 
     logger.info("calibrate image")
