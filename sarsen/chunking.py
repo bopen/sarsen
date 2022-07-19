@@ -1,7 +1,7 @@
 import itertools
-from typing import Any, Callable, Dict, List, Tuple, Union, Optional
-import dask.array as da
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+import dask.array as da
 import numpy as np
 import xarray as xr
 
