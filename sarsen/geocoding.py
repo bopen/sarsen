@@ -53,6 +53,8 @@ def secant_method(
     return t_curr, t_prev, f_curr, payload_curr
 
 
+# FIXME: interpolationg the direction decreses the precision, this function should
+#   probably have velocity_ecef_sar in input instead
 def zero_doppler_plane_distance(
     dem_ecef: xr.DataArray,
     position_ecef_sar: xr.DataArray,
