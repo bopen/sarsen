@@ -107,6 +107,30 @@ def simulate_acquisition(
     return acquisition
 
 
+def to_raster(
+    image: xr.DataArray,
+    output_urlpath: str,
+    profile: xr.DataArray,
+    attrs: Dict[str, Any] = {},
+    **kwargs: Any,
+) -> Any:
+    logger.info(f"save output: {output_urlpath}")
+
+    image.attrs.update(attrs)
+    image.x.attrs.update(profile.x.attrs)
+    image.y.attrs.update(profile.y.attrs)
+    image.rio.set_crs(profile.rio.crs)
+    maybe_delayed = image.rio.to_raster(
+        output_urlpath,
+        dtype=np.float32,
+        tiled=True,
+        compress="ZSTD",
+        num_threads="ALL_CPUS",
+        **kwargs,
+    )
+    return maybe_delayed
+
+
 def terrain_correction(
     product_urlpath: str,
     measurement_group: str,
@@ -302,20 +326,13 @@ def terrain_correction(
     if correct_radiometry is not None:
         geocoded = geocoded / weights
 
-    logger.info("save output")
-
-    geocoded.attrs.update(beta_nought.attrs)
-    geocoded.x.attrs.update(dem_raster.x.attrs)
-    geocoded.y.attrs.update(dem_raster.y.attrs)
-    geocoded.rio.set_crs(dem_raster.rio.crs)
-    maybe_delayed = geocoded.rio.to_raster(
+    maybe_delayed = to_raster(
+        geocoded,
         output_urlpath,
-        dtype=np.float32,
-        tiled=True,
+        dem_raster,
+        attrs=beta_nought.attrs,
         blockxsize=output_chunks,
         blockysize=output_chunks,
-        compress="ZSTD",
-        num_threads="ALL_CPUS",
         **to_raster_kwargs,
     )
 
