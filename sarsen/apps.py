@@ -274,15 +274,14 @@ def terrain_correction(
 
         acquisition = acquisition.persist()
 
-        with mock.patch("xarray.core.missing._localize", lambda o, i: (o, i)):
-            weights = chunking.map_ovelap(
-                obj=acquisition,
-                function=gamma_weights,
-                chunks=radiometry_chunks,
-                bound=radiometry_bound,
-                kwargs=grid_parameters,
-                template=template_raster,
-            )
+        weights = chunking.map_ovelap(
+            obj=acquisition,
+            function=gamma_weights,
+            chunks=radiometry_chunks,
+            bound=radiometry_bound,
+            kwargs=grid_parameters,
+            template=template_raster,
+        )
 
     logger.info("calibrate image")
 
