@@ -306,13 +306,14 @@ def terrain_correction(
             azimuth_time=acquisition.azimuth_time,
             **interp_kwargs,
         )
-        geocoded.attrs.update(beta_nought.attrs)
-        geocoded.x.attrs.update(dem_raster.x.attrs)
-        geocoded.y.attrs.update(dem_raster.y.attrs)
-        geocoded.rio.set_crs(dem_raster.rio.crs)
 
     if correct_radiometry is not None:
         geocoded = geocoded / simulated_beta_nought
+
+    geocoded.attrs.update(beta_nought.attrs)
+    geocoded.x.attrs.update(dem_raster.x.attrs)
+    geocoded.y.attrs.update(dem_raster.y.attrs)
+    geocoded.rio.set_crs(dem_raster.rio.crs)
 
     logger.info("save output")
 
