@@ -107,36 +107,13 @@ def simulate_acquisition(
     return acquisition
 
 
-def to_raster(
-    image: xr.DataArray,
-    output_urlpath: str,
-    profile: xr.DataArray,
-    attrs: Dict[str, Any] = {},
-    **kwargs: Any,
-) -> Any:
-    logger.info(f"save output: {output_urlpath}")
-
-    image.attrs.update(attrs)
-    image.x.attrs.update(profile.x.attrs)
-    image.y.attrs.update(profile.y.attrs)
-    image.rio.set_crs(profile.rio.crs)
-    maybe_delayed = image.rio.to_raster(
-        output_urlpath,
-        dtype=np.float32,
-        tiled=True,
-        compress="ZSTD",
-        num_threads="ALL_CPUS",
-        **kwargs,
-    )
-    return maybe_delayed
-
-
 def terrain_correction(
     product_urlpath: str,
     measurement_group: str,
     dem_urlpath: str,
     orbit_group: Optional[str] = None,
     calibration_group: Optional[str] = None,
+    coordinate_conversion_group: Optional[str] = None,
     output_urlpath: str = "GTC.tif",
     correct_radiometry: Optional[str] = None,
     interp_method: str = "nearest",
@@ -155,7 +132,8 @@ def terrain_correction(
     :param measurement_group: group of the measurement to be used, for example: "IW/VV"
     :param dem_urlpath: dem path or url
     :param orbit_group: overrides the orbit group name
-    :param calibration_group: overridez the calibration group name
+    :param calibration_group: overrides the calibration group name
+    :param coordinate_conversion_group: overrides the coordinate_conversion group name
     :param output_urlpath: output path or url
     :param correct_radiometry: default `None`. If `correct_radiometry=None`the radiometric terrain
     correction is not applied. `correct_radiometry=gamma_bilinear` applies the gamma flattening classic
@@ -188,6 +166,9 @@ def terrain_correction(
 
     orbit_group = orbit_group or f"{measurement_group}/orbit"
     calibration_group = calibration_group or f"{measurement_group}/calibration"
+    coordinate_conversion_group = (
+        coordinate_conversion_group or f"{measurement_group}/coordinate_conversion"
+    )
 
     output_chunks = chunks if chunks is not None else 512
 
@@ -227,7 +208,7 @@ def terrain_correction(
         coordinate_conversion = xr.open_dataset(
             product_urlpath,
             engine="sentinel-1",
-            group=f"{measurement_group}/coordinate_conversion",
+            group=coordinate_conversion_group,
             **kwargs,
         )
     else:
@@ -242,6 +223,8 @@ def terrain_correction(
     )
     dem_ecef = dem_ecef.drop_vars(dem_ecef.rio.grid_mapping)
 
+    logger.info("simulate acquisition")
+
     acquisition_template = xr.Dataset(
         data_vars={
             "slant_range_time": template_raster,
@@ -254,8 +237,6 @@ def terrain_correction(
             acquisition_template = acquisition_template.drop_vars("slant_range_time")
     if correct_radiometry is not None:
         acquisition_template["gamma_area"] = template_raster
-
-    logger.info("simulate acquisition")
 
     acquisition = xr.map_blocks(
         simulate_acquisition,
@@ -298,7 +279,7 @@ def terrain_correction(
 
         acquisition = acquisition.persist()
 
-        weights = chunking.map_ovelap(
+        simulated_beta_nought = chunking.map_ovelap(
             obj=acquisition,
             function=gamma_weights,
             chunks=radiometry_chunks,
@@ -306,6 +287,9 @@ def terrain_correction(
             kwargs=grid_parameters,
             template=template_raster,
         )
+        simulated_beta_nought.x.attrs.update(dem_raster.x.attrs)
+        simulated_beta_nought.y.attrs.update(dem_raster.y.attrs)
+        simulated_beta_nought.rio.set_crs(dem_raster.rio.crs)
 
     logger.info("calibrate image")
 
@@ -322,17 +306,24 @@ def terrain_correction(
             azimuth_time=acquisition.azimuth_time,
             **interp_kwargs,
         )
+        geocoded.attrs.update(beta_nought.attrs)
+        geocoded.x.attrs.update(dem_raster.x.attrs)
+        geocoded.y.attrs.update(dem_raster.y.attrs)
+        geocoded.rio.set_crs(dem_raster.rio.crs)
 
     if correct_radiometry is not None:
-        geocoded = geocoded / weights
+        geocoded = geocoded / simulated_beta_nought
 
-    maybe_delayed = to_raster(
-        geocoded,
+    logger.info("save output")
+
+    maybe_delayed = geocoded.rio.to_raster(
         output_urlpath,
-        dem_raster,
-        attrs=beta_nought.attrs,
+        dtype=np.float32,
+        tiled=True,
         blockxsize=output_chunks,
         blockysize=output_chunks,
+        compress="ZSTD",
+        num_threads="ALL_CPUS",
         **to_raster_kwargs,
     )
 
