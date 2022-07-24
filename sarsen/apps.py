@@ -107,6 +107,21 @@ def simulate_acquisition(
     return acquisition
 
 
+def calibrate_measurement(
+    measurement_ds: xr.Dataset, beta_nought_lut: xr.DataArray
+) -> xr.DataArray:
+    logger.info("calibrate image")
+
+    measurement = measurement_ds.measurement
+    if measurement.attrs["product_type"] == "SLC" and measurement.attrs["mode"] == "IW":
+        measurement = xarray_sentinel.mosaic_slc_iw(measurement)
+
+    beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
+    beta_nought = beta_nought.drop_vars(["pixel", "line"])
+
+    return beta_nought
+
+
 def terrain_correction(
     product_urlpath: str,
     measurement_group: str,
@@ -255,8 +270,6 @@ def terrain_correction(
         interp_kwargs = {"ground_range": acquisition.ground_range}
     elif measurement.attrs["product_type"] == "SLC":
         interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
-        if measurement.attrs["mode"] == "IW":
-            measurement = xarray_sentinel.mosaic_slc_iw(measurement)
     else:
         raise ValueError(
             f"unsupported product_type {measurement.attrs['product_type']}"
@@ -290,10 +303,7 @@ def terrain_correction(
         simulated_beta_nought.y.attrs.update(dem_raster.y.attrs)
         simulated_beta_nought.rio.set_crs(dem_raster.rio.crs)
 
-    logger.info("calibrate image")
-
-    beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
-    beta_nought = beta_nought.drop_vars(["pixel", "line"])
+    beta_nought = calibrate_measurement(measurement_ds, beta_nought_lut)
 
     logger.info("terrain-correct image")
 
