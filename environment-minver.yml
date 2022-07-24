@@ -4,7 +4,7 @@ dependencies:
 - attrs
 - bottleneck
 - click
-- dask == 2021.4.0
+- dask == 2022.4.0
 - flox
 - fsspec
 - make
