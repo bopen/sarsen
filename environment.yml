@@ -11,7 +11,6 @@ dependencies:
 - make
 - mdformat
 - mypy
-- nomkl
 - numexpr
 - numpy >= 1.22.0
 - pip
