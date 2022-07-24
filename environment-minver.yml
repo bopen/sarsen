@@ -12,7 +12,7 @@ dependencies:
 - mypy
 - nomkl
 - numexpr
-- numpy == 1.19.0
+- numpy == 1.21.0
 - pandas == 1.2.0
 - pip
 - pytest
