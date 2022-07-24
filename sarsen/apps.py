@@ -18,18 +18,15 @@ def open_dataset_autodetect(
     chunks: Optional[Union[int, Dict[str, int]]] = None,
     **kwargs: Any,
 ) -> Tuple[xr.Dataset, Dict[str, Any]]:
+    kwargs.setdefault("engine", "sentinel-1")
     try:
-        ds = xr.open_dataset(
-            product_urlpath, engine="sentinel-1", group=group, chunks=chunks, **kwargs
-        )
+        ds = xr.open_dataset(product_urlpath, group=group, chunks=chunks, **kwargs)
     except FileNotFoundError:
         # re-try with Planetary Computer option
         kwargs[
             "override_product_files"
         ] = "{dirname}/{prefix}{swath}-{polarization}{ext}"
-        ds = xr.open_dataset(
-            product_urlpath, engine="sentinel-1", group=group, chunks=chunks, **kwargs
-        )
+        ds = xr.open_dataset(product_urlpath, group=group, chunks=chunks, **kwargs)
     return ds, kwargs
 
 
@@ -132,6 +129,7 @@ def terrain_correction(
     grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
     open_dem_raster_kwargs: Dict[str, Any] = {},
     chunks: Optional[int] = 1024,
+    measurement_chunks: int = 1024,
     radiometry_chunks: int = 2048,
     radiometry_bound: int = 128,
     enable_dask_distributed: bool = False,
@@ -176,10 +174,6 @@ def terrain_correction(
             f"allowed values are: {allowed_correct_radiometry}"
         )
 
-    orbit_group = f"{measurement_group}/orbit"
-    calibration_group = f"{measurement_group}/calibration"
-    coordinate_conversion_group = f"{measurement_group}/coordinate_conversion"
-
     output_chunks = chunks if chunks is not None else 512
 
     to_raster_kwargs = {}
@@ -196,7 +190,7 @@ def terrain_correction(
     measurement_ds, kwargs = open_dataset_autodetect(
         product_urlpath,
         group=measurement_group,
-        chunks=1024,
+        chunks=measurement_chunks,
         **kwargs,
     )
     measurement = measurement_ds["measurement"]
@@ -206,19 +200,19 @@ def terrain_correction(
     )
 
     orbit_ecef = xr.open_dataset(
-        product_urlpath, engine="sentinel-1", group=orbit_group, **kwargs
+        product_urlpath, group=f"{measurement_group}/orbit", **kwargs
     )
     position_ecef = orbit_ecef.position
+
     calibration = xr.open_dataset(
-        product_urlpath, engine="sentinel-1", group=calibration_group, **kwargs
+        product_urlpath, group=f"{measurement_group}/calibration", **kwargs
     )
     beta_nought_lut = calibration.betaNought
 
     if measurement.attrs["product_type"] == "GRD":
         coordinate_conversion = xr.open_dataset(
             product_urlpath,
-            engine="sentinel-1",
-            group=coordinate_conversion_group,
+            group=f"{measurement_group}/coordinate_conversion",
             **kwargs,
         )
         slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
