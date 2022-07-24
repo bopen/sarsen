@@ -211,8 +211,10 @@ def terrain_correction(
             group=coordinate_conversion_group,
             **kwargs,
         )
+        slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
     else:
         coordinate_conversion = None
+        slant_range_time0 = measurement.slant_range_time.values[0]
 
     template_raster = dem_raster.drop_vars(dem_raster.rio.grid_mapping) * 0.0
 
@@ -250,11 +252,8 @@ def terrain_correction(
     )
 
     if measurement.attrs["product_type"] == "GRD":
-        assert coordinate_conversion is not None
-        slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
         interp_kwargs = {"ground_range": acquisition.ground_range}
     elif measurement.attrs["product_type"] == "SLC":
-        slant_range_time0 = measurement.slant_range_time.values[0]
         interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
         if measurement.attrs["mode"] == "IW":
             measurement = xarray_sentinel.mosaic_slc_iw(measurement)
