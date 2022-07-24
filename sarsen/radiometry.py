@@ -160,7 +160,6 @@ def gamma_weights_nearest(
 
 def azimuth_slant_range_grid(
     attrs: Dict[str, Any],
-    azimuth_time0: float,
     grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
 ) -> Dict[str, Any]:
 
@@ -181,7 +180,7 @@ def azimuth_slant_range_grid(
         "slant_range_time0": attrs["image_slant_range_time"],
         "slant_range_time_interval_s": slant_range_time_interval_s,
         "slant_range_spacing_m": slant_range_spacing_m,
-        "azimuth_time0": azimuth_time0,
+        "azimuth_time0": np.datetime64(attrs["product_first_line_utc_time"]),
         "azimuth_time_interval_s": attrs["azimuth_time_interval"]
         * grouping_area_factor[0],
         "azimuth_spacing_m": attrs["azimuth_pixel_spacing"] * grouping_area_factor[0],

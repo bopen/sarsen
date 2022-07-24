@@ -193,7 +193,6 @@ def terrain_correction(
         chunks=measurement_chunks,
         **kwargs,
     )
-    measurement = measurement_ds["measurement"]
 
     dem_raster = scene.open_dem_raster(
         dem_urlpath, chunks=chunks, **open_dem_raster_kwargs
@@ -202,14 +201,12 @@ def terrain_correction(
     orbit_ecef = xr.open_dataset(
         product_urlpath, group=f"{measurement_group}/orbit", **kwargs
     )
-    position_ecef = orbit_ecef.position
 
     calibration = xr.open_dataset(
         product_urlpath, group=f"{measurement_group}/calibration", **kwargs
     )
-    beta_nought_lut = calibration.betaNought
 
-    if measurement.attrs["product_type"] == "GRD":
+    if measurement_ds.attrs["product_type"] == "GRD":
         coordinate_conversion = xr.open_dataset(
             product_urlpath,
             group=f"{measurement_group}/coordinate_conversion",
@@ -246,27 +243,26 @@ def terrain_correction(
         simulate_acquisition,
         dem_ecef,
         kwargs={
-            "position_ecef": position_ecef,
+            "position_ecef": orbit_ecef.position,
             "coordinate_conversion": coordinate_conversion,
             "correct_radiometry": correct_radiometry,
         },
         template=acquisition_template,
     )
 
-    if measurement.attrs["product_type"] == "GRD":
+    if measurement_ds.attrs["product_type"] == "GRD":
         interp_kwargs = {"ground_range": acquisition.ground_range}
-    elif measurement.attrs["product_type"] == "SLC":
+    elif measurement_ds.attrs["product_type"] == "SLC":
         interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
     else:
         raise ValueError(
-            f"unsupported product_type {measurement.attrs['product_type']}"
+            f"unsupported product_type {measurement_ds.attrs['product_type']}"
         )
 
     if correct_radiometry is not None:
         logger.info("simulate radiometry")
         grid_parameters = radiometry.azimuth_slant_range_grid(
-            measurement.attrs,
-            measurement.azimuth_time.values[0],
+            measurement_ds.attrs,  #  type: ignore
             grouping_area_factor,
         )
 
@@ -289,7 +285,7 @@ def terrain_correction(
         simulated_beta_nought.y.attrs.update(dem_raster.y.attrs)
         simulated_beta_nought.rio.set_crs(dem_raster.rio.crs)
 
-    beta_nought = calibrate_measurement(measurement_ds, beta_nought_lut)
+    beta_nought = calibrate_measurement(measurement_ds, calibration.betaNought)
 
     logger.info("terrain-correct image")
 
