@@ -126,9 +126,6 @@ def terrain_correction(
     product_urlpath: str,
     measurement_group: str,
     dem_urlpath: str,
-    orbit_group: Optional[str] = None,
-    calibration_group: Optional[str] = None,
-    coordinate_conversion_group: Optional[str] = None,
     output_urlpath: str = "GTC.tif",
     correct_radiometry: Optional[str] = None,
     interp_method: str = "nearest",
@@ -179,11 +176,9 @@ def terrain_correction(
             f"allowed values are: {allowed_correct_radiometry}"
         )
 
-    orbit_group = orbit_group or f"{measurement_group}/orbit"
-    calibration_group = calibration_group or f"{measurement_group}/calibration"
-    coordinate_conversion_group = (
-        coordinate_conversion_group or f"{measurement_group}/coordinate_conversion"
-    )
+    orbit_group = f"{measurement_group}/orbit"
+    calibration_group = f"{measurement_group}/calibration"
+    coordinate_conversion_group = f"{measurement_group}/coordinate_conversion"
 
     output_chunks = chunks if chunks is not None else 512
 
