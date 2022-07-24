@@ -215,10 +215,8 @@ def terrain_correction(
             group=f"{measurement_group}/coordinate_conversion",
             **kwargs,
         )
-        slant_range_time0 = coordinate_conversion.slant_range_time.values[0]
     else:
         coordinate_conversion = None
-        slant_range_time0 = measurement.slant_range_time.values[0]
 
     template_raster = dem_raster.drop_vars(dem_raster.rio.grid_mapping) * 0.0
 
@@ -268,7 +266,6 @@ def terrain_correction(
         logger.info("simulate radiometry")
         grid_parameters = radiometry.azimuth_slant_range_grid(
             measurement.attrs,
-            slant_range_time0,
             measurement.azimuth_time.values[0],
             grouping_area_factor,
         )
