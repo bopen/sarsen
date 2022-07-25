@@ -82,7 +82,9 @@ def product_info(
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """Get information about the Sentinel-1 product."""
-    root_ds = xr.open_dataset(product_urlpath, engine="sentinel-1", **kwargs)
+    root_ds = xr.open_dataset(
+        product_urlpath, engine="sentinel-1", check_files_exist=True, **kwargs
+    )
 
     measurement_groups = [g for g in root_ds.attrs["subgroups"] if g.count("/") == 1]
 
