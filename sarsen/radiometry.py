@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Hashable, Optional, Tuple
 from unittest import mock
 
 import flox.xarray
@@ -159,7 +159,7 @@ def gamma_weights_nearest(
 
 
 def azimuth_slant_range_grid(
-    attrs: Dict[str, Any],
+    attrs: Dict[Hashable, Any],
     grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
 ) -> Dict[str, Any]:
 
