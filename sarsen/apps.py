@@ -38,7 +38,9 @@ def product_info(
     **kwargs: Any,
 ) -> Dict[str, Any]:
     """Get information about the Sentinel-1 product."""
-    root_ds = xr.open_dataset(product_urlpath, engine="sentinel-1", **kwargs)
+    root_ds = xr.open_dataset(
+        product_urlpath, engine="sentinel-1", check_files_exist=True, **kwargs
+    )
 
     measurement_groups = [g for g in root_ds.attrs["subgroups"] if g.count("/") == 1]
 
@@ -94,8 +96,6 @@ def simulate_acquisition(
             coordinate_conversion,
         )
         acquisition["ground_range"] = ground_range.drop_vars("azimuth_time")
-        if correct_radiometry is None:
-            acquisition = acquisition.drop_vars("slant_range_time")
     if correct_radiometry is not None:
         gamma_area = radiometry.compute_gamma_area(
             dem_ecef, acquisition.dem_distance / slant_range
@@ -245,8 +245,6 @@ def terrain_correction(
     )
     if coordinate_conversion is not None:
         acquisition_template["ground_range"] = template_raster
-        if correct_radiometry is None:
-            acquisition_template = acquisition_template.drop_vars("slant_range_time")
     if correct_radiometry is not None:
         acquisition_template["gamma_area"] = template_raster
 

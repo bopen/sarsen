@@ -1,6 +1,7 @@
 import os
 import pathlib
 
+import numpy as np
 import py
 import pytest
 import xarray as xr
@@ -19,6 +20,20 @@ DATA_PATHS = [
 GROUPS = ["IW/VV", "IW1/VV"]
 
 DEM_RASTER = DATA_FOLDER / "Rome-30m-DEM.tif"
+
+
+def test_product_info() -> None:
+    expected_geospatial_bbox = [
+        11.86800305333565,
+        40.87886713841886,
+        15.32209672548896,
+        42.78115380313222,
+    ]
+
+    res = apps.product_info(str(DATA_PATHS[0]))
+
+    assert "product_type" in res
+    assert np.allclose(res["geospatial_bbox"], expected_geospatial_bbox)
 
 
 @pytest.mark.parametrize("data_path,group", zip(DATA_PATHS, GROUPS))
