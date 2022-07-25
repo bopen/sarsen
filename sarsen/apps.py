@@ -141,8 +141,6 @@ def simulate_acquisition(
             coordinate_conversion,
         )
         acquisition["ground_range"] = ground_range.drop_vars("azimuth_time")
-        if correct_radiometry is None:
-            acquisition = acquisition.drop_vars("slant_range_time")
     if correct_radiometry is not None:
         gamma_area = radiometry.compute_gamma_area(
             dem_ecef, acquisition.dem_distance / slant_range
@@ -266,8 +264,6 @@ def terrain_correction(
     )
     if product.coordinate_conversion is not None:
         acquisition_template["ground_range"] = template_raster
-        if correct_radiometry is None:
-            acquisition_template = acquisition_template.drop_vars("slant_range_time")
     if correct_radiometry is not None:
         acquisition_template["gamma_area"] = template_raster
 
