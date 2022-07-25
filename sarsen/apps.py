@@ -50,17 +50,20 @@ def product_info(
         gcp.attrs["geospatial_lat_max"],
     ]
 
-    product_info = {
-        "product_type": root_ds.attrs["product_type"],
-        "mode": root_ds.attrs["mode"],
-        "swaths": root_ds.attrs["swaths"],
-        "transmitter_receiver_polarisations": root_ds.attrs[
-            "transmitter_receiver_polarisations"
-        ],
-        "measurement_groups": measurement_groups,
-        "geospatial_bounds": gcp.attrs["geospatial_bounds"],
-        "geospatial_bbox": bbox,
-    }
+    product_attrs = [
+        "product_type",
+        "mode",
+        "swaths",
+        "transmitter_receiver_polarisations",
+    ]
+    product_info = {attr_name: root_ds.attrs[attr_name] for attr_name in product_attrs}
+    product_info.update(
+        {
+            "measurement_groups": measurement_groups,
+            "geospatial_bounds": gcp.attrs["geospatial_bounds"],
+            "geospatial_bbox": bbox,
+        }
+    )
 
     return product_info
 
@@ -170,8 +173,7 @@ def terrain_correction(
     allowed_correct_radiometry = [None, "gamma_bilinear", "gamma_nearest"]
     if correct_radiometry not in allowed_correct_radiometry:
         raise ValueError(
-            f"{correct_radiometry=} not supported, "
-            f"allowed values are: {allowed_correct_radiometry}"
+            f"{correct_radiometry=}. Must be one of: {allowed_correct_radiometry}"
         )
 
     output_chunks = chunks if chunks is not None else 512
@@ -185,7 +187,13 @@ def terrain_correction(
         to_raster_kwargs["compute"] = False
         print(f"Dask distributed dashboard at: {client.dashboard_link}")
 
-    logger.info(f"open data {product_urlpath!r}")
+    logger.info(f"open DEM {dem_urlpath!r}")
+
+    dem_raster = scene.open_dem_raster(
+        dem_urlpath, chunks=chunks, **open_dem_raster_kwargs
+    )
+
+    logger.info(f"open data product {product_urlpath!r}")
 
     measurement_ds, kwargs = open_dataset_autodetect(
         product_urlpath,
@@ -194,9 +202,10 @@ def terrain_correction(
         **kwargs,
     )
 
-    dem_raster = scene.open_dem_raster(
-        dem_urlpath, chunks=chunks, **open_dem_raster_kwargs
-    )
+    product_type = measurement_ds.attrs["product_type"]
+    allowed_product_types = ["GRD", "SLC"]
+    if product_type not in allowed_product_types:
+        raise ValueError(f"{product_type=}. Must be one of: {allowed_product_types}")
 
     orbit_ecef = xr.open_dataset(
         product_urlpath, group=f"{measurement_group}/orbit", **kwargs
@@ -206,7 +215,7 @@ def terrain_correction(
         product_urlpath, group=f"{measurement_group}/calibration", **kwargs
     )
 
-    if measurement_ds.attrs["product_type"] == "GRD":
+    if product_type == "GRD":
         coordinate_conversion = xr.open_dataset(
             product_urlpath,
             group=f"{measurement_group}/coordinate_conversion",
@@ -214,8 +223,6 @@ def terrain_correction(
         )
     else:
         coordinate_conversion = None
-
-    template_raster = dem_raster.drop_vars(dem_raster.rio.grid_mapping) * 0.0
 
     logger.info("pre-process DEM")
 
@@ -226,6 +233,7 @@ def terrain_correction(
 
     logger.info("simulate acquisition")
 
+    template_raster = dem_raster.drop_vars(dem_raster.rio.grid_mapping) * 0.0
     acquisition_template = xr.Dataset(
         data_vars={
             "slant_range_time": template_raster,
@@ -250,14 +258,10 @@ def terrain_correction(
         template=acquisition_template,
     )
 
-    if measurement_ds.attrs["product_type"] == "GRD":
+    if product_type == "GRD":
         interp_kwargs = {"ground_range": acquisition.ground_range}
-    elif measurement_ds.attrs["product_type"] == "SLC":
-        interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
     else:
-        raise ValueError(
-            f"unsupported product_type {measurement_ds.attrs['product_type']}"
-        )
+        interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
 
     if correct_radiometry is not None:
         logger.info("simulate radiometry")
