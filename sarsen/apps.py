@@ -68,6 +68,44 @@ def product_info(
     return product_info
 
 
+def open_product_datasets(
+    product_urlpath: str,
+    measurement_group: str,
+    measurement_chunks: int,
+    **kwargs: Any,
+) -> Tuple[xr.Dataset, xr.Dataset, xr.Dataset, Optional[xr.Dataset]]:
+    measurement_ds, kwargs = open_dataset_autodetect(
+        product_urlpath,
+        group=measurement_group,
+        chunks=measurement_chunks,
+        **kwargs,
+    )
+
+    product_type = measurement_ds.attrs["product_type"]
+    allowed_product_types = ["GRD", "SLC"]
+    if product_type not in allowed_product_types:
+        raise ValueError(f"{product_type=}. Must be one of: {allowed_product_types}")
+
+    orbit_ecef = xr.open_dataset(
+        product_urlpath, group=f"{measurement_group}/orbit", **kwargs
+    )
+
+    calibration = xr.open_dataset(
+        product_urlpath, group=f"{measurement_group}/calibration", **kwargs
+    )
+
+    if product_type == "GRD":
+        coordinate_conversion = xr.open_dataset(
+            product_urlpath,
+            group=f"{measurement_group}/coordinate_conversion",
+            **kwargs,
+        )
+    else:
+        coordinate_conversion = None
+
+    return measurement_ds, orbit_ecef, calibration, coordinate_conversion
+
+
 def simulate_acquisition(
     dem_ecef: xr.DataArray,
     position_ecef: xr.DataArray,
@@ -110,8 +148,6 @@ def simulate_acquisition(
 def calibrate_measurement(
     measurement_ds: xr.Dataset, beta_nought_lut: xr.DataArray
 ) -> xr.DataArray:
-    logger.info("calibrate image")
-
     measurement = measurement_ds.measurement
     if measurement.attrs["product_type"] == "SLC" and measurement.attrs["mode"] == "IW":
         measurement = xarray_sentinel.mosaic_slc_iw(measurement)
@@ -195,34 +231,10 @@ def terrain_correction(
 
     logger.info(f"open data product {product_urlpath!r}")
 
-    measurement_ds, kwargs = open_dataset_autodetect(
-        product_urlpath,
-        group=measurement_group,
-        chunks=measurement_chunks,
-        **kwargs,
+    product_datasets = open_product_datasets(
+        product_urlpath, measurement_group, measurement_chunks, **kwargs
     )
-
-    product_type = measurement_ds.attrs["product_type"]
-    allowed_product_types = ["GRD", "SLC"]
-    if product_type not in allowed_product_types:
-        raise ValueError(f"{product_type=}. Must be one of: {allowed_product_types}")
-
-    orbit_ecef = xr.open_dataset(
-        product_urlpath, group=f"{measurement_group}/orbit", **kwargs
-    )
-
-    calibration = xr.open_dataset(
-        product_urlpath, group=f"{measurement_group}/calibration", **kwargs
-    )
-
-    if product_type == "GRD":
-        coordinate_conversion = xr.open_dataset(
-            product_urlpath,
-            group=f"{measurement_group}/coordinate_conversion",
-            **kwargs,
-        )
-    else:
-        coordinate_conversion = None
+    measurement_ds, orbit_ecef, calibration, coordinate_conversion = product_datasets
 
     logger.info("pre-process DEM")
 
@@ -258,7 +270,7 @@ def terrain_correction(
         template=acquisition_template,
     )
 
-    if product_type == "GRD":
+    if measurement_ds.attrs["product_type"] == "GRD":
         interp_kwargs = {"ground_range": acquisition.ground_range}
     else:
         interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
@@ -288,6 +300,8 @@ def terrain_correction(
         simulated_beta_nought.x.attrs.update(dem_raster.x.attrs)
         simulated_beta_nought.y.attrs.update(dem_raster.y.attrs)
         simulated_beta_nought.rio.set_crs(dem_raster.rio.crs)
+
+    logger.info("calibrate image")
 
     beta_nought = calibrate_measurement(measurement_ds, calibration.betaNought)
 
