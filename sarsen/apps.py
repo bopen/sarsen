@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 from typing import Any, Dict, Optional, Tuple, TypeVar, Union
 from unittest import mock
@@ -173,7 +175,7 @@ def terrain_correction(
     dem_urlpath: str,
     output_urlpath: str = "GTC.tif",
     correct_radiometry: Optional[str] = None,
-    interp_method: str = "nearest",
+    interp_method: xr.core.types.InterpOptions = "nearest",
     grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
     open_dem_raster_kwargs: Dict[str, Any] = {},
     chunks: Optional[int] = 1024,
@@ -324,7 +326,7 @@ def terrain_correction(
     #   the interpolation much slower when indeces are dask arrays.
     with mock.patch("xarray.core.missing._localize", lambda o, i: (o, i)):
         geocoded = beta_nought.interp(
-            method=interp_method,  # type: ignore
+            method=interp_method,
             azimuth_time=acquisition.azimuth_time,
             **interp_kwargs,
         )
