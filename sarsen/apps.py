@@ -22,7 +22,7 @@ class SarProduct:
     orbit: xr.Dataset
     calibration: xr.Dataset
     kwargs: Dict[str, Any]
-    coordinate_conversion: xr.Dataset | None = None
+    coordinate_conversion: Optional[xr.Dataset] = None
 
     @classmethod
     def open(
