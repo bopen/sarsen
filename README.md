@@ -20,7 +20,7 @@ This Open Source project is sponsored by B-Open - https://www.bopen.eu.
     - Sentinel-1 Single Look Complex (SLC) SM/IW/EW
     - Sentinel-1 Ground Range Detected (GRD) SM/IW/EW
   - reads uncompressed and compressed SAFE data products on the local computer or
-    on a network via [*fsspec*](https://filesystem-spec.readthedocs.io) - **depends on rasterio>=1.3a3**
+    on a network via [*fsspec*](https://filesystem-spec.readthedocs.io) - *depends on rasterio>=1.3*
 - accesses DEM data via [*rioxarray*](https://corteva.github.io/rioxarray):
   - reads local and remote data in virtually any raster format via
     [*rasterio*](https://rasterio.readthedocs.io) / [*GDAL*](https://gdal.org)
