@@ -113,7 +113,6 @@ The following code applies the geometric terrain correction to the VV polarizati
 ```
 
 The radiometric correction can be activated using the key `correct_radiometry`:
-:
 
 ```python
 >>> rtc = sarsen.terrain_correction(
