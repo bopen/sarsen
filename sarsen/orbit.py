@@ -1,6 +1,6 @@
 from typing import Any, Optional, Tuple
 
-import attr
+import attrs
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -18,7 +18,7 @@ def polyder(coefficients: xr.DataArray) -> xr.DataArray:
     return derivative_coefficients
 
 
-@attr.attrs(auto_attribs=True)
+@attrs.define
 class OrbitPolyfitIterpolator:
     coefficients: xr.DataArray
     epoch: np.datetime64
