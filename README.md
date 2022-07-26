@@ -12,18 +12,18 @@ This Open Source project is sponsored by B-Open - https://www.bopen.eu.
 
 - provides algorithms to terrain-correct satellite SAR data
   - geometric terrain correction (geocoding)
-    ... - *fast mode*: to terrain-correct images
-    ... - *accurate mode*: for interferometric processing
+    - *fast mode*: to terrain-correct images
+    - *accurate mode*: for interferometric processing
   - radiometric terrain correction (gamma flattening)
 - accesses SAR data via [*xarray-sentinel*](https://github.com/bopen/xarray-sentinel):
   - supports most Sentinel-1 data products as [distributed by ESA](https://scihub.copernicus.eu/dhus/#/home):
-    ... - Sentinel-1 Single Look Complex (SLC) SM/IW/EW
-    ... - Sentinel-1 Ground Range Detected (GRD) SM/IW/EW
+    - Sentinel-1 Single Look Complex (SLC) SM/IW/EW
+    - Sentinel-1 Ground Range Detected (GRD) SM/IW/EW
   - reads uncompressed and compressed SAFE data products on the local computer or
-    ... on a network via [*fsspec*](https://filesystem-spec.readthedocs.io) - **depends on rasterio>=1.3a3**
+    on a network via [*fsspec*](https://filesystem-spec.readthedocs.io) - **depends on rasterio>=1.3a3**
 - accesses DEM data via [*rioxarray*](https://corteva.github.io/rioxarray):
   - reads local and remote data in virtually any raster format via
-    ... [*rasterio*](https://rasterio.readthedocs.io) / [*GDAL*](https://gdal.org)
+    [*rasterio*](https://rasterio.readthedocs.io) / [*GDAL*](https://gdal.org)
 - supports larger-than-memory and distributed data access and processing via *Dask*
   - efficient geometric terrain-correction for a full GRD
   - efficient radiometric terrain-correction for a full GRD.
@@ -65,9 +65,9 @@ The easiest way to install *sarsen* is in a *conda* environment.
 The following commands create a new environment, activate it, install the package and its dependencies:
 
 ```shell
-... conda create -n SARSEN
-... conda activate SARSEN
-... conda install -c conda-forge dask proj-data sarsen
+  conda create -n SARSEN
+  conda activate SARSEN
+  conda install -c conda-forge dask proj-data sarsen
 ```
 
 Note that the `proj-data` package is rather large (500+Mb) and it is only needed to handle input DEM whose
@@ -173,7 +173,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-... http://www.apache.org/licenses/LICENSE-2.0
+  http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
