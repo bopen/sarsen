@@ -280,13 +280,9 @@ def terrain_correction(
         template=acquisition_template,
     )
 
-    if product_type == "GRD":
-        interp_kwargs = {"ground_range": acquisition.ground_range}
-    else:
-        interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
-
     if correct_radiometry is not None:
         logger.info("simulate radiometry")
+
         grid_parameters = radiometry.azimuth_slant_range_grid(
             product.measurement.attrs,
             grouping_area_factor,
@@ -318,6 +314,11 @@ def terrain_correction(
     )
 
     logger.info("terrain-correct image")
+
+    if product_type == "GRD":
+        interp_kwargs = {"ground_range": acquisition.ground_range}
+    else:
+        interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
 
     # HACK: we monkey-patch away an optimisation in xr.DataArray.interp that actually makes
     #   the interpolation much slower when indeces are dask arrays.
