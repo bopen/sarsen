@@ -63,7 +63,7 @@ def rtc(
         product_urlpath,
         measurement_group,
         dem_urlpath,
-        correct_radiometry="gamma_nearest",
+        correct_radiometry="gamma_bilinear",
         output_urlpath=output_urlpath,
         grouping_area_factor=grouping_area_factor,
         enable_dask_distributed=enable_dask_distributed,
