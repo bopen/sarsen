@@ -1,21 +1,21 @@
 channels:
-  - conda-forge
+- conda-forge
 dependencies:
-  - attrs
-  - bottleneck
-  - click
-  - dask == 2022.4.0
-  - flox
-  - make
-  - numexpr
-  - numpy == 1.21.0
-  - pandas == 1.2.0
-  - pytest
-  - pytest-cov
-  - rasterio == 1.2.4
-  - rioxarray
-  - scipy
-  - typer
-  - types-setuptools
-  - xarray == 2022.06.0
-  - xarray-sentinel == 0.9.3
+- attrs
+- bottleneck
+- click
+- dask == 2022.4.0
+- flox
+- make
+- numexpr
+- numpy == 1.21.0
+- pandas == 1.2.0
+- pytest
+- pytest-cov
+- rasterio == 1.2.4
+- rioxarray
+- scipy
+- typer
+- types-setuptools
+- xarray == 2022.06.0
+- xarray-sentinel == 0.9.3
