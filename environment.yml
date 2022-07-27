@@ -3,7 +3,6 @@ channels:
 dependencies:
 - attrs
 - bottleneck
-- click
 - dask >= 2022.6.1
 - flox
 - fsspec
