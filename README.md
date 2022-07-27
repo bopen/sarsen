@@ -87,8 +87,9 @@ The following command performs a geometric terrain correction:
   sarsen gtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
 ```
 
-Performing geometric and radiometric terrain correction requires significantly more resources.
-Currently it is possible to produce 50km x 50km RTC images at a 10m resolution on a 32Gb machine:
+Performing geometric and radiometric terrain correction is more demanding,
+but it is possible to produce the RTC of a full GRD product at a 10m resolution
+in one go (and it takes approx 25 minutes on a 32Gb MacBook Pro):
 
 ```shell
   sarsen rtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
