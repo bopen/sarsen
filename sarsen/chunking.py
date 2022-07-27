@@ -1,7 +1,6 @@
 import itertools
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-import dask.array as da
 import numpy as np
 import xarray as xr
 
@@ -101,7 +100,13 @@ def map_ovelap(
     ext_chunks, ext_chunks_bounds, int_chunks = compute_chunks(
         dims, chunks, bound
     )  # type ignore
-    out = xr.DataArray(da.empty_like(template.data), dims=template.dims)  # type: ignore
+
+    try:
+        from dask.array import empty_like
+    except ModuleNotFoundError:
+        from numpy import empty_like  # type: ignore
+
+    out = xr.DataArray(empty_like(template.data), dims=template.dims)  # type: ignore
     out.coords.update(obj.coords)
     for ext_chunk, ext_chunk_bounds, int_chunk in zip(
         ext_chunks, ext_chunks_bounds, int_chunks
