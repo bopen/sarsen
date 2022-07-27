@@ -3,7 +3,7 @@
 See: https://sentinel.esa.int/documents/247904/0/Guide-to-Sentinel-1-Geocoding.pdf/e0450150-b4e9-4b2d-9b32-dadf989d3bd3
 """
 import functools
-from typing import Callable, Optional, Tuple, TypeVar
+from typing import Any, Callable, Optional, Tuple, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -21,14 +21,14 @@ def secant_method(
     t_curr: TimedeltaArrayLike,
     diff_ufunc: float = 1.0,
     diff_t: np.timedelta64 = np.timedelta64(0, "ns"),
-) -> Tuple[TimedeltaArrayLike, TimedeltaArrayLike, FloatArrayLike, FloatArrayLike]:
+) -> Tuple[TimedeltaArrayLike, TimedeltaArrayLike, FloatArrayLike, Any]:
     """Return the root of ufunc calculated using the secant method."""
     # implementation modified from https://en.wikipedia.org/wiki/Secant_method
     f_prev, _ = ufunc(t_prev)
 
     # strong convergence, all points below one of the two thresholds
     while True:
-        f_curr, g_curr = ufunc(t_curr)
+        f_curr, payload_curr = ufunc(t_curr)
 
         # the `not np.any` construct let us accept `np.nan` as good values
         if not np.any((np.abs(f_curr) > diff_ufunc)):
@@ -50,21 +50,22 @@ def secant_method(
         if not np.any(np.abs(t_diff) > diff_t):
             break
 
-    return t_curr, t_prev, f_curr, g_curr
+    return t_curr, t_prev, f_curr, payload_curr
 
 
+# FIXME: interpolationg the direction decreses the precision, this function should
+#   probably have velocity_ecef_sar in input instead
 def zero_doppler_plane_distance(
     dem_ecef: xr.DataArray,
     position_ecef_sar: xr.DataArray,
     direction_ecef_sar: xr.DataArray,
     azimuth_time: TimedeltaArrayLike,
     dim: str = "axis",
-) -> Tuple[xr.DataArray, xr.DataArray]:
-    distance = dem_ecef - position_ecef_sar.interp(azimuth_time=azimuth_time)
-    plane_distance = (
-        distance * direction_ecef_sar.interp(azimuth_time=azimuth_time)
-    ).sum(dim, skipna=False)
-    return plane_distance, distance
+) -> Tuple[xr.DataArray, Tuple[xr.DataArray, xr.DataArray]]:
+    dem_distance = dem_ecef - position_ecef_sar.interp(azimuth_time=azimuth_time)
+    satellite_direction = direction_ecef_sar.interp(azimuth_time=azimuth_time)
+    plane_distance = (dem_distance * satellite_direction).sum(dim, skipna=False)
+    return plane_distance, (dem_distance, satellite_direction)
 
 
 def backward_geocode(
@@ -90,14 +91,13 @@ def backward_geocode(
     t_curr = xr.full_like(t_template, azimuth_time.values[-1], dtype=azimuth_time.dtype)
 
     # NOTE: dem_distance has the associated azimuth_time as a coordinate already
-    _, _, _, dem_distance = secant_method(zero_doppler, t_prev, t_curr, diff_ufunc)
-    dem_slant_range = xr.dot(dem_distance, dem_distance, dims=dim) ** 0.5  # type: ignore
-    slant_range_time = 2.0 / SPEED_OF_LIGHT * dem_slant_range
-    dem_direction = dem_distance / dem_slant_range
-    simulation = xr.merge(
-        [
-            slant_range_time.rename("slant_range_time"),
-            dem_direction.rename("dem_direction"),
-        ]
+    _, _, _, (dem_distance, satellite_direction) = secant_method(
+        zero_doppler, t_prev, t_curr, diff_ufunc  # type: ignore
     )
-    return simulation.reset_coords("azimuth_time")
+    acquisition = xr.Dataset(
+        data_vars={
+            "dem_distance": dem_distance,
+            "satellite_direction": satellite_direction,
+        }
+    )
+    return acquisition.reset_coords("azimuth_time")

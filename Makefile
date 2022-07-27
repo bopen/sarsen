@@ -11,11 +11,11 @@ qa:
 test:
 	python -m pytest -vv --cov=. --cov-report=$(COV_REPORT)
 
+doc-test:
+	python -m pytest -vv --doctest-glob='*.md' README.md
+
 type-check:
 	python -m mypy --strict .
-
-doc-test:
-	python -m pytest -v README.md
 
 conda-env-update:
 	$(CONDA) env update $(CONDAFLAGS) -f environment.yml

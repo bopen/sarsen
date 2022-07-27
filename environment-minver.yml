@@ -3,17 +3,12 @@ channels:
 dependencies:
 - attrs
 - bottleneck
-- click
-- dask
+- dask == 2022.4.0
 - flox
-- fsspec
 - make
-- mdformat
-- mypy
-- nomkl
 - numexpr
-- numpy == 1.22.0
-- pip
+- numpy == 1.21.0
+- pandas == 1.2.0
 - pytest
 - pytest-cov
 - rasterio == 1.2.4
@@ -21,8 +16,5 @@ dependencies:
 - scipy
 - typer
 - types-setuptools
-- xarray-sentinel == 0.9.0
-- xmlschema
-- pip:
-  - mdformat-gfm
-  - git+https://github.com/pydata/xarray.git
+- xarray == 2022.06.0
+- xarray-sentinel == 0.9.3

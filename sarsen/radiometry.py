@@ -1,5 +1,6 @@
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Hashable, Optional, Tuple
+from unittest import mock
 
 import flox.xarray
 import numpy as np
@@ -38,11 +39,12 @@ def sum_weights(
             min_periods=multilook[0] * multilook[1] // 2 + 1,
         ).mean()
 
-    weights_sum = flat_sum.interp(
-        slant_range_index=slant_range_index,
-        azimuth_index=azimuth_index,
-        method="nearest",
-    )
+    with mock.patch("xarray.core.missing._localize", lambda o, i: (o, i)):
+        weights_sum = flat_sum.interp(
+            slant_range_index=slant_range_index,
+            azimuth_index=azimuth_index,
+            method="nearest",
+        )
 
     return weights_sum
 
@@ -157,9 +159,7 @@ def gamma_weights_nearest(
 
 
 def azimuth_slant_range_grid(
-    attrs: Dict[str, Any],
-    slant_range_time0: float,
-    azimuth_time0: float,
+    attrs: Dict[Hashable, Any],
     grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
 ) -> Dict[str, Any]:
 
@@ -177,10 +177,10 @@ def azimuth_slant_range_grid(
     )
 
     grid_parameters: Dict[str, Any] = {
-        "slant_range_time0": slant_range_time0,
+        "slant_range_time0": attrs["image_slant_range_time"],
         "slant_range_time_interval_s": slant_range_time_interval_s,
         "slant_range_spacing_m": slant_range_spacing_m,
-        "azimuth_time0": azimuth_time0,
+        "azimuth_time0": np.datetime64(attrs["product_first_line_utc_time"]),
         "azimuth_time_interval_s": attrs["azimuth_time_interval"]
         * grouping_area_factor[0],
         "azimuth_spacing_m": attrs["azimuth_pixel_spacing"] * grouping_area_factor[0],

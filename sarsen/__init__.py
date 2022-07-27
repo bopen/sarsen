@@ -20,4 +20,6 @@ except ImportError:  # pragma: no cover
     # Local copy or not installed with setuptools
     __version__ = "999"
 
-__all__ = ["__version__"]
+from .apps import terrain_correction
+
+__all__ = ["__version__", "terrain_correction"]

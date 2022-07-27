@@ -33,7 +33,7 @@ def convert_to_dem_3d(dem_raster: xr.DataArray, dim: str = "axis") -> xr.DataArr
         dem_3d = dem_3d.chunk({dim: None})
 
     dem_3d = dem_3d.assign_coords({dim: [0, 1, 2]})
-    return dem_3d.rename("dem_3d")
+    return dem_3d.rename("dem_3d")  # type: ignore
 
 
 def transform_dem_3d(

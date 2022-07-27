@@ -20,7 +20,7 @@ This Open Source project is sponsored by B-Open - https://www.bopen.eu.
     - Sentinel-1 Single Look Complex (SLC) SM/IW/EW
     - Sentinel-1 Ground Range Detected (GRD) SM/IW/EW
   - reads uncompressed and compressed SAFE data products on the local computer or
-    on a network via [*fsspec*](https://filesystem-spec.readthedocs.io) - **depends on rasterio>=1.3a3**
+    on a network via [*fsspec*](https://filesystem-spec.readthedocs.io) - *depends on rasterio>=1.3*
 - accesses DEM data via [*rioxarray*](https://corteva.github.io/rioxarray):
   - reads local and remote data in virtually any raster format via
     [*rasterio*](https://rasterio.readthedocs.io) / [*GDAL*](https://gdal.org)
@@ -65,9 +65,9 @@ The easiest way to install *sarsen* is in a *conda* environment.
 The following commands create a new environment, activate it, install the package and its dependencies:
 
 ```shell
-    conda create -n SARSEN
-    conda activate SARSEN
-    conda install -c conda-forge dask proj-data sarsen
+  conda create -n SARSEN
+  conda activate SARSEN
+  conda install -c conda-forge dask proj-data sarsen
 ```
 
 Note that the `proj-data` package is rather large (500+Mb) and it is only needed to handle input DEM whose
@@ -87,8 +87,9 @@ The following command performs a geometric terrain correction:
   sarsen gtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
 ```
 
-Performing geometric and radiometric terrain correction requires significantly more resources.
-Currently it is possible to produce 50km x 50km RTC images at a 10m resolution on a 32Gb machine:
+Performing geometric and radiometric terrain correction is more demanding,
+but it is possible to produce the RTC of a full GRD product at a 10m resolution
+in one go (and it takes approx 25 minutes on a 32Gb MacBook Pro):
 
 ```shell
   sarsen rtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
@@ -103,25 +104,25 @@ The following code applies the geometric terrain correction to the VV polarizati
 "S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE" product:
 
 ```python
-from sarsen import apps
-gtc = apps.terrain_correction(
-  "S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE",
-  measurement_group="IW/VV",
-  dem_urlpath="South-of-Redmond-10m_UTM.tif",
-)
+>>> import sarsen
+>>> gtc = sarsen.terrain_correction(
+...   "tests/data/S1B_IW_GRDH_1SDV_20211223T051122_20211223T051147_030148_039993_5371.SAFE",
+...   measurement_group="IW/VV",
+...   dem_urlpath="tests/data/Rome-30m-DEM.tif",
+... )
+
 ```
 
 The radiometric correction can be activated using the key `correct_radiometry`:
-:
 
 ```python
-from sarsen import apps
-rtc = apps.terrain_correction(
-  "S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE",
-  measurement_group="IW/VV",
-  dem_urlpath="South-of-Redmond-10m_UTM.tif",
-  correct_radiometry="gamma_nearest"
-)
+>>> rtc = sarsen.terrain_correction(
+...   "tests/data/S1B_IW_GRDH_1SDV_20211223T051122_20211223T051147_030148_039993_5371.SAFE",
+...   measurement_group="IW/VV",
+...   dem_urlpath="tests/data/Rome-30m-DEM.tif",
+...   correct_radiometry="gamma_nearest"
+... )
+
 ```
 
 ## Reference documentation
@@ -172,7 +173,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+  http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
