@@ -318,7 +318,6 @@ def terrain_correction(
 
         logger.info("save simulated")
 
-        retval = simulated_beta_nought
         maybe_delayed = simulated_beta_nought.rio.to_raster(
             simulated_urlpath,
             dtype=np.float32,
@@ -334,7 +333,8 @@ def terrain_correction(
             maybe_delayed.compute()
 
     if output_urlpath is None:
-        return None
+        return simulated_beta_nought
+
     logger.info("calibrate image")
 
     beta_nought = calibrate_measurement(
@@ -367,7 +367,6 @@ def terrain_correction(
 
     logger.info("save output")
 
-    retval = geocoded
     maybe_delayed = geocoded.rio.to_raster(
         output_urlpath,
         dtype=np.float32,
@@ -382,4 +381,4 @@ def terrain_correction(
     if enable_dask_distributed:
         maybe_delayed.compute()
 
-    return retval
+    return geocoded
