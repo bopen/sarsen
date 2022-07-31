@@ -173,7 +173,8 @@ def terrain_correction(
     product_urlpath: str,
     measurement_group: str,
     dem_urlpath: str,
-    output_urlpath: str = "GTC.tif",
+    output_urlpath: Optional[str] = None,
+    simulated_urlpath: Optional[str] = None,
     correct_radiometry: Optional[str] = None,
     interp_method: xr.core.types.InterpOptions = "nearest",
     grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
@@ -222,6 +223,8 @@ def terrain_correction(
         raise ValueError(
             f"{correct_radiometry=}. Must be one of: {allowed_correct_radiometry}"
         )
+    if output_urlpath is None and simulated_urlpath is None:
+        raise ValueError("No output selected")
 
     output_chunks = chunks if chunks is not None else 512
 
@@ -309,6 +312,29 @@ def terrain_correction(
         simulated_beta_nought.y.attrs.update(dem_raster.y.attrs)
         simulated_beta_nought.rio.set_crs(dem_raster.rio.crs)
 
+    if simulated_urlpath is not None:
+        if output_urlpath is not None:
+            simulated_beta_nought.persist()
+
+        logger.info("save simulated")
+
+        retval = simulated_beta_nought
+        maybe_delayed = simulated_beta_nought.rio.to_raster(
+            simulated_urlpath,
+            dtype=np.float32,
+            tiled=True,
+            blockxsize=output_chunks,
+            blockysize=output_chunks,
+            compress="ZSTD",
+            num_threads="ALL_CPUS",
+            **to_raster_kwargs,
+        )
+
+        if enable_dask_distributed:
+            maybe_delayed.compute()
+
+    if output_urlpath is None:
+        return None
     logger.info("calibrate image")
 
     beta_nought = calibrate_measurement(
@@ -341,6 +367,7 @@ def terrain_correction(
 
     logger.info("save output")
 
+    retval = geocoded
     maybe_delayed = geocoded.rio.to_raster(
         output_urlpath,
         dtype=np.float32,
@@ -354,6 +381,5 @@ def terrain_correction(
 
     if enable_dask_distributed:
         maybe_delayed.compute()
-        client.close()
 
-    return geocoded
+    return retval
