@@ -45,6 +45,34 @@ def gtc(
 
 
 @app.command()
+def stc(
+    product_urlpath: str,
+    measurement_group: str,
+    dem_urlpath: str,
+    simulated_urlpath: str = "simulated_amplitude.tif",
+    enable_dask_distributed: bool = False,
+    client_kwargs_json: str = '{"processes": false}',
+    chunks: int = 1024,
+    grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
+) -> None:
+    """Generate a simulated terrain corrected image from a Sentinel-1 product."""
+    client_kwargs = json.loads(client_kwargs_json)
+    real_chunks = chunks if chunks > 0 else None
+    logging.basicConfig(level=logging.INFO)
+    apps.terrain_correction(
+        product_urlpath,
+        measurement_group,
+        dem_urlpath,
+        correct_radiometry="gamma_bilinear",
+        simulated_urlpath=simulated_urlpath,
+        grouping_area_factor=grouping_area_factor,
+        enable_dask_distributed=enable_dask_distributed,
+        client_kwargs=client_kwargs,
+        chunks=real_chunks,
+    )
+
+
+@app.command()
 def rtc(
     product_urlpath: str,
     measurement_group: str,
