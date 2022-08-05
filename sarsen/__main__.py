@@ -49,7 +49,7 @@ def stc(
     product_urlpath: str,
     measurement_group: str,
     dem_urlpath: str,
-    simulated_urlpath: str = "simulated_amplitude.tif",
+    simulated_urlpath: str = "STC.tif",
     enable_dask_distributed: bool = False,
     client_kwargs_json: str = '{"processes": false}',
     chunks: int = 1024,

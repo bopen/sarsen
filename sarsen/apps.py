@@ -173,7 +173,7 @@ def terrain_correction(
     product_urlpath: str,
     measurement_group: str,
     dem_urlpath: str,
-    output_urlpath: Optional[str] = None,
+    output_urlpath: Optional[str] = "GTC.tif",
     simulated_urlpath: Optional[str] = None,
     correct_radiometry: Optional[str] = None,
     interp_method: xr.core.types.InterpOptions = "nearest",
