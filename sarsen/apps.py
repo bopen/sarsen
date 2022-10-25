@@ -216,7 +216,7 @@ def terrain_correction(
     :param kwargs: additional keyword arguments passed on to ``xarray.open_dataset`` to open the `product_urlpath`
     """
     # rioxarray must be imported explicitly or accesses to `.rio` may fail in dask
-    assert rioxarray.__version__  # type: ignore
+    assert rioxarray.__version__
 
     allowed_correct_radiometry = [None, "gamma_bilinear", "gamma_nearest"]
     if correct_radiometry not in allowed_correct_radiometry:
@@ -228,12 +228,12 @@ def terrain_correction(
 
     output_chunks = chunks if chunks is not None else 512
 
-    to_raster_kwargs = {}
+    to_raster_kwargs: Dict[str, Any] = {}
     if enable_dask_distributed:
         from dask.distributed import Client, Lock
 
-        client = Client(**client_kwargs)
-        to_raster_kwargs["lock"] = Lock("rio", client=client)
+        client = Client(**client_kwargs)  # type: ignore
+        to_raster_kwargs["lock"] = Lock("rio", client=client)  # type: ignore
         to_raster_kwargs["compute"] = False
         print(f"Dask distributed dashboard at: {client.dashboard_link}")
 
