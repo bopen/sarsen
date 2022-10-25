@@ -102,11 +102,11 @@ def map_ovelap(
     )  # type ignore
 
     try:
-        from dask.array import empty_like
+        from dask.array import empty_like  # type: ignore
     except ModuleNotFoundError:
         from numpy import empty_like  # type: ignore
 
-    out = xr.DataArray(empty_like(template.data), dims=template.dims)  # type: ignore
+    out = xr.DataArray(empty_like(template.data), dims=template.dims)
     out.coords.update(obj.coords)
     for ext_chunk, ext_chunk_bounds, int_chunk in zip(
         ext_chunks, ext_chunks_bounds, int_chunks

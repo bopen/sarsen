@@ -54,7 +54,7 @@ def compute_gamma_area(
     dem_direction: xr.DataArray,
 ) -> xr.DataArray:
     dem_oriented_area = scene.compute_dem_oriented_area(dem_ecef)
-    gamma_area: xr.DataArray = xr.dot(dem_oriented_area, -dem_direction, dims="axis")  # type: ignore
+    gamma_area: xr.DataArray = xr.dot(dem_oriented_area, -dem_direction, dims="axis")
     gamma_area = gamma_area.where(gamma_area > 0, 0)
     return gamma_area
 

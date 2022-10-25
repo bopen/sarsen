@@ -77,7 +77,7 @@ def backward_geocode(
     diff_ufunc: float = 1.0,
 ) -> xr.Dataset:
     direction_ecef = (
-        velocity_ecef / xr.dot(velocity_ecef, velocity_ecef, dims=dim) ** 0.5  # type: ignore
+        velocity_ecef / xr.dot(velocity_ecef, velocity_ecef, dims=dim) ** 0.5
     )
 
     zero_doppler = functools.partial(

@@ -1,28 +1,28 @@
 channels:
-  - conda-forge
+- conda-forge
 dependencies:
-  - attrs
-  - bottleneck
-  - dask >= 2022.6.1
-  - flox
-  - fsspec
-  - gdal
-  - make
-  - mdformat
-  - mypy
-  - numexpr
-  - numpy >= 1.22.0
-  - pandas-stubs
-  - pip
-  - pytest
-  - pytest-cov
-  - rasterio >= 1.3.0
-  - rioxarray
-  - scipy
-  - typer
-  - types-setuptools
-  - xarray >= 2022.06.0
-  - xarray-sentinel >= 0.9.3
-  - xmlschema
-  - pip:
-      - mdformat-gfm
+- attrs
+- bottleneck
+- dask >= 2022.6.1
+- flox
+- fsspec
+- gdal
+- make
+- mdformat
+- mypy
+- numexpr
+- numpy >= 1.22.0
+- pandas-stubs
+- pip
+- pytest
+- pytest-cov
+- rasterio >= 1.3.0
+- rioxarray
+- scipy
+- typer
+- types-setuptools
+- xarray >= 2022.06.0
+- xarray-sentinel >= 0.9.3
+- xmlschema
+- pip:
+  - mdformat-gfm
