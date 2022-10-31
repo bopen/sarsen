@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import functools
 import logging
 from typing import Any, Dict, Optional, Tuple, TypeVar, Union
 from unittest import mock
@@ -18,47 +19,47 @@ logger = logging.getLogger(__name__)
 T_SarProduct = TypeVar("T_SarProduct", bound="SarProduct")
 
 
-@attrs.define
+@attrs.define(slots=False)
 class SarProduct:
-    measurement: xr.Dataset
-    orbit: xr.Dataset
-    calibration: xr.Dataset
-    kwargs: Dict[str, Any]
-    coordinate_conversion: Optional[xr.Dataset] = None
+    product_urlpath: str
+    measurement_group: str
+    measurement_chunks: int = 2048
+    kwargs: Dict[str, Any] = {}
 
-    @classmethod
-    def open(
-        cls: type[T_SarProduct],
-        product_urlpath: str,
-        measurement_group: str,
-        measurement_chunks: int,
-        **kwargs: Any,
-    ) -> T_SarProduct:
-        measurement, kwargs = open_dataset_autodetect(
-            product_urlpath,
-            group=measurement_group,
-            chunks=measurement_chunks,
-            **kwargs,
+    @functools.cached_property
+    def measurement(self) -> xr.Dataset:
+        ds, self.kwargs = open_dataset_autodetect(
+            self.product_urlpath,
+            group=self.measurement_group,
+            chunks=self.measurement_chunks,
+            **self.kwargs,
         )
+        return ds
 
-        orbit = xr.open_dataset(
-            product_urlpath, group=f"{measurement_group}/orbit", **kwargs
+    @functools.cached_property
+    def orbit(self) -> xr.Dataset:
+        ds, self.kwargs = open_dataset_autodetect(
+            self.product_urlpath, group=f"{self.measurement_group}/orbit", **self.kwargs
         )
+        return ds
 
-        calibration = xr.open_dataset(
-            product_urlpath, group=f"{measurement_group}/calibration", **kwargs
+    @functools.cached_property
+    def calibration(self) -> xr.Dataset:
+        ds, self.kwargs = open_dataset_autodetect(
+            self.product_urlpath,
+            group=f"{self.measurement_group}/calibration",
+            **self.kwargs,
         )
+        return ds
 
-        if measurement.attrs["product_type"] == "GRD":
-            coordinate_conversion = xr.open_dataset(
-                product_urlpath,
-                group=f"{measurement_group}/coordinate_conversion",
-                **kwargs,
-            )
-        else:
-            coordinate_conversion = None
-
-        return cls(measurement, orbit, calibration, kwargs, coordinate_conversion)
+    @functools.cached_property
+    def coordinate_conversion(self) -> xr.Dataset:
+        ds, self.kwargs = open_dataset_autodetect(
+            self.product_urlpath,
+            group=f"{self.measurement_group}/coordinate_conversion",
+            **self.kwargs,
+        )
+        return ds
 
 
 def open_dataset_autodetect(
@@ -122,8 +123,8 @@ def product_info(
 def simulate_acquisition(
     dem_ecef: xr.DataArray,
     position_ecef: xr.DataArray,
-    coordinate_conversion: Optional[xr.Dataset],
-    correct_radiometry: Optional[str],
+    coordinate_conversion: Optional[xr.Dataset] = None,
+    correct_radiometry: Optional[str] = None,
 ) -> xr.Dataset:
     """Compute the image coordinates of the DEM given the satellite orbit."""
 
@@ -245,7 +246,7 @@ def terrain_correction(
 
     logger.info(f"open data product {product_urlpath!r}")
 
-    product = SarProduct.open(
+    product = SarProduct(
         product_urlpath, measurement_group, measurement_chunks, **kwargs
     )
     product_type = product.measurement.attrs["product_type"]
@@ -269,19 +270,20 @@ def terrain_correction(
             "azimuth_time": template_raster.astype("datetime64[ns]"),
         }
     )
-    if product.coordinate_conversion is not None:
+    acquisition_kwargs = {
+        "position_ecef": product.orbit.position,
+        "correct_radiometry": correct_radiometry,
+    }
+    if product_type == "GRD":
         acquisition_template["ground_range"] = template_raster
+        acquisition_kwargs["coordinate_conversion"] = product.coordinate_conversion
     if correct_radiometry is not None:
         acquisition_template["gamma_area"] = template_raster
 
     acquisition = xr.map_blocks(
         simulate_acquisition,
         dem_ecef,
-        kwargs={
-            "position_ecef": product.orbit.position,
-            "coordinate_conversion": product.coordinate_conversion,
-            "correct_radiometry": correct_radiometry,
-        },
+        kwargs=acquisition_kwargs,
         template=acquisition_template,
     )
 
