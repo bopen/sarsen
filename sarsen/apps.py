@@ -6,7 +6,7 @@ import numpy as np
 import rioxarray
 import xarray as xr
 
-from . import chunking, geocoding, orbit, radiometry, scene, sentinel1
+from . import chunking, datamodel, geocoding, orbit, radiometry, scene, sentinel1
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +65,7 @@ def terrain_correction(
     radiometry_bound: int = 128,
     enable_dask_distributed: bool = False,
     client_kwargs: Dict[str, Any] = {"processes": False},
+    sar_product_class: type(datamodel.SarProduct) = sentinel1.Sentinel1SarProduct,
     **kwargs: Any,
 ) -> xr.DataArray:
     """Apply the terrain-correction to sentinel-1 SLC and GRD products.
@@ -125,7 +126,7 @@ def terrain_correction(
 
     logger.info(f"open data product {product_urlpath!r}")
 
-    product = sentinel1.Sentinel1SarProduct(
+    product = sar_product_class(
         product_urlpath, measurement_group, measurement_chunks, **kwargs
     )
     allowed_product_types = ["GRD", "SLC"]
