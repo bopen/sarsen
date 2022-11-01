@@ -14,3 +14,7 @@ class SarProduct(abc.ABC):
     @abc.abstractmethod
     def beta_nought(self) -> xr.DataArray:
         ...
+
+    @abc.abstractmethod
+    def state_vectors(self) -> xr.DataArray:
+        ...

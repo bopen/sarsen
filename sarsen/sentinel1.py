@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import functools
 from typing import Any, Dict, Optional, Tuple, Union
 
 import attrs
@@ -47,7 +46,7 @@ class Sentinel1SarProduct(datamodel.SarProduct):
     measurement_chunks: int = 2048
     kwargs: Dict[str, Any] = {}
 
-    @functools.cached_property
+    @property
     def measurement(self) -> xr.Dataset:
         ds, self.kwargs = open_dataset_autodetect(
             self.product_urlpath,
@@ -57,14 +56,14 @@ class Sentinel1SarProduct(datamodel.SarProduct):
         )
         return ds
 
-    @functools.cached_property
+    @property
     def orbit(self) -> xr.Dataset:
         ds, self.kwargs = open_dataset_autodetect(
             self.product_urlpath, group=f"{self.measurement_group}/orbit", **self.kwargs
         )
         return ds
 
-    @functools.cached_property
+    @property
     def calibration(self) -> xr.Dataset:
         ds, self.kwargs = open_dataset_autodetect(
             self.product_urlpath,
@@ -73,7 +72,7 @@ class Sentinel1SarProduct(datamodel.SarProduct):
         )
         return ds
 
-    @functools.cached_property
+    @property
     def coordinate_conversion(self) -> Optional[xr.Dataset]:
         try:
             ds, self.kwargs = open_dataset_autodetect(
@@ -87,15 +86,18 @@ class Sentinel1SarProduct(datamodel.SarProduct):
 
     # SarProduct interaface
 
-    @functools.cached_property
+    @property
     def product_type(self) -> Any:
         prod_type = self.measurement.attrs["product_type"]
         assert isinstance(prod_type, str)
         return prod_type
 
     def beta_nought(self) -> xr.DataArray:
-        measurement = self.measurement.measurement
+        measurement = self.measurement.data_vars["measurement"]
         return calibrate_measurement(measurement, self.calibration.betaNought)
+
+    def state_vectors(self) -> xr.DataArray:
+        return self.orbit.data_vars["position"]
 
 
 def product_info(

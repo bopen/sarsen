@@ -159,7 +159,7 @@ def terrain_correction(
         simulate_acquisition,
         dem_ecef,
         kwargs={
-            "position_ecef": product.orbit.position,
+            "position_ecef": product.state_vectors(),
             "coordinate_conversion": product.coordinate_conversion,
             "correct_radiometry": correct_radiometry,
         },
