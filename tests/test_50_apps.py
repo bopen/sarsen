@@ -41,6 +41,7 @@ def test_terrain_correction_gtc(
     )
 
     assert isinstance(res, xr.DataArray)
+    assert "beta" in res.attrs["long_name"]
 
 
 @pytest.mark.parametrize("data_path,group", zip(DATA_PATHS, GROUPS))
@@ -62,6 +63,7 @@ def test_terrain_correction_fast_rtc(
     )
 
     assert isinstance(res, xr.DataArray)
+    assert "gamma" in res.attrs["long_name"]
 
 
 @pytest.mark.parametrize("data_path,group", zip(DATA_PATHS, GROUPS))
@@ -83,6 +85,7 @@ def test_terrain_correction_rtc(
     )
 
     assert isinstance(res, xr.DataArray)
+    assert "gamma" in res.attrs["long_name"]
 
 
 @pytest.mark.parametrize("data_path,group", zip(DATA_PATHS, GROUPS))
@@ -104,6 +107,7 @@ def test_terrain_correction_gtc_dask(
     )
 
     assert isinstance(res, xr.DataArray)
+    assert "beta" in res.attrs["long_name"]
 
 
 @pytest.mark.parametrize("data_path,group", zip(DATA_PATHS, GROUPS))
@@ -126,6 +130,7 @@ def test_terrain_correction_fast_rtc_dask(
     )
 
     assert isinstance(res, xr.DataArray)
+    assert "gamma" in res.attrs["long_name"]
 
 
 @pytest.mark.parametrize("data_path,group", zip(DATA_PATHS, GROUPS))
@@ -148,3 +153,4 @@ def test_terrain_correction_rtc_dask(
     )
 
     assert isinstance(res, xr.DataArray)
+    assert "gamma" in res.attrs["long_name"]
