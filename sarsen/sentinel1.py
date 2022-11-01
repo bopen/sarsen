@@ -43,7 +43,7 @@ def calibrate_measurement(
 class Sentinel1SarProduct(datamodel.SarProduct):
     product_urlpath: str
     measurement_group: str
-    measurement_chunks: int = 2048
+    measurement_chunks: Optional[int] = None
     kwargs: Dict[str, Any] = {}
 
     @property
