@@ -220,10 +220,13 @@ def terrain_correction(
             **interp_kwargs,
         )
 
+    geocoded_attrs = beta_nought.attrs.copy()
+
     if correct_radiometry is not None:
         geocoded = geocoded / simulated_beta_nought
+        geocoded_attrs["long_name"] = "terrain-corrected gamma nought"
 
-    geocoded.attrs.update(beta_nought.attrs)
+    geocoded.attrs.update(geocoded_attrs)
     geocoded.x.attrs.update(dem_raster.x.attrs)
     geocoded.y.attrs.update(dem_raster.y.attrs)
     geocoded.rio.set_crs(dem_raster.rio.crs)
