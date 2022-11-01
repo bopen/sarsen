@@ -1,129 +1,22 @@
-from __future__ import annotations
-
-import functools
 import logging
-from typing import Any, Dict, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, Optional, Tuple
 from unittest import mock
 
-import attrs
 import numpy as np
 import rioxarray
 import xarray as xr
-import xarray_sentinel
 
-from . import chunking, geocoding, orbit, radiometry, scene
+from . import chunking, datamodel, geocoding, orbit, radiometry, scene
 
 logger = logging.getLogger(__name__)
-
-
-T_SarProduct = TypeVar("T_SarProduct", bound="SarProduct")
-
-
-@attrs.define(slots=False)
-class SarProduct:
-    product_urlpath: str
-    measurement_group: str
-    measurement_chunks: int = 2048
-    kwargs: Dict[str, Any] = {}
-
-    @functools.cached_property
-    def measurement(self) -> xr.Dataset:
-        ds, self.kwargs = open_dataset_autodetect(
-            self.product_urlpath,
-            group=self.measurement_group,
-            chunks=self.measurement_chunks,
-            **self.kwargs,
-        )
-        return ds
-
-    @functools.cached_property
-    def orbit(self) -> xr.Dataset:
-        ds, self.kwargs = open_dataset_autodetect(
-            self.product_urlpath, group=f"{self.measurement_group}/orbit", **self.kwargs
-        )
-        return ds
-
-    @functools.cached_property
-    def calibration(self) -> xr.Dataset:
-        ds, self.kwargs = open_dataset_autodetect(
-            self.product_urlpath,
-            group=f"{self.measurement_group}/calibration",
-            **self.kwargs,
-        )
-        return ds
-
-    @functools.cached_property
-    def coordinate_conversion(self) -> xr.Dataset:
-        ds, self.kwargs = open_dataset_autodetect(
-            self.product_urlpath,
-            group=f"{self.measurement_group}/coordinate_conversion",
-            **self.kwargs,
-        )
-        return ds
-
-
-def open_dataset_autodetect(
-    product_urlpath: str,
-    group: Optional[str] = None,
-    chunks: Optional[Union[int, Dict[str, int]]] = None,
-    **kwargs: Any,
-) -> Tuple[xr.Dataset, Dict[str, Any]]:
-    kwargs.setdefault("engine", "sentinel-1")
-    try:
-        ds = xr.open_dataset(product_urlpath, group=group, chunks=chunks, **kwargs)
-    except FileNotFoundError:
-        # re-try with Planetary Computer option
-        kwargs[
-            "override_product_files"
-        ] = "{dirname}/{prefix}{swath}-{polarization}{ext}"
-        ds = xr.open_dataset(product_urlpath, group=group, chunks=chunks, **kwargs)
-    return ds, kwargs
-
-
-def product_info(
-    product_urlpath: str,
-    **kwargs: Any,
-) -> Dict[str, Any]:
-    """Get information about the Sentinel-1 product."""
-    root_ds = xr.open_dataset(
-        product_urlpath, engine="sentinel-1", check_files_exist=True, **kwargs
-    )
-
-    measurement_groups = [g for g in root_ds.attrs["subgroups"] if g.count("/") == 1]
-
-    gcp_group = measurement_groups[0] + "/gcp"
-
-    gcp, kwargs = open_dataset_autodetect(product_urlpath, group=gcp_group, **kwargs)
-
-    bbox = [
-        gcp.attrs["geospatial_lon_min"],
-        gcp.attrs["geospatial_lat_min"],
-        gcp.attrs["geospatial_lon_max"],
-        gcp.attrs["geospatial_lat_max"],
-    ]
-
-    product_attrs = [
-        "product_type",
-        "mode",
-        "swaths",
-        "transmitter_receiver_polarisations",
-    ]
-    product_info = {attr_name: root_ds.attrs[attr_name] for attr_name in product_attrs}
-    product_info.update(
-        {
-            "measurement_groups": measurement_groups,
-            "geospatial_bounds": gcp.attrs["geospatial_bounds"],
-            "geospatial_bbox": bbox,
-        }
-    )
-
-    return product_info
 
 
 def simulate_acquisition(
     dem_ecef: xr.DataArray,
     position_ecef: xr.DataArray,
-    coordinate_conversion: Optional[xr.Dataset] = None,
+    slant_range_time_to_ground_range: Callable[
+        [xr.DataArray, xr.DataArray], xr.DataArray
+    ],
     correct_radiometry: Optional[str] = None,
 ) -> xr.Dataset:
     """Compute the image coordinates of the DEM given the satellite orbit."""
@@ -139,13 +32,12 @@ def simulate_acquisition(
 
     acquisition["slant_range_time"] = slant_range_time
 
-    if coordinate_conversion is not None:
-        ground_range = xarray_sentinel.slant_range_time_to_ground_range(
-            acquisition.azimuth_time,
-            slant_range_time,
-            coordinate_conversion,
-        )
-        acquisition["ground_range"] = ground_range.drop_vars("azimuth_time")
+    maybe_ground_range = slant_range_time_to_ground_range(
+        acquisition.azimuth_time,
+        slant_range_time,
+    )
+    if maybe_ground_range is not None:
+        acquisition["ground_range"] = maybe_ground_range.drop_vars("azimuth_time")
     if correct_radiometry is not None:
         gamma_area = radiometry.compute_gamma_area(
             dem_ecef, acquisition.dem_distance / slant_range
@@ -157,22 +49,8 @@ def simulate_acquisition(
     return acquisition
 
 
-def calibrate_measurement(
-    measurement_ds: xr.Dataset, beta_nought_lut: xr.DataArray
-) -> xr.DataArray:
-    measurement = measurement_ds.measurement
-    if measurement.attrs["product_type"] == "SLC" and measurement.attrs["mode"] == "IW":
-        measurement = xarray_sentinel.mosaic_slc_iw(measurement)
-
-    beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
-    beta_nought = beta_nought.drop_vars(["pixel", "line"])
-
-    return beta_nought
-
-
 def terrain_correction(
-    product_urlpath: str,
-    measurement_group: str,
+    product: datamodel.SarProduct,
     dem_urlpath: str,
     output_urlpath: Optional[str] = "GTC.tif",
     simulated_urlpath: Optional[str] = None,
@@ -181,17 +59,14 @@ def terrain_correction(
     grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
     open_dem_raster_kwargs: Dict[str, Any] = {},
     chunks: Optional[int] = 1024,
-    measurement_chunks: int = 1024,
     radiometry_chunks: int = 2048,
     radiometry_bound: int = 128,
     enable_dask_distributed: bool = False,
     client_kwargs: Dict[str, Any] = {"processes": False},
-    **kwargs: Any,
 ) -> xr.DataArray:
     """Apply the terrain-correction to sentinel-1 SLC and GRD products.
 
-    :param product_urlpath: input product path or url
-    :param measurement_group: group of the measurement to be used, for example: "IW/VV"
+    :param product: SarProduct instance representing the input data
     :param dem_urlpath: dem path or url
     :param orbit_group: overrides the orbit group name
     :param calibration_group: overrides the calibration group name
@@ -214,7 +89,6 @@ def terrain_correction(
     Be aware that `grouping_area_factor` too high may degrade the final result
     :param open_dem_raster_kwargs: additional keyword arguments passed on to ``xarray.open_dataset``
     to open the `dem_urlpath`
-    :param kwargs: additional keyword arguments passed on to ``xarray.open_dataset`` to open the `product_urlpath`
     """
     # rioxarray must be imported explicitly or accesses to `.rio` may fail in dask
     assert rioxarray.__version__
@@ -244,15 +118,11 @@ def terrain_correction(
         dem_urlpath, chunks=chunks, **open_dem_raster_kwargs
     )
 
-    logger.info(f"open data product {product_urlpath!r}")
-
-    product = SarProduct(
-        product_urlpath, measurement_group, measurement_chunks, **kwargs
-    )
-    product_type = product.measurement.attrs["product_type"]
     allowed_product_types = ["GRD", "SLC"]
-    if product_type not in allowed_product_types:
-        raise ValueError(f"{product_type=}. Must be one of: {allowed_product_types}")
+    if product.product_type not in allowed_product_types:
+        raise ValueError(
+            f"{product.product_type=}. Must be one of: {allowed_product_types}"
+        )
 
     logger.info("pre-process DEM")
 
@@ -270,30 +140,26 @@ def terrain_correction(
             "azimuth_time": template_raster.astype("datetime64[ns]"),
         }
     )
-    acquisition_kwargs = {
-        "position_ecef": product.orbit.position,
-        "correct_radiometry": correct_radiometry,
-    }
-    if product_type == "GRD":
+    if product.product_type == "GRD":
         acquisition_template["ground_range"] = template_raster
-        acquisition_kwargs["coordinate_conversion"] = product.coordinate_conversion
     if correct_radiometry is not None:
         acquisition_template["gamma_area"] = template_raster
 
     acquisition = xr.map_blocks(
         simulate_acquisition,
         dem_ecef,
-        kwargs=acquisition_kwargs,
+        kwargs={
+            "position_ecef": product.state_vectors(),
+            "slant_range_time_to_ground_range": product.slant_range_time_to_ground_range,
+            "correct_radiometry": correct_radiometry,
+        },
         template=acquisition_template,
     )
 
     if correct_radiometry is not None:
         logger.info("simulate radiometry")
 
-        grid_parameters = radiometry.azimuth_slant_range_grid(
-            product.measurement.attrs,
-            grouping_area_factor,
-        )
+        grid_parameters = product.grid_parameters(grouping_area_factor)
 
         if correct_radiometry == "gamma_bilinear":
             gamma_weights = radiometry.gamma_weights_bilinear
@@ -339,13 +205,11 @@ def terrain_correction(
 
     logger.info("calibrate image")
 
-    beta_nought = calibrate_measurement(
-        product.measurement, product.calibration.betaNought
-    )
+    beta_nought = product.beta_nought()
 
     logger.info("terrain-correct image")
 
-    if product_type == "GRD":
+    if product.product_type == "GRD":
         interp_kwargs = {"ground_range": acquisition.ground_range}
     else:
         interp_kwargs = {"slant_range_time": acquisition.slant_range_time}

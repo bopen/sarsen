@@ -1,12 +1,12 @@
 import logging
-from typing import Any, Dict, Hashable, Optional, Tuple
+from typing import Optional, Tuple
 from unittest import mock
 
 import flox.xarray
 import numpy as np
 import xarray as xr
 
-from . import geocoding, scene
+from . import scene
 
 logger = logging.getLogger(__name__)
 
@@ -65,8 +65,8 @@ def gamma_weights_bilinear(
     azimuth_time0: np.datetime64,
     slant_range_time_interval_s: float,
     azimuth_time_interval_s: float,
-    slant_range_spacing_m: float = 1,
-    azimuth_spacing_m: float = 1,
+    slant_range_spacing_m: float = 1.0,
+    azimuth_spacing_m: float = 1.0,
 ) -> xr.DataArray:
     # compute dem image coordinates
     azimuth_index = ((dem_coords.azimuth_time - azimuth_time0) / ONE_SECOND) / (
@@ -134,8 +134,8 @@ def gamma_weights_nearest(
     azimuth_time0: np.datetime64,
     slant_range_time_interval_s: float,
     azimuth_time_interval_s: float,
-    slant_range_spacing_m: float = 1,
-    azimuth_spacing_m: float = 1,
+    slant_range_spacing_m: float = 1.0,
+    azimuth_spacing_m: float = 1.0,
 ) -> xr.DataArray:
     # compute dem image coordinates
     azimuth_index = np.round(
@@ -156,33 +156,3 @@ def gamma_weights_nearest(
 
     normalized_area = tot_area / (azimuth_spacing_m * slant_range_spacing_m)
     return normalized_area
-
-
-def azimuth_slant_range_grid(
-    attrs: Dict[Hashable, Any],
-    grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
-) -> Dict[str, Any]:
-
-    if attrs["product_type"] == "SLC":
-        slant_range_spacing_m = (
-            attrs["range_pixel_spacing"]
-            * np.sin(attrs["incidence_angle_mid_swath"])
-            * grouping_area_factor[1]
-        )
-    else:
-        slant_range_spacing_m = attrs["range_pixel_spacing"] * grouping_area_factor[1]
-
-    slant_range_time_interval_s = (
-        slant_range_spacing_m * 2 / geocoding.SPEED_OF_LIGHT  # ignore type
-    )
-
-    grid_parameters: Dict[str, Any] = {
-        "slant_range_time0": attrs["image_slant_range_time"],
-        "slant_range_time_interval_s": slant_range_time_interval_s,
-        "slant_range_spacing_m": slant_range_spacing_m,
-        "azimuth_time0": np.datetime64(attrs["product_first_line_utc_time"]),
-        "azimuth_time_interval_s": attrs["azimuth_time_interval"]
-        * grouping_area_factor[0],
-        "azimuth_spacing_m": attrs["azimuth_pixel_spacing"] * grouping_area_factor[0],
-    }
-    return grid_parameters

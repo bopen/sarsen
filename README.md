@@ -105,9 +105,12 @@ The following code applies the geometric terrain correction to the VV polarizati
 
 ```python
 >>> import sarsen
->>> gtc = sarsen.terrain_correction(
+>>> product = sarsen.Sentinel1SarProduct(
 ...   "tests/data/S1B_IW_GRDH_1SDV_20211223T051122_20211223T051147_030148_039993_5371.SAFE",
 ...   measurement_group="IW/VV",
+... )
+>>> gtc = sarsen.terrain_correction(
+...   product,
 ...   dem_urlpath="tests/data/Rome-30m-DEM.tif",
 ... )
 
@@ -117,8 +120,7 @@ The radiometric correction can be activated using the key `correct_radiometry`:
 
 ```python
 >>> rtc = sarsen.terrain_correction(
-...   "tests/data/S1B_IW_GRDH_1SDV_20211223T051122_20211223T051147_030148_039993_5371.SAFE",
-...   measurement_group="IW/VV",
+...   product,
 ...   dem_urlpath="tests/data/Rome-30m-DEM.tif",
 ...   correct_radiometry="gamma_nearest"
 ... )

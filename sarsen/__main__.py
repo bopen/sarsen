@@ -4,7 +4,7 @@ from typing import Tuple
 
 import typer
 
-from . import apps
+from . import apps, sentinel1
 
 app = typer.Typer()
 
@@ -14,7 +14,7 @@ def info(
     product_urlpath: str,
 ) -> None:
     """Print information about the Sentinel-1 product."""
-    product_info = apps.product_info(product_urlpath)
+    product_info = sentinel1.product_info(product_urlpath)
     for key, value in product_info.items():
         print(f"{key}: {value}")
 
@@ -33,9 +33,12 @@ def gtc(
     client_kwargs = json.loads(client_kwargs_json)
     real_chunks = chunks if chunks > 0 else None
     logging.basicConfig(level=logging.INFO)
-    apps.terrain_correction(
+    product = sentinel1.Sentinel1SarProduct(
         product_urlpath,
         measurement_group,
+    )
+    apps.terrain_correction(
+        product,
         dem_urlpath,
         output_urlpath=output_urlpath,
         enable_dask_distributed=enable_dask_distributed,
@@ -59,9 +62,12 @@ def stc(
     client_kwargs = json.loads(client_kwargs_json)
     real_chunks = chunks if chunks > 0 else None
     logging.basicConfig(level=logging.INFO)
-    apps.terrain_correction(
+    product = sentinel1.Sentinel1SarProduct(
         product_urlpath,
         measurement_group,
+    )
+    apps.terrain_correction(
+        product,
         dem_urlpath,
         correct_radiometry="gamma_bilinear",
         simulated_urlpath=simulated_urlpath,
@@ -87,9 +93,12 @@ def rtc(
     client_kwargs = json.loads(client_kwargs_json)
     real_chunks = chunks if chunks > 0 else None
     logging.basicConfig(level=logging.INFO)
-    apps.terrain_correction(
+    product = sentinel1.Sentinel1SarProduct(
         product_urlpath,
         measurement_group,
+    )
+    apps.terrain_correction(
+        product,
         dem_urlpath,
         correct_radiometry="gamma_bilinear",
         output_urlpath=output_urlpath,
