@@ -74,14 +74,13 @@ class Sentinel1SarProduct(datamodel.SarProduct):
 
     @property
     def coordinate_conversion(self) -> Optional[xr.Dataset]:
+        ds = None
         if self.product_type == "GRD":
             ds, self.kwargs = open_dataset_autodetect(
                 self.product_urlpath,
                 group=f"{self.measurement_group}/coordinate_conversion",
                 **self.kwargs,
             )
-        else:
-            ds = None
         return ds
 
     # SarProduct interaface
@@ -102,12 +101,13 @@ class Sentinel1SarProduct(datamodel.SarProduct):
     def slant_range_time_to_ground_range(
         self, azimuth_time: xr.DataArray, slant_range_time: xr.DataArray
     ) -> Optional[xr.DataArray]:
-        if self.product_type == "GRD":
-            return xarray_sentinel.slant_range_time_to_ground_range(
-                azimuth_time,
-                slant_range_time,
+        ds = None
+        coordinate_conversion = self.coordinate_conversion
+        if coordinate_conversion is not None:
+            ds = xarray_sentinel.slant_range_time_to_ground_range(
+                azimuth_time, slant_range_time, coordinate_conversion
             )
-        return None
+        return ds
 
 
 def product_info(

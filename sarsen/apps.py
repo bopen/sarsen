@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 def simulate_acquisition(
     dem_ecef: xr.DataArray,
     position_ecef: xr.DataArray,
-    slant_range_time_to_ground_range: Optional[
-        Callable[[xr.DataArray, xr.DataArray], xr.DataArray]
-    ] = None,
+    slant_range_time_to_ground_range: Callable[
+        [xr.DataArray, xr.DataArray], xr.DataArray
+    ],
     correct_radiometry: Optional[str] = None,
 ) -> xr.Dataset:
     """Compute the image coordinates of the DEM given the satellite orbit."""
