@@ -1,10 +1,13 @@
 import abc
-from typing import Optional
+from typing import Any, Dict, Optional, Tuple
 
 import xarray as xr
 
 
 class SarProduct(abc.ABC):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        pass
+
     @property
     @abc.abstractmethod
     def product_type(self) -> str:
@@ -22,3 +25,10 @@ class SarProduct(abc.ABC):
         self, azimuth_time: xr.DataArray, slant_range_time: xr.DataArray
     ) -> Optional[xr.DataArray]:
         return None
+
+    # FIXME: design a better interface
+    def grid_parameters(
+        self,
+        grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
+    ) -> Dict[str, Any]:
+        ...

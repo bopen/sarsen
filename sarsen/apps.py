@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple, Type
 from unittest import mock
 
 import numpy as np
@@ -65,7 +65,7 @@ def terrain_correction(
     radiometry_bound: int = 128,
     enable_dask_distributed: bool = False,
     client_kwargs: Dict[str, Any] = {"processes": False},
-    sar_product_class: type(datamodel.SarProduct) = sentinel1.Sentinel1SarProduct,
+    sar_product_class: Type[datamodel.SarProduct] = sentinel1.Sentinel1SarProduct,
     **kwargs: Any,
 ) -> xr.DataArray:
     """Apply the terrain-correction to sentinel-1 SLC and GRD products.
@@ -170,11 +170,7 @@ def terrain_correction(
     if correct_radiometry is not None:
         logger.info("simulate radiometry")
 
-        # FIXME: Sentinel-1 specific code should br moved to Sentinel1SarProduct
-        grid_parameters = radiometry.azimuth_slant_range_grid(
-            product.measurement.attrs,
-            grouping_area_factor,
-        )
+        grid_parameters = product.grid_parameters(grouping_area_factor)
 
         if correct_radiometry == "gamma_bilinear":
             gamma_weights = radiometry.gamma_weights_bilinear

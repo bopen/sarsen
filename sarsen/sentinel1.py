@@ -3,10 +3,11 @@ from __future__ import annotations
 from typing import Any, Dict, Optional, Tuple, Union
 
 import attrs
+import numpy as np
 import xarray as xr
 import xarray_sentinel
 
-from . import datamodel
+from . import datamodel, geocoding
 
 
 def open_dataset_autodetect(
@@ -37,6 +38,36 @@ def calibrate_measurement(
     beta_nought = beta_nought.drop_vars(["pixel", "line"])
 
     return beta_nought
+
+
+def azimuth_slant_range_grid(
+    attrs: Dict[str, Any],
+    grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
+) -> Dict[str, Any]:
+
+    if attrs["product_type"] == "SLC":
+        slant_range_spacing_m = (
+            attrs["range_pixel_spacing"]
+            * np.sin(attrs["incidence_angle_mid_swath"])
+            * grouping_area_factor[1]
+        )
+    else:
+        slant_range_spacing_m = attrs["range_pixel_spacing"] * grouping_area_factor[1]
+
+    slant_range_time_interval_s = (
+        slant_range_spacing_m * 2 / geocoding.SPEED_OF_LIGHT  # ignore type
+    )
+
+    grid_parameters: Dict[str, Any] = {
+        "slant_range_time0": attrs["image_slant_range_time"],
+        "slant_range_time_interval_s": slant_range_time_interval_s,
+        "slant_range_spacing_m": slant_range_spacing_m,
+        "azimuth_time0": np.datetime64(attrs["product_first_line_utc_time"]),
+        "azimuth_time_interval_s": attrs["azimuth_time_interval"]
+        * grouping_area_factor[0],
+        "azimuth_spacing_m": attrs["azimuth_pixel_spacing"] * grouping_area_factor[0],
+    }
+    return grid_parameters
 
 
 @attrs.define(slots=False)
@@ -108,6 +139,12 @@ class Sentinel1SarProduct(datamodel.SarProduct):
                 azimuth_time, slant_range_time, coordinate_conversion
             )
         return ds
+
+    def grid_parameters(
+        self,
+        grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
+    ) -> Dict[str, Any]:
+        return azimuth_slant_range_grid(self.measurement.attrs, grouping_area_factor)
 
 
 def product_info(
