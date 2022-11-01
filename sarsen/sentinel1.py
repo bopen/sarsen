@@ -114,6 +114,28 @@ class Sentinel1SarProduct(datamodel.SarProduct):
             )
         return ds
 
+    @property
+    def azimuth_fm_rate(self) -> Optional[xr.Dataset]:
+        ds = None
+        if self.product_type == "SLC":
+            ds, self.kwargs = open_dataset_autodetect(
+                self.product_urlpath,
+                group=f"{self.measurement_group}/azimuth_fm_rate",
+                **self.kwargs,
+            )
+        return ds
+
+    @property
+    def dc_estimate(self) -> Optional[xr.Dataset]:
+        ds = None
+        if self.product_type == "SLC":
+            ds, self.kwargs = open_dataset_autodetect(
+                self.product_urlpath,
+                group=f"{self.measurement_group}/dc_estimate",
+                **self.kwargs,
+            )
+        return ds
+
     # SarProduct interaface
 
     @property

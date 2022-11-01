@@ -26,11 +26,18 @@ def test_Sentinel1SarProduct(data_path: str, group: str) -> None:
     assert isinstance(res.orbit, xr.Dataset)
     assert isinstance(res.calibration, xr.Dataset)
 
+    if res.product_type == "GRD":
+        assert isinstance(res.coordinate_conversion, xr.Dataset)
+        assert res.azimuth_fm_rate is None
+        assert res.dc_estimate is None
+    else:
+        assert res.coordinate_conversion is None
+        assert isinstance(res.azimuth_fm_rate, xr.Dataset)
+        assert isinstance(res.dc_estimate, xr.Dataset)
+
+    assert res.product_type in {"SLC", "GRD"}
     assert isinstance(res.beta_nought(), xr.DataArray)
-
-    expected_class = xr.Dataset() if res.product_type == "GRD" else None
-
-    assert isinstance(res.coordinate_conversion, type(expected_class))
+    assert isinstance(res.state_vectors(), xr.DataArray)
 
 
 def test_product_info() -> None:
