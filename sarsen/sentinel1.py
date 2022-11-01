@@ -29,9 +29,8 @@ def open_dataset_autodetect(
 
 
 def calibrate_measurement(
-    measurement_ds: xr.Dataset, beta_nought_lut: xr.DataArray
+    measurement: xr.DataArray, beta_nought_lut: xr.DataArray
 ) -> xr.DataArray:
-    measurement = measurement_ds.measurement
     if measurement.attrs["product_type"] == "SLC" and measurement.attrs["mode"] == "IW":
         measurement = xarray_sentinel.mosaic_slc_iw(measurement)
 
@@ -86,8 +85,17 @@ class Sentinel1SarProduct(datamodel.SarProduct):
             ds = None
         return ds
 
+    # SarProduct interaface
+
+    @functools.cached_property
+    def product_type(self) -> Any:
+        prod_type = self.measurement.attrs["product_type"]
+        assert isinstance(prod_type, str)
+        return prod_type
+
     def beta_nought(self) -> xr.DataArray:
-        return calibrate_measurement(self.measurement, self.calibration.betaNought)
+        measurement = self.measurement.measurement
+        return calibrate_measurement(measurement, self.calibration.betaNought)
 
 
 def product_info(

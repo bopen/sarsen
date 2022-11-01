@@ -128,10 +128,11 @@ def terrain_correction(
     product = sentinel1.Sentinel1SarProduct(
         product_urlpath, measurement_group, measurement_chunks, **kwargs
     )
-    product_type = product.measurement.attrs["product_type"]
     allowed_product_types = ["GRD", "SLC"]
-    if product_type not in allowed_product_types:
-        raise ValueError(f"{product_type=}. Must be one of: {allowed_product_types}")
+    if product.product_type not in allowed_product_types:
+        raise ValueError(
+            f"{product.product_type=}. Must be one of: {allowed_product_types}"
+        )
 
     logger.info("pre-process DEM")
 
@@ -149,7 +150,7 @@ def terrain_correction(
             "azimuth_time": template_raster.astype("datetime64[ns]"),
         }
     )
-    if product_type == "GRD":
+    if product.product_type == "GRD":
         acquisition_template["ground_range"] = template_raster
     if correct_radiometry is not None:
         acquisition_template["gamma_area"] = template_raster
@@ -221,7 +222,7 @@ def terrain_correction(
 
     logger.info("terrain-correct image")
 
-    if product_type == "GRD":
+    if product.product_type == "GRD":
         interp_kwargs = {"ground_range": acquisition.ground_range}
     else:
         interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
