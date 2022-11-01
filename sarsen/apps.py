@@ -217,7 +217,7 @@ def terrain_correction(
 
     logger.info("calibrate image")
 
-    beta_nought = product.beta_nought
+    beta_nought = product.beta_nought()
 
     logger.info("terrain-correct image")
 

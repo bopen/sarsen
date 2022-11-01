@@ -4,7 +4,7 @@ from typing import Tuple
 
 import typer
 
-from . import apps
+from . import apps, sentinel1
 
 app = typer.Typer()
 
@@ -14,7 +14,7 @@ def info(
     product_urlpath: str,
 ) -> None:
     """Print information about the Sentinel-1 product."""
-    product_info = apps.product_info(product_urlpath)
+    product_info = sentinel1.product_info(product_urlpath)
     for key, value in product_info.items():
         print(f"{key}: {value}")
 
