@@ -1,11 +1,10 @@
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 from unittest import mock
 
 import numpy as np
 import rioxarray
 import xarray as xr
-import xarray_sentinel
 
 from . import chunking, geocoding, orbit, radiometry, scene, sentinel1
 
@@ -15,7 +14,9 @@ logger = logging.getLogger(__name__)
 def simulate_acquisition(
     dem_ecef: xr.DataArray,
     position_ecef: xr.DataArray,
-    coordinate_conversion: Optional[xr.Dataset] = None,
+    slant_range_time_to_ground_range: Optional[
+        Callable[[xr.DataArray, xr.DataArray], xr.DataArray]
+    ] = None,
     correct_radiometry: Optional[str] = None,
 ) -> xr.Dataset:
     """Compute the image coordinates of the DEM given the satellite orbit."""
@@ -31,13 +32,12 @@ def simulate_acquisition(
 
     acquisition["slant_range_time"] = slant_range_time
 
-    if coordinate_conversion is not None:
-        ground_range = xarray_sentinel.slant_range_time_to_ground_range(
-            acquisition.azimuth_time,
-            slant_range_time,
-            coordinate_conversion,
-        )
-        acquisition["ground_range"] = ground_range.drop_vars("azimuth_time")
+    maybe_ground_range = slant_range_time_to_ground_range(
+        acquisition.azimuth_time,
+        slant_range_time,
+    )
+    if maybe_ground_range is not None:
+        acquisition["ground_range"] = maybe_ground_range.drop_vars("azimuth_time")
     if correct_radiometry is not None:
         gamma_area = radiometry.compute_gamma_area(
             dem_ecef, acquisition.dem_distance / slant_range
@@ -160,7 +160,7 @@ def terrain_correction(
         dem_ecef,
         kwargs={
             "position_ecef": product.state_vectors(),
-            "coordinate_conversion": product.coordinate_conversion,
+            "slant_range_time_to_ground_range": product.slant_range_time_to_ground_range,
             "correct_radiometry": correct_radiometry,
         },
         template=acquisition_template,

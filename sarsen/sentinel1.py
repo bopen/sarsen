@@ -74,13 +74,13 @@ class Sentinel1SarProduct(datamodel.SarProduct):
 
     @property
     def coordinate_conversion(self) -> Optional[xr.Dataset]:
-        try:
+        if self.product_type == "GRD":
             ds, self.kwargs = open_dataset_autodetect(
                 self.product_urlpath,
                 group=f"{self.measurement_group}/coordinate_conversion",
                 **self.kwargs,
             )
-        except TypeError:
+        else:
             ds = None
         return ds
 
@@ -98,6 +98,16 @@ class Sentinel1SarProduct(datamodel.SarProduct):
 
     def state_vectors(self) -> xr.DataArray:
         return self.orbit.data_vars["position"]
+
+    def slant_range_time_to_ground_range(
+        self, azimuth_time: xr.DataArray, slant_range_time: xr.DataArray
+    ) -> Optional[xr.DataArray]:
+        if self.product_type == "GRD":
+            return xarray_sentinel.slant_range_time_to_ground_range(
+                azimuth_time,
+                slant_range_time,
+            )
+        return None
 
 
 def product_info(
