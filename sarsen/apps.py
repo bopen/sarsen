@@ -169,6 +169,7 @@ def terrain_correction(
     if correct_radiometry is not None:
         logger.info("simulate radiometry")
 
+        # FIXME: Sentinel-1 specific code should br moved to Sentinel1SarProduct
         grid_parameters = radiometry.azimuth_slant_range_grid(
             product.measurement.attrs,
             grouping_area_factor,
