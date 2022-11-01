@@ -79,10 +79,17 @@ class Sentinel1SarProduct(datamodel.SarProduct):
 
     @property
     def measurement(self) -> xr.Dataset:
+        try:
+            import dask  # noqa: F401
+
+            measurement_chunks = self.measurement_chunks or 1024
+        except ModuleNotFoundError:
+            pass
+
         ds, self.kwargs = open_dataset_autodetect(
             self.product_urlpath,
             group=self.measurement_group,
-            chunks=self.measurement_chunks,
+            chunks=measurement_chunks,
             **self.kwargs,
         )
         return ds
