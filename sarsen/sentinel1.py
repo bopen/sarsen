@@ -9,6 +9,13 @@ import xarray_sentinel
 
 from . import datamodel, geocoding
 
+try:
+    import dask  # noqa: F401
+
+    DEFAULT_MEASUREMENT_CHUNKS: Optional[int] = 2048
+except ModuleNotFoundError:
+    DEFAULT_MEASUREMENT_CHUNKS = None
+
 
 def open_dataset_autodetect(
     product_urlpath: str,
@@ -74,22 +81,15 @@ def azimuth_slant_range_grid(
 class Sentinel1SarProduct(datamodel.SarProduct):
     product_urlpath: str
     measurement_group: str
-    measurement_chunks: Optional[int] = None
+    measurement_chunks: Optional[int] = DEFAULT_MEASUREMENT_CHUNKS
     kwargs: Dict[str, Any] = {}
 
     @property
     def measurement(self) -> xr.Dataset:
-        try:
-            import dask  # noqa: F401
-
-            measurement_chunks = self.measurement_chunks or 1024
-        except ModuleNotFoundError:
-            pass
-
         ds, self.kwargs = open_dataset_autodetect(
             self.product_urlpath,
             group=self.measurement_group,
-            chunks=measurement_chunks,
+            chunks=self.measurement_chunks,
             **self.kwargs,
         )
         return ds
