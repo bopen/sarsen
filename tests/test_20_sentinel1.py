@@ -28,7 +28,7 @@ def test_Sentinel1SarProduct(data_path: str, group: str) -> None:
 
     assert isinstance(res.beta_nought(), xr.DataArray)
 
-    expected_class = xr.Dataset if res.product_type == "GRD" else None
+    expected_class = xr.Dataset() if res.product_type == "GRD" else None
 
     assert isinstance(res.coordinate_conversion, type(expected_class))
 
