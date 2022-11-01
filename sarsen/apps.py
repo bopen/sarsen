@@ -1,12 +1,12 @@
 import logging
-from typing import Any, Callable, Dict, Optional, Tuple, Type
+from typing import Any, Callable, Dict, Optional, Tuple
 from unittest import mock
 
 import numpy as np
 import rioxarray
 import xarray as xr
 
-from . import chunking, datamodel, geocoding, orbit, radiometry, scene, sentinel1
+from . import chunking, datamodel, geocoding, orbit, radiometry, scene
 
 logger = logging.getLogger(__name__)
 
@@ -50,8 +50,7 @@ def simulate_acquisition(
 
 
 def terrain_correction(
-    product_urlpath: str,
-    measurement_group: str,
+    product: datamodel.SarProduct,
     dem_urlpath: str,
     output_urlpath: Optional[str] = "GTC.tif",
     simulated_urlpath: Optional[str] = None,
@@ -60,18 +59,14 @@ def terrain_correction(
     grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
     open_dem_raster_kwargs: Dict[str, Any] = {},
     chunks: Optional[int] = 1024,
-    measurement_chunks: int = 1024,
     radiometry_chunks: int = 2048,
     radiometry_bound: int = 128,
     enable_dask_distributed: bool = False,
     client_kwargs: Dict[str, Any] = {"processes": False},
-    sar_product_class: Type[datamodel.SarProduct] = sentinel1.Sentinel1SarProduct,
-    **kwargs: Any,
 ) -> xr.DataArray:
     """Apply the terrain-correction to sentinel-1 SLC and GRD products.
 
-    :param product_urlpath: input product path or url
-    :param measurement_group: group of the measurement to be used, for example: "IW/VV"
+    :param product: SarProduct instance representing the input data
     :param dem_urlpath: dem path or url
     :param orbit_group: overrides the orbit group name
     :param calibration_group: overrides the calibration group name
@@ -94,7 +89,6 @@ def terrain_correction(
     Be aware that `grouping_area_factor` too high may degrade the final result
     :param open_dem_raster_kwargs: additional keyword arguments passed on to ``xarray.open_dataset``
     to open the `dem_urlpath`
-    :param kwargs: additional keyword arguments passed on to ``xarray.open_dataset`` to open the `product_urlpath`
     """
     # rioxarray must be imported explicitly or accesses to `.rio` may fail in dask
     assert rioxarray.__version__
@@ -124,11 +118,6 @@ def terrain_correction(
         dem_urlpath, chunks=chunks, **open_dem_raster_kwargs
     )
 
-    logger.info(f"open data product {product_urlpath!r}")
-
-    product = sar_product_class(
-        product_urlpath, measurement_group, measurement_chunks, **kwargs
-    )
     allowed_product_types = ["GRD", "SLC"]
     if product.product_type not in allowed_product_types:
         raise ValueError(

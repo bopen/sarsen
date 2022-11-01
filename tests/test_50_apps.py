@@ -5,7 +5,7 @@ import py
 import pytest
 import xarray as xr
 
-from sarsen import apps
+from sarsen import apps, sentinel1
 
 DATA_FOLDER = pathlib.Path(__file__).parent / "data"
 
@@ -29,9 +29,13 @@ def test_terrain_correction_gtc(
     group: str,
 ) -> None:
     out = str(tmpdir.join("GTC.tif"))
-    res = apps.terrain_correction(
+    product = sentinel1.Sentinel1SarProduct(
         str(data_path),
         group,
+    )
+
+    res = apps.terrain_correction(
+        product,
         str(DEM_RASTER),
         output_urlpath=out,
     )
@@ -45,10 +49,13 @@ def test_terrain_correction_fast_rtc(
     tmpdir: py.path.local, data_path: pathlib.Path, group: str
 ) -> None:
     out = str(tmpdir.join("RTC.tif"))
-
-    res = apps.terrain_correction(
+    product = sentinel1.Sentinel1SarProduct(
         str(data_path),
         group,
+    )
+
+    res = apps.terrain_correction(
+        product,
         str(DEM_RASTER),
         correct_radiometry="gamma_nearest",
         output_urlpath=out,
@@ -63,10 +70,13 @@ def test_terrain_correction_rtc(
     tmpdir: py.path.local, data_path: pathlib.Path, group: str
 ) -> None:
     out = str(tmpdir.join("RTC.tif"))
-
-    res = apps.terrain_correction(
+    product = sentinel1.Sentinel1SarProduct(
         str(data_path),
         group,
+    )
+
+    res = apps.terrain_correction(
+        product,
         str(DEM_RASTER),
         correct_radiometry="gamma_bilinear",
         output_urlpath=out,
@@ -81,9 +91,13 @@ def test_terrain_correction_gtc_dask(
     tmpdir: py.path.local, data_path: pathlib.Path, group: str
 ) -> None:
     out = str(tmpdir.join("GTC.tif"))
-    res = apps.terrain_correction(
+    product = sentinel1.Sentinel1SarProduct(
         str(data_path),
         group,
+    )
+
+    res = apps.terrain_correction(
+        product,
         str(DEM_RASTER),
         output_urlpath=out,
         chunks=1024,
@@ -98,10 +112,13 @@ def test_terrain_correction_fast_rtc_dask(
     tmpdir: py.path.local, data_path: pathlib.Path, group: str
 ) -> None:
     out = str(tmpdir.join("RTC.tif"))
-
-    res = apps.terrain_correction(
+    product = sentinel1.Sentinel1SarProduct(
         str(data_path),
         group,
+    )
+
+    res = apps.terrain_correction(
+        product,
         str(DEM_RASTER),
         correct_radiometry="gamma_nearest",
         output_urlpath=out,
@@ -117,10 +134,13 @@ def test_terrain_correction_rtc_dask(
     tmpdir: py.path.local, data_path: pathlib.Path, group: str
 ) -> None:
     out = str(tmpdir.join("RTC.tif"))
-
-    res = apps.terrain_correction(
+    product = sentinel1.Sentinel1SarProduct(
         str(data_path),
         group,
+    )
+
+    res = apps.terrain_correction(
+        product,
         str(DEM_RASTER),
         correct_radiometry="gamma_bilinear",
         output_urlpath=out,
