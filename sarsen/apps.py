@@ -200,10 +200,6 @@ def terrain_correction(
     if output_urlpath is None:
         return simulated_beta_nought
 
-    logger.info("calibrate image")
-
-    beta_nought = product.beta_nought()
-
     logger.info("terrain-correct image")
 
     if product.product_type == "GRD":
@@ -214,19 +210,16 @@ def terrain_correction(
     # HACK: we monkey-patch away an optimisation in xr.DataArray.interp that actually makes
     #   the interpolation much slower when indeces are dask arrays.
     with mock.patch("xarray.core.missing._localize", lambda o, i: (o, i)):
-        geocoded = beta_nought.interp(
+        geocoded = product.beta_nought_interp(
             method=interp_method,
             azimuth_time=acquisition.azimuth_time,
             **interp_kwargs,
         )
 
-    geocoded_attrs = beta_nought.attrs.copy()
-
     if correct_radiometry is not None:
         geocoded = geocoded / simulated_beta_nought
-        geocoded_attrs["long_name"] = "terrain-corrected gamma nought"
+        geocoded.attrs["long_name"] = "terrain-corrected gamma nought"
 
-    geocoded.attrs.update(geocoded_attrs)
     geocoded.x.attrs.update(dem_raster.x.attrs)
     geocoded.y.attrs.update(dem_raster.y.attrs)
     geocoded.rio.set_crs(dem_raster.rio.crs)

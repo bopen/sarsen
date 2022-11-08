@@ -14,12 +14,20 @@ class SarProduct(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def beta_nought(self) -> xr.DataArray:
+    def state_vectors(self) -> xr.DataArray:
         ...
 
     @abc.abstractmethod
-    def state_vectors(self) -> xr.DataArray:
+    def beta_nought(self) -> xr.DataArray:
         ...
+
+    def beta_nought_interp(
+        self,
+        **kwargs: Any,
+    ) -> xr.DataArray:
+        beta_nought = self.beta_nought()
+        interpolated = beta_nought.interp(**kwargs)
+        return interpolated.assign_attrs(beta_nought.attrs)
 
     def slant_range_time_to_ground_range(
         self, azimuth_time: xr.DataArray, slant_range_time: xr.DataArray
