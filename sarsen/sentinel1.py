@@ -78,7 +78,7 @@ def azimuth_slant_range_grid(
 
 
 @attrs.define(slots=False)
-class Sentinel1SarProduct(datamodel.SarProduct):
+class Sentinel1SarProduct(datamodel.GroundSarProduct, datamodel.SlantRangeSarProduct):
     product_urlpath: str
     measurement_group: str
     measurement_chunks: Optional[int] = DEFAULT_MEASUREMENT_CHUNKS

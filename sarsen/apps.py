@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 from unittest import mock
 
 import numpy as np
@@ -14,9 +14,6 @@ logger = logging.getLogger(__name__)
 def simulate_acquisition(
     dem_ecef: xr.DataArray,
     position_ecef: xr.DataArray,
-    slant_range_time_to_ground_range: Callable[
-        [xr.DataArray, xr.DataArray], xr.DataArray
-    ],
     correct_radiometry: Optional[str] = None,
 ) -> xr.Dataset:
     """Compute the image coordinates of the DEM given the satellite orbit."""
@@ -32,12 +29,6 @@ def simulate_acquisition(
 
     acquisition["slant_range_time"] = slant_range_time
 
-    maybe_ground_range = slant_range_time_to_ground_range(
-        acquisition.azimuth_time,
-        slant_range_time,
-    )
-    if maybe_ground_range is not None:
-        acquisition["ground_range"] = maybe_ground_range.drop_vars("azimuth_time")
     if correct_radiometry is not None:
         gamma_area = radiometry.compute_gamma_area(
             dem_ecef, acquisition.dem_distance / slant_range
@@ -137,8 +128,6 @@ def terrain_correction(
             "azimuth_time": template_raster.astype("datetime64[ns]"),
         }
     )
-    if product.product_type == "GRD":
-        acquisition_template["ground_range"] = template_raster
     if correct_radiometry is not None:
         acquisition_template["gamma_area"] = template_raster
 
@@ -147,7 +136,6 @@ def terrain_correction(
         dem_ecef,
         kwargs={
             "position_ecef": product.state_vectors(),
-            "slant_range_time_to_ground_range": product.slant_range_time_to_ground_range,
             "correct_radiometry": correct_radiometry,
         },
         template=acquisition_template,
@@ -202,18 +190,13 @@ def terrain_correction(
 
     logger.info("terrain-correct image")
 
-    if product.product_type == "GRD":
-        interp_kwargs = {"ground_range": acquisition.ground_range}
-    else:
-        interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
-
     # HACK: we monkey-patch away an optimisation in xr.DataArray.interp that actually makes
     #   the interpolation much slower when indeces are dask arrays.
     with mock.patch("xarray.core.missing._localize", lambda o, i: (o, i)):
         geocoded = product.beta_nought_interp(
             method=interp_method,
             azimuth_time=acquisition.azimuth_time,
-            **interp_kwargs,
+            slant_range_time=acquisition.slant_range_time,
         )
 
     if correct_radiometry is not None:
