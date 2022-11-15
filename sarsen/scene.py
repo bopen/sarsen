@@ -25,7 +25,7 @@ def open_dem_raster(dem_urlpath: str, **kwargs: Any) -> xr.DataArray:
 
 
 def convert_to_dem_3d(dem_raster: xr.DataArray, dim: str = "axis") -> xr.DataArray:
-    _, dem_raster_x = xr.broadcast(dem_raster, dem_raster.x)  # type: ignore
+    _, dem_raster_x = xr.broadcast(dem_raster, dem_raster.x)
     dem_3d = xr.concat(
         [dem_raster_x, dem_raster.y, dem_raster], dim=dim, coords="minimal"
     )

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Container, Dict, Optional, Tuple
 from unittest import mock
 
 import numpy as np
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 def simulate_acquisition(
     dem_ecef: xr.DataArray,
     position_ecef: xr.DataArray,
-    correct_radiometry: Optional[str] = None,
+    include_variables: Container[str] = (),
 ) -> xr.Dataset:
     """Compute the image coordinates of the DEM given the satellite orbit."""
 
@@ -29,13 +29,20 @@ def simulate_acquisition(
 
     acquisition["slant_range_time"] = slant_range_time
 
-    if correct_radiometry is not None:
+    if include_variables and "gamma_area" in include_variables:
         gamma_area = radiometry.compute_gamma_area(
             dem_ecef, acquisition.dem_distance / slant_range
         )
         acquisition["gamma_area"] = gamma_area
 
-    acquisition = acquisition.drop_vars(["dem_distance", "satellite_direction", "axis"])
+    for data_var_name in acquisition.data_vars:
+        if include_variables and data_var_name not in include_variables:
+            acquisition = acquisition.drop_vars(data_var_name)
+
+    # drop coordinates that are not associated with any data variable
+    for coord_name in acquisition.coords:
+        if all(coord_name not in dv.coords for dv in acquisition.data_vars.values()):
+            acquisition = acquisition.drop_vars(coord_name)
 
     return acquisition
 
@@ -128,15 +135,17 @@ def terrain_correction(
             "azimuth_time": template_raster.astype("datetime64[ns]"),
         }
     )
+    include_variables = {"slant_range_time", "azimuth_time"}
     if correct_radiometry is not None:
         acquisition_template["gamma_area"] = template_raster
+        include_variables.add("gamma_area")
 
     acquisition = xr.map_blocks(
         simulate_acquisition,
         dem_ecef,
         kwargs={
             "position_ecef": product.state_vectors(),
-            "correct_radiometry": correct_radiometry,
+            "include_variables": include_variables,
         },
         template=acquisition_template,
     )

@@ -97,7 +97,7 @@ def backward_geocode(
     acquisition = xr.Dataset(
         data_vars={
             "dem_distance": dem_distance,
-            "satellite_direction": satellite_direction,
+            "satellite_direction": satellite_direction.transpose(*dem_distance.dims),
         }
     )
     return acquisition.reset_coords("azimuth_time")
