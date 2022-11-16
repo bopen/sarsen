@@ -7,7 +7,7 @@ import numpy as np
 import xarray as xr
 import xarray_sentinel
 
-from . import datamodel, geocoding
+import sarsen
 
 try:
     import dask  # noqa: F401
@@ -15,6 +15,8 @@ try:
     DEFAULT_MEASUREMENT_CHUNKS: Optional[int] = 2048
 except ModuleNotFoundError:
     DEFAULT_MEASUREMENT_CHUNKS = None
+
+SPEED_OF_LIGHT = 299_792_458.0  # m / s
 
 
 def open_dataset_autodetect(
@@ -35,18 +37,6 @@ def open_dataset_autodetect(
     return ds, kwargs
 
 
-def calibrate_measurement(
-    measurement: xr.DataArray, beta_nought_lut: xr.DataArray
-) -> xr.DataArray:
-    if measurement.attrs["product_type"] == "SLC" and measurement.attrs["mode"] == "IW":
-        measurement = xarray_sentinel.mosaic_slc_iw(measurement)
-
-    beta_nought = xarray_sentinel.calibrate_intensity(measurement, beta_nought_lut)
-    beta_nought = beta_nought.drop_vars(["pixel", "line"])
-
-    return beta_nought
-
-
 def azimuth_slant_range_grid(
     attrs: Dict[str, Any],
     grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
@@ -62,7 +52,7 @@ def azimuth_slant_range_grid(
         slant_range_spacing_m = attrs["range_pixel_spacing"] * grouping_area_factor[1]
 
     slant_range_time_interval_s = (
-        slant_range_spacing_m * 2 / geocoding.SPEED_OF_LIGHT  # ignore type
+        slant_range_spacing_m * 2 / SPEED_OF_LIGHT  # ignore type
     )
 
     grid_parameters: Dict[str, Any] = {
@@ -78,7 +68,7 @@ def azimuth_slant_range_grid(
 
 
 @attrs.define(slots=False)
-class Sentinel1SarProduct(datamodel.GroundSarProduct, datamodel.SlantRangeSarProduct):
+class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProduct):
     product_urlpath: str
     measurement_group: str
     measurement_chunks: Optional[int] = DEFAULT_MEASUREMENT_CHUNKS
@@ -92,6 +82,8 @@ class Sentinel1SarProduct(datamodel.GroundSarProduct, datamodel.SlantRangeSarPro
             chunks=self.measurement_chunks,
             **self.kwargs,
         )
+        if ds.attrs["product_type"] == "SLC" and ds.attrs["mode"] == "IW":
+            ds = xarray_sentinel.mosaic_slc_iw(ds)
         return ds
 
     @property
@@ -153,7 +145,11 @@ class Sentinel1SarProduct(datamodel.GroundSarProduct, datamodel.SlantRangeSarPro
 
     def beta_nought(self) -> xr.DataArray:
         measurement = self.measurement.data_vars["measurement"]
-        return calibrate_measurement(measurement, self.calibration.betaNought)
+        beta_nought = xarray_sentinel.calibrate_intensity(
+            measurement, self.calibration.betaNought
+        )
+        beta_nought = beta_nought.drop_vars(["pixel", "line"])
+        return beta_nought
 
     def state_vectors(self) -> xr.DataArray:
         return self.orbit.data_vars["position"]
@@ -174,6 +170,14 @@ class Sentinel1SarProduct(datamodel.GroundSarProduct, datamodel.SlantRangeSarPro
         grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
     ) -> Dict[str, Any]:
         return azimuth_slant_range_grid(self.measurement.attrs, grouping_area_factor)
+
+    def complex_amplitude(self) -> xr.DataArray:
+        measurement = self.measurement.data_vars["measurement"]
+        beta_nought = xarray_sentinel.calibrate_amplitude(
+            measurement, self.calibration.betaNought
+        )
+        beta_nought = beta_nought.drop_vars(["pixel", "line"])
+        return beta_nought
 
 
 def product_info(

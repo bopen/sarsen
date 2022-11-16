@@ -9,8 +9,6 @@ import numpy as np
 import numpy.typing as npt
 import xarray as xr
 
-SPEED_OF_LIGHT = 299_792_458.0  # m / s
-
 TimedeltaArrayLike = TypeVar("TimedeltaArrayLike", bound=npt.ArrayLike)
 FloatArrayLike = TypeVar("FloatArrayLike", bound=npt.ArrayLike)
 

@@ -11,6 +11,9 @@ from . import chunking, datamodel, geocoding, orbit, radiometry, scene
 logger = logging.getLogger(__name__)
 
 
+SPEED_OF_LIGHT = 299_792_458.0  # m / s
+
+
 def simulate_acquisition(
     dem_ecef: xr.DataArray,
     position_ecef: xr.DataArray,
@@ -25,7 +28,7 @@ def simulate_acquisition(
     acquisition = geocoding.backward_geocode(dem_ecef, position_ecef, velocity_ecef)
 
     slant_range = (acquisition.dem_distance**2).sum(dim="axis") ** 0.5
-    slant_range_time = 2.0 / geocoding.SPEED_OF_LIGHT * slant_range
+    slant_range_time = 2.0 / SPEED_OF_LIGHT * slant_range
 
     acquisition["slant_range_time"] = slant_range_time
 
