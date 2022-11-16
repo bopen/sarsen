@@ -47,8 +47,9 @@ def test_product_info() -> None:
         15.32209672548896,
         42.78115380313222,
     ]
+    product = sentinel1.Sentinel1SarProduct(str(DATA_PATHS[0]))
 
-    res = sentinel1.product_info(str(DATA_PATHS[0]))
+    res = product.product_info()
 
     assert "product_type" in res
     assert np.allclose(res["geospatial_bbox"], expected_geospatial_bbox)

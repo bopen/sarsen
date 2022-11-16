@@ -14,7 +14,9 @@ def info(
     product_urlpath: str,
 ) -> None:
     """Print information about the Sentinel-1 product."""
-    product_info = sentinel1.product_info(product_urlpath)
+    logging.basicConfig(level=logging.INFO)
+    product = sentinel1.Sentinel1SarProduct(product_urlpath)
+    product_info = product.product_info()
     for key, value in product_info.items():
         print(f"{key}: {value}")
 

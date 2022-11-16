@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import attrs
 import numpy as np
@@ -70,9 +70,17 @@ def azimuth_slant_range_grid(
 @attrs.define(slots=False)
 class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProduct):
     product_urlpath: str
-    measurement_group: str
+    measurement_group: Optional[str] = None
     measurement_chunks: Optional[int] = DEFAULT_MEASUREMENT_CHUNKS
     kwargs: Dict[str, Any] = {}
+
+    def all_measurement_groups(self) -> List[str]:
+        ds, self.kwargs = open_dataset_autodetect(
+            self.product_urlpath, check_files_exist=True, **self.kwargs
+        )
+
+        measurement_groups = [g for g in ds.attrs["subgroups"] if g.count("/") == 1]
+        return measurement_groups
 
     @property
     def measurement(self) -> xr.Dataset:
@@ -90,6 +98,13 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
     def orbit(self) -> xr.Dataset:
         ds, self.kwargs = open_dataset_autodetect(
             self.product_urlpath, group=f"{self.measurement_group}/orbit", **self.kwargs
+        )
+        return ds
+
+    @property
+    def gcp(self) -> xr.Dataset:
+        ds, self.kwargs = open_dataset_autodetect(
+            self.product_urlpath, group=f"{self.measurement_group}/gcp", **self.kwargs
         )
         return ds
 
@@ -183,39 +198,33 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
         else:
             return sarsen.SlantRangeSarProduct.interp_sar(self, *args, **kwargs)
 
+    def product_info(self, **kwargs: Any) -> Dict[str, Any]:
+        """Get information about the Sentinel-1 product."""
+        measurement_groups = self.all_measurement_groups()
 
-def product_info(product_urlpath: str, **kwargs: Any) -> Dict[str, Any]:
-    """Get information about the Sentinel-1 product."""
-    root_ds = xr.open_dataset(
-        product_urlpath, engine="sentinel-1", check_files_exist=True, **kwargs
-    )
+        self.measurement_group = measurement_groups[0]
+        gcp = self.gcp
 
-    measurement_groups = [g for g in root_ds.attrs["subgroups"] if g.count("/") == 1]
+        bbox = [
+            gcp.attrs["geospatial_lon_min"],
+            gcp.attrs["geospatial_lat_min"],
+            gcp.attrs["geospatial_lon_max"],
+            gcp.attrs["geospatial_lat_max"],
+        ]
 
-    gcp_group = measurement_groups[0] + "/gcp"
+        product_attrs = [
+            "product_type",
+            "mode",
+            "swaths",
+            "transmitter_receiver_polarisations",
+        ]
+        product_info = {attr_name: gcp.attrs[attr_name] for attr_name in product_attrs}
+        product_info.update(
+            {
+                "measurement_groups": measurement_groups,
+                "geospatial_bounds": gcp.attrs["geospatial_bounds"],
+                "geospatial_bbox": bbox,
+            }
+        )
 
-    gcp, kwargs = open_dataset_autodetect(product_urlpath, group=gcp_group, **kwargs)
-
-    bbox = [
-        gcp.attrs["geospatial_lon_min"],
-        gcp.attrs["geospatial_lat_min"],
-        gcp.attrs["geospatial_lon_max"],
-        gcp.attrs["geospatial_lat_max"],
-    ]
-
-    product_attrs = [
-        "product_type",
-        "mode",
-        "swaths",
-        "transmitter_receiver_polarisations",
-    ]
-    product_info = {attr_name: root_ds.attrs[attr_name] for attr_name in product_attrs}
-    product_info.update(
-        {
-            "measurement_groups": measurement_groups,
-            "geospatial_bounds": gcp.attrs["geospatial_bounds"],
-            "geospatial_bbox": bbox,
-        }
-    )
-
-    return product_info
+        return product_info
