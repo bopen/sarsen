@@ -179,11 +179,14 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
         beta_nought = beta_nought.drop_vars(["pixel", "line"])
         return beta_nought
 
+    def interp_sar(self, *args: Any, **kwargs: Any) -> xr.DataArray:
+        if self.product_type == "GRD":
+            return sarsen.GroundRangeSarProduct.interp_sar(self, *args, **kwargs)
+        else:
+            return sarsen.SlantRangeSarProduct.interp_sar(self, *args, **kwargs)
 
-def product_info(
-    product_urlpath: str,
-    **kwargs: Any,
-) -> Dict[str, Any]:
+
+def product_info(product_urlpath: str, **kwargs: Any) -> Dict[str, Any]:
     """Get information about the Sentinel-1 product."""
     root_ds = xr.open_dataset(
         product_urlpath, engine="sentinel-1", check_files_exist=True, **kwargs

@@ -22,8 +22,9 @@ class SarProduct(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def beta_nought_interp(
+    def interp_sar(
         self,
+        data: xr.DataArray,
         azimuth_time: xr.DataArray,
         slant_range_time: xr.DataArray,
         method: xr.core.types.InterpOptions = "nearest",
@@ -32,20 +33,20 @@ class SarProduct(abc.ABC):
 
 
 class GroundRangeSarProduct(SarProduct):
-    def beta_nought_interp(
+    def interp_sar(
         self,
+        data: xr.DataArray,
         azimuth_time: xr.DataArray,
         slant_range_time: xr.DataArray,
         method: xr.core.types.InterpOptions = "nearest",
     ) -> xr.DataArray:
-        beta_nought = self.beta_nought()
         ground_range = self.slant_range_time_to_ground_range(
             azimuth_time, slant_range_time
         )
-        interpolated = beta_nought.interp(
+        interpolated = data.interp(
             azimuth_time=azimuth_time, ground_range=ground_range, method=method
         )
-        return interpolated.assign_attrs(beta_nought.attrs)
+        return interpolated.assign_attrs(data.attrs)
 
     @abc.abstractmethod
     def slant_range_time_to_ground_range(
@@ -73,14 +74,14 @@ class SlantRangeSarProduct(SarProduct):
         beta_nought = abs(amplitude) ** 2
         return beta_nought.assign_attrs(long_name="beta nought", units="m2 m-2")
 
-    def beta_nought_interp(
+    def interp_sar(
         self,
+        data: xr.DataArray,
         azimuth_time: xr.DataArray,
         slant_range_time: xr.DataArray,
         method: xr.core.types.InterpOptions = "nearest",
     ) -> xr.DataArray:
-        beta_nought = self.beta_nought()
-        interpolated = beta_nought.interp(
+        interpolated = data.interp(
             azimuth_time=azimuth_time, slant_range_time=slant_range_time, method=method
         )
-        return interpolated.assign_attrs(beta_nought.attrs)
+        return interpolated.assign_attrs(data.attrs)

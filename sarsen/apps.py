@@ -200,15 +200,20 @@ def terrain_correction(
     if output_urlpath is None:
         return simulated_beta_nought
 
+    logger.info("calibrate image")
+
+    beta_nought = product.beta_nought()
+
     logger.info("terrain-correct image")
 
     # HACK: we monkey-patch away an optimisation in xr.DataArray.interp that actually makes
     #   the interpolation much slower when indeces are dask arrays.
     with mock.patch("xarray.core.missing._localize", lambda o, i: (o, i)):
-        geocoded = product.beta_nought_interp(
-            method=interp_method,
+        geocoded = product.interp_sar(
+            beta_nought,
             azimuth_time=acquisition.azimuth_time,
             slant_range_time=acquisition.slant_range_time,
+            method=interp_method,
         )
 
     if correct_radiometry is not None:
