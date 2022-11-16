@@ -31,8 +31,22 @@ class SarProduct(abc.ABC):
     ) -> xr.DataArray:
         ...
 
+    # FIXME: design a better interface
+    @abc.abstractmethod
+    def grid_parameters(
+        self,
+        grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
+    ) -> Dict[str, Any]:
+        ...
+
 
 class GroundRangeSarProduct(SarProduct):
+    @abc.abstractmethod
+    def slant_range_time_to_ground_range(
+        self, azimuth_time: xr.DataArray, slant_range_time: xr.DataArray
+    ) -> Optional[xr.DataArray]:
+        ...
+
     def interp_sar(
         self,
         data: xr.DataArray,
@@ -47,20 +61,6 @@ class GroundRangeSarProduct(SarProduct):
             azimuth_time=azimuth_time, ground_range=ground_range, method=method
         )
         return interpolated.assign_attrs(data.attrs)
-
-    @abc.abstractmethod
-    def slant_range_time_to_ground_range(
-        self, azimuth_time: xr.DataArray, slant_range_time: xr.DataArray
-    ) -> Optional[xr.DataArray]:
-        return None
-
-    # FIXME: design a better interface
-    @abc.abstractmethod
-    def grid_parameters(
-        self,
-        grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
-    ) -> Dict[str, Any]:
-        ...
 
 
 class SlantRangeSarProduct(SarProduct):
