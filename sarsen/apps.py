@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Callable, Container, Dict, Optional, Tuple
+from typing import Any, Container, Dict, Optional, Tuple
 from unittest import mock
 
 import numpy as np
@@ -11,12 +11,12 @@ from . import chunking, datamodel, geocoding, orbit, radiometry, scene
 logger = logging.getLogger(__name__)
 
 
+SPEED_OF_LIGHT = 299_792_458.0  # m / s
+
+
 def simulate_acquisition(
     dem_ecef: xr.DataArray,
     position_ecef: xr.DataArray,
-    slant_range_time_to_ground_range: Callable[
-        [xr.DataArray, xr.DataArray], xr.DataArray
-    ],
     include_variables: Container[str] = (),
 ) -> xr.Dataset:
     """Compute the image coordinates of the DEM given the satellite orbit."""
@@ -28,15 +28,9 @@ def simulate_acquisition(
     acquisition = geocoding.backward_geocode(dem_ecef, position_ecef, velocity_ecef)
 
     slant_range = (acquisition.dem_distance**2).sum(dim="axis") ** 0.5
-    slant_range_time = 2.0 / geocoding.SPEED_OF_LIGHT * slant_range
+    slant_range_time = 2.0 / SPEED_OF_LIGHT * slant_range
 
     acquisition["slant_range_time"] = slant_range_time
-
-    if include_variables and "ground_range" in include_variables:
-        acquisition["ground_range"] = slant_range_time_to_ground_range(
-            acquisition.azimuth_time,
-            slant_range_time,
-        ).drop_vars("azimuth_time")
 
     if include_variables and "gamma_area" in include_variables:
         gamma_area = radiometry.compute_gamma_area(
@@ -145,9 +139,6 @@ def terrain_correction(
         }
     )
     include_variables = {"slant_range_time", "azimuth_time"}
-    if product.product_type == "GRD":
-        acquisition_template["ground_range"] = template_raster
-        include_variables.add("ground_range")
     if correct_radiometry is not None:
         acquisition_template["gamma_area"] = template_raster
         include_variables.add("gamma_area")
@@ -157,7 +148,6 @@ def terrain_correction(
         dem_ecef,
         kwargs={
             "position_ecef": product.state_vectors(),
-            "slant_range_time_to_ground_range": product.slant_range_time_to_ground_range,
             "include_variables": include_variables,
         },
         template=acquisition_template,
@@ -216,27 +206,20 @@ def terrain_correction(
 
     logger.info("terrain-correct image")
 
-    if product.product_type == "GRD":
-        interp_kwargs = {"ground_range": acquisition.ground_range}
-    else:
-        interp_kwargs = {"slant_range_time": acquisition.slant_range_time}
-
     # HACK: we monkey-patch away an optimisation in xr.DataArray.interp that actually makes
     #   the interpolation much slower when indeces are dask arrays.
     with mock.patch("xarray.core.missing._localize", lambda o, i: (o, i)):
-        geocoded = beta_nought.interp(
-            method=interp_method,
+        geocoded = product.interp_sar(
+            beta_nought,
             azimuth_time=acquisition.azimuth_time,
-            **interp_kwargs,
+            slant_range_time=acquisition.slant_range_time,
+            method=interp_method,
         )
-
-    geocoded_attrs = beta_nought.attrs.copy()
 
     if correct_radiometry is not None:
         geocoded = geocoded / simulated_beta_nought
-        geocoded_attrs["long_name"] = "terrain-corrected gamma nought"
+        geocoded.attrs["long_name"] = "terrain-corrected gamma nought"
 
-    geocoded.attrs.update(geocoded_attrs)
     geocoded.x.attrs.update(dem_raster.x.attrs)
     geocoded.y.attrs.update(dem_raster.y.attrs)
     geocoded.rio.set_crs(dem_raster.rio.crs)

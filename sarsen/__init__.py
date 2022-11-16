@@ -21,7 +21,14 @@ except ImportError:  # pragma: no cover
     __version__ = "999"
 
 from .apps import terrain_correction
-from .datamodel import SarProduct
+from .datamodel import GroundRangeSarProduct, SarProduct, SlantRangeSarProduct
 from .sentinel1 import Sentinel1SarProduct
 
-__all__ = ["__version__", "terrain_correction", "SarProduct", "Sentinel1SarProduct"]
+__all__ = [
+    "__version__",
+    "GroundRangeSarProduct",
+    "SarProduct",
+    "Sentinel1SarProduct",
+    "SlantRangeSarProduct",
+    "terrain_correction",
+]
