@@ -156,13 +156,11 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
 
     def slant_range_time_to_ground_range(
         self, azimuth_time: xr.DataArray, slant_range_time: xr.DataArray
-    ) -> Optional[xr.DataArray]:
-        ds = None
-        coordinate_conversion = self.coordinate_conversion
-        if coordinate_conversion is not None:
-            ds = xarray_sentinel.slant_range_time_to_ground_range(
-                azimuth_time, slant_range_time, coordinate_conversion
-            )
+    ) -> xr.DataArray:
+        assert self.coordinate_conversion is not None
+        ds = xarray_sentinel.slant_range_time_to_ground_range(
+            azimuth_time, slant_range_time, self.coordinate_conversion
+        )
         return ds
 
     def grid_parameters(

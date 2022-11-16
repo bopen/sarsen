@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Tuple
 
 import xarray as xr
 
@@ -44,7 +44,7 @@ class GroundRangeSarProduct(SarProduct):
     @abc.abstractmethod
     def slant_range_time_to_ground_range(
         self, azimuth_time: xr.DataArray, slant_range_time: xr.DataArray
-    ) -> Optional[xr.DataArray]:
+    ) -> xr.DataArray:
         ...
 
     def interp_sar(

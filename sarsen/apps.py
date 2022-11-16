@@ -173,6 +173,8 @@ def terrain_correction(
             kwargs=grid_parameters,
             template=template_raster,
         )
+        simulated_beta_nought.attrs["long_name"] = "simulated beta nought"
+
         simulated_beta_nought.x.attrs.update(dem_raster.x.attrs)
         simulated_beta_nought.y.attrs.update(dem_raster.y.attrs)
         simulated_beta_nought.rio.set_crs(dem_raster.rio.crs)
