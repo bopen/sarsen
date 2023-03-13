@@ -7,7 +7,6 @@ from sarsen import chunking
 
 
 def test_compute_chunk_1d() -> None:
-
     ext_chunks, ext_chunks_bound, int_chunks = chunking.compute_chunks_1d(
         dim_size=20, chunks=10, bound=2
     )
@@ -48,7 +47,6 @@ def test_compute_chunk_1d() -> None:
 
 
 def test_compute_chunks() -> None:
-
     ext_chunks, ext_chunks_bound, int_chunks = chunking.compute_chunks(
         dims={"x": 10, "y": 21}, chunks=10, bound=2
     )

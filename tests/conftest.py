@@ -43,7 +43,7 @@ def orbit_ds() -> xr.Dataset:
             "axis": ("axis", [0, 1, 2]),
         },
     )
-    return xr.decode_cf(ds)  # type: ignore
+    return xr.decode_cf(ds)
 
 
 @pytest.fixture

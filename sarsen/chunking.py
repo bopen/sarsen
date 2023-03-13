@@ -45,7 +45,6 @@ def compute_chunks_1d(
 def compute_product(
     slices: List[List[slice]], dims_name: List[str]
 ) -> List[Dict[str, slice]]:
-
     product: List[Dict[str, slice]] = []
 
     for slices_ in itertools.product(*slices):
@@ -83,7 +82,6 @@ def map_ovelap(
     kwargs: Dict[Any, Any] = {},
     template: Optional[xr.DataArray] = None,
 ) -> xr.DataArray:
-
     dims = {}
     for d in obj.dims:
         dims[str(d)] = len(obj[d])
@@ -106,7 +104,7 @@ def map_ovelap(
     except ModuleNotFoundError:
         from numpy import empty_like  # type: ignore
 
-    out = xr.DataArray(empty_like(template.data), dims=template.dims)
+    out = xr.DataArray(empty_like(template.data), dims=template.dims)  # type: ignore
     out.coords.update(obj.coords)
     for ext_chunk, ext_chunk_bounds, int_chunk in zip(
         ext_chunks, ext_chunks_bounds, int_chunks

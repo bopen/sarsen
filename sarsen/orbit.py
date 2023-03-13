@@ -54,7 +54,7 @@ class OrbitPolyfitIterpolator:
         azimuth_time_values = pd.date_range(
             start=self.interval[0],
             end=self.interval[-1],
-            freq=pd.Timedelta(freq_s, "s"),
+            freq=pd.Timedelta(freq_s, "s"),  # type: ignore
         ).values
         return xr.DataArray(
             azimuth_time_values,
@@ -70,7 +70,7 @@ class OrbitPolyfitIterpolator:
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
 
         position: xr.DataArray
-        position = xr.polyval(time - self.epoch, self.coefficients)  # type: ignore
+        position = xr.polyval(time - self.epoch, self.coefficients)
         position = position.assign_coords({time.name: time})
         return position.rename("position")
 
@@ -84,6 +84,6 @@ class OrbitPolyfitIterpolator:
         velocity_coefficients = polyder(self.coefficients) * S_TO_NS
 
         velocity: xr.DataArray
-        velocity = xr.polyval(time - self.epoch, velocity_coefficients)  # type: ignore
+        velocity = xr.polyval(time - self.epoch, velocity_coefficients)
         velocity = velocity.assign_coords({time.name: time})
         return velocity.rename("velocity")

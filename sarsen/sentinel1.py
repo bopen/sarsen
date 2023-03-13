@@ -41,7 +41,6 @@ def azimuth_slant_range_grid(
     attrs: Dict[str, Any],
     grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
 ) -> Dict[str, Any]:
-
     if attrs["product_type"] == "SLC":
         slant_range_spacing_m = (
             attrs["range_pixel_spacing"]
