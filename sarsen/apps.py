@@ -228,16 +228,17 @@ def terrain_correction(
 
     logger.info("save output")
 
-    maybe_delayed = geocoded.rio.to_raster(
-        output_urlpath,
-        dtype=np.float32,
-        tiled=True,
-        blockxsize=output_chunks,
-        blockysize=output_chunks,
-        compress="ZSTD",
-        num_threads="ALL_CPUS",
-        **to_raster_kwargs,
-    )
+    if output_urlpath is not None:
+        maybe_delayed = geocoded.rio.to_raster(
+            output_urlpath,
+            dtype=np.float32,
+            tiled=True,
+            blockxsize=output_chunks,
+            blockysize=output_chunks,
+            compress="ZSTD",
+            num_threads="ALL_CPUS",
+            **to_raster_kwargs,
+        )
 
     if enable_dask_distributed:
         maybe_delayed.compute()
