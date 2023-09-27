@@ -90,10 +90,10 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.10', '3.9', '3.8']
+        python-version: ['3.10', '3.9']
         extra: ['']
         include:
-        - python-version: '3.8'
+        - python-version: '3.9'
           extra: -minver
         - python-version: '3.11'
           extra: -mindep
