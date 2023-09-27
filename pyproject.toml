@@ -6,14 +6,15 @@ requires = [
   "setuptools_scm_git_archive"
 ]
 
-[mypy]
-plugins = "numpy.typing.mypy_plugin"
-
 [tool.coverage.run]
 branch = true
 
 [tool.isort]
 profile = "black"
+
+[tool.mypy]
+plugins = "numpy.typing.mypy_plugin"
+strict = true
 
 [tool.setuptools_scm]
 write_to = "sarsen/version.py"
