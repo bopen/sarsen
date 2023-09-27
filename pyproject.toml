@@ -16,6 +16,10 @@ profile = "black"
 plugins = "numpy.typing.mypy_plugin"
 strict = true
 
+[[tool.mypy.overrides]]
+ignore_missing_imports = true
+module = ["py", "rasterio"]
+
 [tool.setuptools_scm]
 write_to = "sarsen/version.py"
 write_to_template = '''
