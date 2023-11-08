@@ -96,8 +96,6 @@ def terrain_correction(
         raise ValueError(
             f"{correct_radiometry=}. Must be one of: {allowed_correct_radiometry}"
         )
-    if output_urlpath is None and simulated_urlpath is None:
-        raise ValueError("No output selected")
 
     output_chunks = chunks if chunks is not None else 512
 
