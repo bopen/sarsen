@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.4.0
+  rev: v4.5.0
   hooks:
   - id: trailing-whitespace
   - id: end-of-file-fixer
@@ -8,34 +8,32 @@ repos:
   - id: check-yaml
   - id: check-toml
   - id: check-added-large-files
+  - id: check-merge-conflict
   - id: debug-statements
   - id: mixed-line-ending
-- repo: https://github.com/PyCQA/isort
-  rev: 5.12.0
-  hooks:
-  - id: isort
-- repo: https://github.com/psf/black
-  rev: 23.9.1
-  hooks:
-  - id: black
 - repo: https://github.com/keewis/blackdoc
-  rev: v0.3.8
+  rev: v0.3.9
   hooks:
   - id: blackdoc
-    exclude: generate_reductions.py
-    additional_dependencies: [black==22.3.0]
-- repo: https://github.com/PyCQA/flake8
-  rev: 6.1.0
+    additional_dependencies: [black==23.11.0]
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  rev: v0.1.13
   hooks:
-  - id: flake8
+  - id: ruff
+    args: [--fix, --show-fixes]
+  - id: ruff-format
 - repo: https://github.com/executablebooks/mdformat
   rev: 0.7.17
   hooks:
   - id: mdformat
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-  rev: v2.10.0
+  rev: v2.12.0
   hooks:
   - id: pretty-format-yaml
-    args: [--autofix]
+    args: [--autofix, --preserve-quotes]
   - id: pretty-format-toml
     args: [--autofix]
+- repo: https://github.com/gitleaks/gitleaks
+  rev: v8.18.1
+  hooks:
+  - id: gitleaks

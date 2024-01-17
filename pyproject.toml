@@ -1,16 +1,27 @@
 [build-system]
-requires = [
-  "setuptools>=42",
-  "wheel",
-  "setuptools_scm[toml]>=3.4",
-  "setuptools_scm_git_archive"
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
+
+[project]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering"
 ]
+description = "Algorithms and utilities for Synthetic Aperture Radar (SAR) sensors"
+dynamic = ["version"]
+license = {file = "LICENSE"}
+name = "sarsen"
+readme = "README.md"
 
 [tool.coverage.run]
 branch = true
-
-[tool.isort]
-profile = "black"
 
 [tool.mypy]
 plugins = "numpy.typing.mypy_plugin"
@@ -20,9 +31,41 @@ strict = true
 ignore_missing_imports = true
 module = ["py", "rasterio"]
 
+[tool.ruff]
+ignore = [
+  # pydocstyle: Missing Docstrings
+  "D1"
+]
+# Same as Black.
+indent-width = 4
+line-length = 88
+select = [
+  # pyflakes
+  "F",
+  # pycodestyle
+  "E",
+  "W",
+  # isort
+  "I",
+  # pydocstyle
+  "D"
+]
+
+[tool.ruff.lint.pycodestyle]
+max-line-length = 110
+
+[tool.ruff.pydocstyle]
+convention = "numpy"
+
+[tool.setuptools]
+packages = ["sarsen"]
+
+[tool.setuptools.package-data]
+sarsen = ["py.typed"]
+
 [tool.setuptools_scm]
 write_to = "sarsen/version.py"
 write_to_template = '''
-# don't change, don't track in version control
+# Do not change! Do not track in version control!
 __version__ = "{version}"
 '''

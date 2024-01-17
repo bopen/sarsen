@@ -14,65 +14,95 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash -l {0}
+
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-python@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: 3.x
     - uses: pre-commit/action@v3.0.0
 
-  unit-tests:
-    name: unit-tests (3.11)
+  combine-environments:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
 
     steps:
     - uses: actions/checkout@v4
-    - name: Install Conda environment with Micromamba
-      uses: mamba-org/provision-with-micromamba@v16
+    - uses: actions/setup-python@v5
       with:
-        environment-file: environment.yml
+        python-version: 3.x
+    - name: Install conda-merge
+      run: |
+        python -m pip install conda-merge
+    - name: Combine environments
+      run: |
+        for SUFFIX in ci integration; do
+        conda-merge ci/environment-$SUFFIX.yml environment.yml > ci/combined-environment-$SUFFIX.yml || exit
+        done
+    - uses: actions/upload-artifact@v4
+      with:
+        name: combined-environments
+        path: ci/combined-environment-*.yml
+
+  unit-tests:
+    name: unit-tests
+    needs: combine-environments
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.11']
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/download-artifact@v4
+      with:
+        name: combined-environments
+        path: ci
+    - name: Get current date
+      id: date
+      run: echo "date=$(date +%Y-%m-%d)" >> "${GITHUB_OUTPUT}"
+    - uses: mamba-org/setup-micromamba@v1
+      with:
+        environment-file: ci/combined-environment-ci.yml
         environment-name: DEVELOP
-        channels: conda-forge
-        cache-env: true
-        cache-env-key: ubuntu-latest-3.11
-        extra-specs: |
-          python=3.11
+        cache-environment: true
+        cache-environment-key: environment-${{ steps.date.outputs.date }}
+        cache-downloads-key: downloads-${{ steps.date.outputs.date }}
+        create-args: >-
+          python=${{ matrix.python-version }}
     - name: Install package
       run: |
         python -m pip install --no-deps -e .
     - name: Run tests
       run: |
-        make test COV_REPORT=xml
-    - name: Run doc tests
-      run: |
-        make doc-test COV_REPORT=xml
-    - name: Upload code coverage to Codecov
-      uses: codecov/codecov-action@v3.1.4
+        make unit-tests COV_REPORT=xml
 
   type-check:
-    needs: [unit-tests]
+    needs: [combine-environments, unit-tests]
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
 
     steps:
     - uses: actions/checkout@v4
-    - name: Install Conda environment with Micromamba
-      uses: mamba-org/provision-with-micromamba@v16
+    - uses: actions/download-artifact@v4
       with:
-        environment-file: environment.yml
+        name: combined-environments
+        path: ci
+    - name: Get current date
+      id: date
+      run: echo "date=$(date +%Y-%m-%d)" >> "${GITHUB_OUTPUT}"
+    - uses: mamba-org/setup-micromamba@v1
+      with:
+        environment-file: ci/combined-environment-ci.yml
         environment-name: DEVELOP
-        channels: conda-forge
-        cache-env: true
-        cache-env-key: ubuntu-latest-3.11
-        extra-specs: |
+        cache-environment: true
+        cache-environment-key: environment-${{ steps.date.outputs.date }}
+        cache-downloads-key: downloads-${{ steps.date.outputs.date }}
+        create-args: >-
           python=3.11
     - name: Install package
       run: |
@@ -81,56 +111,125 @@ jobs:
       run: |
         make type-check
 
-  integration-tests:
-    needs: [unit-tests]
+  docs-build:
+    needs: [combine-environments, unit-tests]
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
+
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/download-artifact@v4
+      with:
+        name: combined-environments
+        path: ci
+    - name: Get current date
+      id: date
+      run: echo "date=$(date +%Y-%m-%d)" >> "${GITHUB_OUTPUT}"
+    - uses: mamba-org/setup-micromamba@v1
+      with:
+        environment-file: ci/combined-environment-ci.yml
+        environment-name: DEVELOP
+        cache-environment: true
+        cache-environment-key: environment-${{ steps.date.outputs.date }}
+        cache-downloads-key: downloads-${{ steps.date.outputs.date }}
+        create-args: >-
+          python=3.11
+    - name: Install package
+      run: |
+        python -m pip install --no-deps -e .
+    - name: Build documentation
+      run: |
+        make docs-build
+
+  integration-tests:
+    needs: [combine-environments, unit-tests]
+    if: |
+      success() && true
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        python-version: ['3.10', '3.9']
-        extra: ['']
         include:
-        - python-version: '3.9'
-          extra: -minver
         - python-version: '3.11'
-          extra: -mindep
+          extra: -integration
+
     steps:
     - uses: actions/checkout@v4
-    - name: Install Conda environment with Micromamba
-      uses: mamba-org/provision-with-micromamba@v16
+    - uses: actions/download-artifact@v4
       with:
-        environment-file: environment${{ matrix.extra }}.yml
+        name: combined-environments
+        path: ci
+    - name: Get current date
+      id: date
+      run: echo "date=$(date +%Y-%m-%d)" >> "${GITHUB_OUTPUT}"
+    - uses: mamba-org/setup-micromamba@v1
+      with:
+        environment-file: ci/combined-environment${{ matrix.extra }}.yml
         environment-name: DEVELOP${{ matrix.extra }}
-        channels: conda-forge
-        cache-env: true
-        cache-env-key: ubuntu-latest-${{ matrix.python-version }}${{ matrix.extra }}.
-        extra-specs: |
+        cache-environment: true
+        cache-environment-key: environment-${{ steps.date.outputs.date }}
+        cache-downloads-key: downloads-${{ steps.date.outputs.date }}
+        create-args: >-
           python=${{ matrix.python-version }}
     - name: Install package
       run: |
         python -m pip install --no-deps -e .
     - name: Run tests
       run: |
-        make test COV_REPORT=xml
-    - name: Upload code coverage to Codecov
-      uses: codecov/codecov-action@v3.1.4
+        make unit-tests COV_REPORT=xml
 
   distribution:
     runs-on: ubuntu-latest
-    needs: [integration-tests, type-check]
+    needs: [unit-tests, type-check, docs-build, integration-tests]
+    if: |
+      always() &&
+      needs.unit-tests.result == 'success' &&
+      needs.type-check.result == 'success' &&
+      needs.docs-build.result == 'success' &&
+      (needs.integration-tests.result == 'success' || needs.integration-tests.result == 'skipped')
 
     steps:
     - uses: actions/checkout@v4
-    - name: Build distributions
-      run: |
-        $CONDA/bin/python -m pip install build
-        $CONDA/bin/python -m build
-    - name: Publish a Python distribution to PyPI
-      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
-      uses: pypa/gh-action-pypi-publish@release/v1
+    - uses: actions/setup-python@v5
       with:
-        user: __token__
-        password: ${{ secrets.PYPI_API_TOKEN }}
+        python-version: '3.11'
+    - name: Install package
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install build twine
+    - name: Build distribution
+      run: |
+        python -m build
+    - name: Check wheels
+      run: |
+        cd dist || exit
+        python -m pip install sarsen*.whl || exit
+        python -m twine check --strict * || exit
+        python -c "import sarsen" || exit
+        cd ..
+    - uses: actions/upload-artifact@v4
+      with:
+        name: distribution
+        path: dist
+
+  upload-to-pypi:
+    runs-on: ubuntu-latest
+    needs: distribution
+    if: |
+      always() &&
+      needs.distribution.result == 'success' &&
+      github.event_name == 'push' &&
+      startsWith(github.ref, 'refs/tags')
+    environment:
+      name: pypi
+      url: https://pypi.org/p/sarsen
+    permissions:
+      id-token: write  # IMPORTANT: this permission is mandatory for trusted publish
+
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: distribution
+        path: dist
+    - uses: pypa/gh-action-pypi-publish@v1.8.11
+      with:
+        verbose: true
