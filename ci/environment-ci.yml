@@ -15,6 +15,7 @@ dependencies:
 - sphinx-autoapi
 # DO NOT EDIT ABOVE THIS LINE, ADD DEPENDENCIES BELOW
 - mdformat
+- pandas-stubs
 - types-setuptools
 - pip:
   - mdformat-gfm
