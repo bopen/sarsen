@@ -31,6 +31,9 @@ license = {file = "LICENSE"}
 name = "sarsen"
 readme = "README.md"
 
+[project.scripts]
+sarsen = "sarsen.__main__:app"
+
 [tool.coverage.run]
 branch = true
 
