@@ -1,5 +1,12 @@
+# environment.yml: Mandatory dependencies only.
 channels:
 - conda-forge
+- nodefaults
+# EXAMPLE:
+# dependencies:
+# - package1
+# - package2
+# DO NOT EDIT ABOVE THIS LINE, ADD DEPENDENCIES BELOW AS SHOWN IN THE EXAMPLE
 dependencies:
 - attrs
 - bottleneck
@@ -7,22 +14,11 @@ dependencies:
 - flox
 - fsspec
 - gdal
-- make
-- mdformat
-- mypy
-- numexpr
 - numpy >= 1.22.0
-- pandas-stubs
-- pip
-- pytest
-- pytest-cov
 - rasterio >= 1.3.0
 - rioxarray
 - scipy
 - typer
-- types-setuptools
 - xarray >= 2022.06.0
 - xarray-sentinel >= 0.9.3
 - xmlschema
-- pip:
-  - mdformat-gfm

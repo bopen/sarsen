@@ -20,7 +20,6 @@ def simulate_acquisition(
     include_variables: Container[str] = (),
 ) -> xr.Dataset:
     """Compute the image coordinates of the DEM given the satellite orbit."""
-
     orbit_interpolator = orbit.OrbitPolyfitIterpolator.from_position(position_ecef)
     position_ecef = orbit_interpolator.position()
     velocity_ecef = orbit_interpolator.velocity()
@@ -40,12 +39,12 @@ def simulate_acquisition(
 
     for data_var_name in acquisition.data_vars:
         if include_variables and data_var_name not in include_variables:
-            acquisition = acquisition.drop_vars(data_var_name)
+            acquisition = acquisition.drop_vars(data_var_name)  # type: ignore
 
     # drop coordinates that are not associated with any data variable
     for coord_name in acquisition.coords:
         if all(coord_name not in dv.coords for dv in acquisition.data_vars.values()):
-            acquisition = acquisition.drop_vars(coord_name)
+            acquisition = acquisition.drop_vars(coord_name)  # type: ignore
 
     return acquisition
 

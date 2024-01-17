@@ -90,7 +90,10 @@ def backward_geocode(
 
     # NOTE: dem_distance has the associated azimuth_time as a coordinate already
     _, _, _, (dem_distance, satellite_direction) = secant_method(
-        zero_doppler, t_prev, t_curr, diff_ufunc  # type: ignore
+        zero_doppler,
+        t_prev,
+        t_curr,
+        diff_ufunc,
     )
     acquisition = xr.Dataset(
         data_vars={

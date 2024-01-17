@@ -1,0 +1,18 @@
+{
+  "template": "https://github.com/ecmwf-projects/cookiecutter-conda-package",
+  "commit": "d379e35af1aa17d816367bcb0942fcf3e238be9d",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "project_name": "sarsen",
+      "project_slug": "sarsen",
+      "project_short_description": "Sarsen",
+      "copyright_holder": "B-Open Solutions srl",
+      "copyright_year": "2016",
+      "mypy_strict": true,
+      "integration_tests": true,
+      "_template": "https://github.com/ecmwf-projects/cookiecutter-conda-package"
+    }
+  },
+  "directory": null
+}

@@ -1,5 +1,3 @@
-from typing import Callable
-
 import numpy as np
 import xarray as xr
 
@@ -62,6 +60,9 @@ def test_compute_chunks() -> None:
 
 def test_map_ovelap() -> None:
     arr = xr.DataArray(np.arange(22 * 31).reshape((22, 31)), dims=("x", "y"))
-    function: Callable[[xr.DataArray], xr.DataArray] = lambda x: x
+
+    def function(x: xr.DataArray) -> xr.DataArray:
+        return x
+
     res = chunking.map_ovelap(function=function, obj=arr, chunks=10, bound=2)
     assert res.equals(arr)
