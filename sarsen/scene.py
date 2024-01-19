@@ -24,16 +24,15 @@ def open_dem_raster(dem_urlpath: str, **kwargs: Any) -> xr.DataArray:
     return dem_raster
 
 
+def make_nd_dataarray(das: list[xr.DataArray], dim: str = "axis") -> xr.DataArray:
+    da_nd = xr.concat(das, dim=dim, coords="minimal")
+    return da_nd.assign_coords({dim: range(len(das))})
+
+
 def convert_to_dem_3d(dem_raster: xr.DataArray, dim: str = "axis") -> xr.DataArray:
     _, dem_raster_x = xr.broadcast(dem_raster, dem_raster.x)
-    dem_3d = xr.concat(
-        [dem_raster_x, dem_raster.y, dem_raster], dim=dim, coords="minimal"
-    )
-    if dem_3d.chunks is not None:
-        dem_3d = dem_3d.chunk({dim: None})
-
-    dem_3d = dem_3d.assign_coords({dim: [0, 1, 2]})
-    return dem_3d.rename("dem_3d")  # type: ignore
+    dem_3d = make_nd_dataarray([dem_raster_x, dem_raster.y, dem_raster], dim=dim)
+    return dem_3d.rename("dem_3d")
 
 
 def transform_dem_3d(
