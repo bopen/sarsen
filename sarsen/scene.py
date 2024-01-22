@@ -29,9 +29,12 @@ def make_nd_dataarray(das: list[xr.DataArray], dim: str = "axis") -> xr.DataArra
     return da_nd.assign_coords({dim: range(len(das))})
 
 
-def convert_to_dem_3d(dem_raster: xr.DataArray, dim: str = "axis") -> xr.DataArray:
-    _, dem_raster_x = xr.broadcast(dem_raster, dem_raster.x)
-    dem_3d = make_nd_dataarray([dem_raster_x, dem_raster.y, dem_raster], dim=dim)
+def convert_to_dem_3d(
+    dem_raster: xr.DataArray, dim: str = "axis", x: str = "x", y: str = "y"
+) -> xr.DataArray:
+    _, dem_raster_x = xr.broadcast(dem_raster, dem_raster.coords[x])
+    dem_raster_y = dem_raster.coords[y]
+    dem_3d = make_nd_dataarray([dem_raster_x, dem_raster_y, dem_raster], dim=dim)
     return dem_3d.rename("dem_3d")
 
 
@@ -67,8 +70,10 @@ def transform_dem_3d(
     return dem_3d_crs
 
 
-def convert_to_dem_ecef(dem_raster: xr.DataArray, **kwargs: Any) -> xr.DataArray:
-    dem_3d = convert_to_dem_3d(dem_raster)
+def convert_to_dem_ecef(
+    dem_raster: xr.DataArray, x: str = "x", y: str = "y", **kwargs: Any
+) -> xr.DataArray:
+    dem_3d = convert_to_dem_3d(dem_raster, x=x, y=y)
     return transform_dem_3d(dem_3d, **kwargs)
 
 
