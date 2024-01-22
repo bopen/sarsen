@@ -52,8 +52,8 @@ def simulate_acquisition(
 def map_simulate_acquisition(
     dem_ecef,
     position_ecef,
-    correct_radiometry: bool,
     template_raster,
+    correct_radiometry: Optional[str] = None,
 ) -> xr.DataArray:
     acquisition_template = xr.Dataset(
         data_vars={
@@ -99,7 +99,7 @@ def do_terrain_correction(
     template_raster = dem_raster.drop_vars(dem_raster.rio.grid_mapping) * 0.0
 
     acquisition = map_simulate_acquisition(
-        dem_ecef, product.state_vectors(), correct_radiometry, template_raster
+        dem_ecef, product.state_vectors(), template_raster, correct_radiometry
     )
 
     simulated_beta_nought = None
