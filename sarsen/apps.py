@@ -50,11 +50,11 @@ def simulate_acquisition(
 
 
 def map_simulate_acquisition(
-    dem_ecef,
-    position_ecef,
-    template_raster,
+    dem_ecef: xr.DataArray,
+    position_ecef: xr.DataArray,
+    template_raster: xr.DataArray,
     correct_radiometry: Optional[str] = None,
-) -> xr.DataArray:
+) -> xr.Dataset:
     acquisition_template = xr.Dataset(
         data_vars={
             "slant_range_time": template_raster,
@@ -86,7 +86,7 @@ def do_terrain_correction(
     grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
     radiometry_chunks: int = 2048,
     radiometry_bound: int = 128,
-) -> tuple[xr.DataArray, xr.DataArray | None]:
+) -> tuple[xr.DataArray, Optional[xr.DataArray]]:
     logger.info("pre-process DEM")
 
     dem_ecef = xr.map_blocks(
@@ -202,6 +202,8 @@ def terrain_correction(
         raise ValueError(
             f"{correct_radiometry=}. Must be one of: {allowed_correct_radiometry}"
         )
+    if simulated_urlpath is not None and correct_radiometry is None:
+        raise ValueError("Simulation cannot be saved")
     if output_urlpath is None and simulated_urlpath is None:
         raise ValueError("No output selected")
 
@@ -239,6 +241,7 @@ def terrain_correction(
     )
 
     if simulated_urlpath is not None:
+        assert simulated_beta_nought is not None
         if output_urlpath is not None:
             simulated_beta_nought.persist()
 
@@ -259,6 +262,7 @@ def terrain_correction(
             maybe_delayed.compute()
 
     if output_urlpath is None:
+        assert simulated_beta_nought is not None
         return simulated_beta_nought
 
     logger.info("save output")
