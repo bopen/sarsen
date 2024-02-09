@@ -40,10 +40,12 @@ def convert_to_dem_3d(
 
 def transform_dem_3d(
     dem_3d: xr.DataArray,
-    source_crs: str,
+    source_crs: str = None,
     target_crs: str = ECEF_CRS,
     dim: str = "axis",
 ) -> xr.DataArray:
+    if source_crs is None:
+        source_crs = dem_3d.rio.crs
     try:
         x, y, z = warp.transform(
             source_crs,
