@@ -216,6 +216,9 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
             "mode",
             "swaths",
             "transmitter_receiver_polarisations",
+            "relative_orbit_number",
+            "orbit_number",
+            "mission_data_take_id",
         ]
         product_info = {attr_name: gcp.attrs[attr_name] for attr_name in product_attrs}
         product_info.update(
