@@ -56,7 +56,7 @@ class GroundRangeSarProduct(SarProduct):
         method: xr.core.types.InterpOptions = "nearest",
         ground_range: Optional[xr.DataArray] = None,
     ) -> xr.DataArray:
-        if ground_range is not None:
+        if ground_range is None:
             ground_range = self.slant_range_time_to_ground_range(
                 azimuth_time, slant_range_time
             )
