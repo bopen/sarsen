@@ -23,11 +23,18 @@ def open_dataset_autodetect(
     product_urlpath: str,
     group: Optional[str] = None,
     chunks: Optional[Union[int, Dict[str, int]]] = None,
+    check_files_exist: bool = False,
     **kwargs: Any,
 ) -> Tuple[xr.Dataset, Dict[str, Any]]:
     kwargs.setdefault("engine", "sentinel-1")
     try:
-        ds = xr.open_dataset(product_urlpath, group=group, chunks=chunks, **kwargs)
+        ds = xr.open_dataset(
+            product_urlpath,
+            group=group,
+            chunks=chunks,
+            check_files_exist=check_files_exist,
+            **kwargs,
+        )
     except FileNotFoundError:
         # re-try with Planetary Computer option
         kwargs[
