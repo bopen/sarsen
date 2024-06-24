@@ -10,24 +10,20 @@ from . import chunking, datamodel, geocoding, orbit, radiometry, scene
 
 logger = logging.getLogger(__name__)
 
-
-SPEED_OF_LIGHT = 299_792_458.0  # m / s
+from scipy.constants import speed_of_light
 
 
 def simulate_acquisition(
     dem_ecef: xr.DataArray,
-    position_ecef: xr.DataArray,
+    pos: xr.DataArray,
+    azimuth_time: Optional[xr.DataArray] = None,
     include_variables: Container[str] = (),
+    **kwargs,
 ) -> xr.Dataset:
     """Compute the image coordinates of the DEM given the satellite orbit."""
-    orbit_interpolator = orbit.OrbitPolyfitIterpolator.from_position(position_ecef)
-    position_ecef = orbit_interpolator.position()
-    velocity_ecef = orbit_interpolator.velocity()
-
-    acquisition = geocoding.backward_geocode(dem_ecef, position_ecef, velocity_ecef)
-
+    acquisition = geocoding.backward_geocode(dem_ecef, pos, t0=azimuth_time)
     slant_range = (acquisition.dem_distance**2).sum(dim="axis") ** 0.5
-    slant_range_time = 2.0 / SPEED_OF_LIGHT * slant_range
+    slant_range_time = 2.0 / speed_of_light * slant_range
 
     acquisition["slant_range_time"] = slant_range_time
 
@@ -39,19 +35,19 @@ def simulate_acquisition(
 
     for data_var_name in acquisition.data_vars:
         if include_variables and data_var_name not in include_variables:
-            acquisition = acquisition.drop_vars(data_var_name)  # type: ignore
+            acquisition = acquisition.drop_vars(data_var_name)
 
     # drop coordinates that are not associated with any data variable
     for coord_name in acquisition.coords:
         if all(coord_name not in dv.coords for dv in acquisition.data_vars.values()):
-            acquisition = acquisition.drop_vars(coord_name)  # type: ignore
+            acquisition = acquisition.drop_vars(coord_name)
 
     return acquisition
 
 
 def map_simulate_acquisition(
     dem_ecef: xr.DataArray,
-    position_ecef: xr.DataArray,
+    pos: xr.DataArray,
     template_raster: xr.DataArray,
     correct_radiometry: Optional[str] = None,
 ) -> xr.Dataset:
@@ -70,7 +66,7 @@ def map_simulate_acquisition(
         simulate_acquisition,
         dem_ecef,
         kwargs={
-            "position_ecef": position_ecef,
+            "pos": pos,
             "include_variables": include_variables,
         },
         template=acquisition_template,
@@ -90,16 +86,23 @@ def do_terrain_correction(
     logger.info("pre-process DEM")
 
     dem_ecef = xr.map_blocks(
-        scene.convert_to_dem_ecef, dem_raster, kwargs={"source_crs": dem_raster.rio.crs}
+        scene.convert_to_dem_ecef, dem_raster, kwargs={
+            "source_crs": dem_raster.rio.crs}
     )
     dem_ecef = dem_ecef.drop_vars(dem_ecef.rio.grid_mapping)
 
     logger.info("simulate acquisition")
 
     template_raster = dem_raster.drop_vars(dem_raster.rio.grid_mapping) * 0.0
-
+    
+    orbit_ecef = product.state_vectors()
+    pos = orbit.OrbitPolyfitIterpolator.from_position(
+        orbit_ecef, poly_type='polynomial', deg=min(14, orbit_ecef.azimuth_time.size - 5))
+    
+    pos.coefficients = pos.coefficients.assign_attrs({"referenceTime": pos.epoch, "scaleTime": 1e-9})
+    
     acquisition = map_simulate_acquisition(
-        dem_ecef, product.state_vectors(), template_raster, correct_radiometry
+        dem_ecef, pos.coefficients, template_raster, correct_radiometry
     )
 
     simulated_beta_nought = None
