@@ -34,7 +34,8 @@ def convert_to_dem_3d(
 ) -> xr.DataArray:
     _, dem_raster_x = xr.broadcast(dem_raster, dem_raster.coords[x])
     dem_raster_y = dem_raster.coords[y]
-    dem_3d = make_nd_dataarray([dem_raster_x, dem_raster_y, dem_raster], dim=dim)
+    dem_3d = make_nd_dataarray(
+        [dem_raster_x, dem_raster_y, dem_raster], dim=dim)
     return dem_3d.rename("dem_3d")
 
 
