@@ -21,10 +21,8 @@ def simulate_acquisition(
 ) -> xr.Dataset:
     """Compute the image coordinates of the DEM given the satellite orbit."""
     orbit_interpolator = orbit.OrbitPolyfitIterpolator.from_position(position_ecef)
-    position_ecef = orbit_interpolator.position()
-    velocity_ecef = orbit_interpolator.velocity()
 
-    acquisition = geocoding.backward_geocode(dem_ecef, position_ecef, velocity_ecef)
+    acquisition = geocoding.backward_geocode(dem_ecef, orbit_interpolator)
 
     slant_range = (acquisition.dem_distance**2).sum(dim="axis") ** 0.5
     slant_range_time = 2.0 / SPEED_OF_LIGHT * slant_range

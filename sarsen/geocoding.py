@@ -2,12 +2,15 @@
 
 See: https://sentinel.esa.int/documents/247904/0/Guide-to-Sentinel-1-Geocoding.pdf/e0450150-b4e9-4b2d-9b32-dadf989d3bd3
 """
+
 import functools
 from typing import Any, Callable, Optional, Tuple, TypeVar
 
 import numpy as np
 import numpy.typing as npt
 import xarray as xr
+
+from . import orbit
 
 TimedeltaArrayLike = TypeVar("TimedeltaArrayLike", bound=npt.ArrayLike)
 FloatArrayLike = TypeVar("FloatArrayLike", bound=npt.ArrayLike)
@@ -68,12 +71,13 @@ def zero_doppler_plane_distance(
 
 def backward_geocode(
     dem_ecef: xr.DataArray,
-    position_ecef: xr.DataArray,
-    velocity_ecef: xr.DataArray,
+    orbit_interpolator: orbit.OrbitPolyfitIterpolator,
     azimuth_time: Optional[xr.DataArray] = None,
     dim: str = "axis",
     diff_ufunc: float = 1.0,
 ) -> xr.Dataset:
+    position_ecef = orbit_interpolator.position()
+    velocity_ecef = orbit_interpolator.velocity()
     direction_ecef = (
         velocity_ecef / xr.dot(velocity_ecef, velocity_ecef, dims=dim) ** 0.5
     )
