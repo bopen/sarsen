@@ -146,6 +146,7 @@ def do_terrain_correction(
         )
 
     if correct_radiometry is not None:
+        assert simulated_beta_nought is not None
         geocoded = geocoded / simulated_beta_nought
         geocoded.attrs["long_name"] = "terrain-corrected gamma nought"
 
