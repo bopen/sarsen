@@ -14,8 +14,8 @@ LOGGER = logging.getLogger(__name__)
 ECEF_CRS = "EPSG:4978"
 
 
-def open_dem_raster(dem_urlpath: str, **kwargs: Any) -> xr.DataArray:
-    dem_raster = xr.open_dataarray(dem_urlpath, engine="rasterio", **kwargs)
+def open_dem_raster(dem_urlpath: str, engine="rasterio", **kwargs: Any) -> xr.DataArray:
+    dem_raster = xr.open_dataarray(dem_urlpath, engine=engine, **kwargs)
     if dem_raster.y.diff("y").values[0] < 0:
         dem_raster = dem_raster.isel(y=slice(None, None, -1))
     dem_raster.attrs["long_name"] = "elevation"
