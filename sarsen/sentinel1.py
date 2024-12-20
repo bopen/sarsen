@@ -227,7 +227,12 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
             "orbit_number",
             "mission_data_take_id",
         ]
-        product_info = {attr_name: gcp.attrs[attr_name] for attr_name in product_attrs}
+        product_info = {}
+        for attr_name in product_attrs:
+            try:
+                product_info[attr_name] = gcp.attrs[attr_name]
+            except KeyError:
+                pass
         product_info.update(
             {
                 "measurement_groups": measurement_groups,
