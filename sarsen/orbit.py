@@ -54,7 +54,7 @@ class OrbitPolyfitIterpolator:
         azimuth_time_values = pd.date_range(
             start=self.interval[0],
             end=self.interval[-1],
-            freq=pd.Timedelta(freq_s, "s"),  # type: ignore
+            freq=pd.Timedelta(freq_s, "s"),
         ).values
         return xr.DataArray(
             azimuth_time_values,

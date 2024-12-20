@@ -14,7 +14,9 @@ LOGGER = logging.getLogger(__name__)
 ECEF_CRS = "EPSG:4978"
 
 
-def open_dem_raster(dem_urlpath: str, engine="rasterio", **kwargs: Any) -> xr.DataArray:
+def open_dem_raster(
+    dem_urlpath: str, engine: str = "rasterio", **kwargs: Any
+) -> xr.DataArray:
     dem_raster = xr.open_dataarray(dem_urlpath, engine=engine, **kwargs)
     if dem_raster.y.diff("y").values[0] < 0:
         dem_raster = dem_raster.isel(y=slice(None, None, -1))
@@ -40,7 +42,7 @@ def convert_to_dem_3d(
 
 def transform_dem_3d(
     dem_3d: xr.DataArray,
-    source_crs: str = None,
+    source_crs: str | None = None,
     target_crs: str = ECEF_CRS,
     dim: str = "axis",
 ) -> xr.DataArray:

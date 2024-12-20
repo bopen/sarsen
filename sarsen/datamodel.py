@@ -57,6 +57,7 @@ class GroundRangeSarProduct(SarProduct):
         ground_range: Optional[xr.DataArray] = None,
     ) -> xr.DataArray:
         if ground_range is None:
+            assert slant_range_time is not None
             ground_range = self.slant_range_time_to_ground_range(
                 azimuth_time, slant_range_time
             )
