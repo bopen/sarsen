@@ -127,7 +127,7 @@ def do_terrain_correction(
 
         simulated_beta_nought.x.attrs.update(dem_raster.x.attrs)
         simulated_beta_nought.y.attrs.update(dem_raster.y.attrs)
-        simulated_beta_nought.rio.set_crs(dem_raster.rio.crs)
+        simulated_beta_nought.rio.write_crs(dem_raster.rio.crs)
 
     logger.info("calibrate image")
 
@@ -152,7 +152,7 @@ def do_terrain_correction(
 
     geocoded.x.attrs.update(dem_raster.x.attrs)
     geocoded.y.attrs.update(dem_raster.y.attrs)
-    geocoded.rio.set_crs(dem_raster.rio.crs)
+    geocoded.rio.write_crs(dem_raster.rio.crs)
 
     return geocoded, simulated_beta_nought
 
