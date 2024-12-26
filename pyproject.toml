@@ -9,10 +9,10 @@ classifiers = [
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
-  "Topic :: Scientific/Engineering"
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering",
 ]
 dependencies = [
   "attrs",
@@ -24,11 +24,11 @@ dependencies = [
   "rioxarray",
   "typer",
   "xarray >= 2022.06.0",
-  "xarray-sentinel >= 0.9.3"
+  "xarray-sentinel >= 0.9.3",
 ]
 description = "Algorithms and utilities for Synthetic Aperture Radar (SAR) sensors"
 dynamic = ["version"]
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 name = "sarsen"
 readme = "README.md"
 
@@ -49,7 +49,7 @@ module = ["py", "rasterio"]
 [tool.ruff]
 ignore = [
   # pydocstyle: Missing Docstrings
-  "D1"
+  "D1",
 ]
 # Same as Black.
 indent-width = 4
@@ -63,7 +63,7 @@ select = [
   # isort
   "I",
   # pydocstyle
-  "D"
+  "D",
 ]
 
 [tool.ruff.lint.pycodestyle]
