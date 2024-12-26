@@ -37,9 +37,9 @@ def open_dataset_autodetect(
         )
     except FileNotFoundError:
         # re-try with Planetary Computer option
-        kwargs[
-            "override_product_files"
-        ] = "{dirname}/{prefix}{swath}-{polarization}{ext}"
+        kwargs["override_product_files"] = (
+            "{dirname}/{prefix}{swath}-{polarization}{ext}"
+        )
         ds = xr.open_dataset(product_urlpath, group=group, chunks=chunks, **kwargs)
     return ds, kwargs
 
@@ -179,10 +179,14 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
         self, azimuth_time: xr.DataArray, slant_range_time: xr.DataArray
     ) -> xr.DataArray:
         assert self.coordinate_conversion is not None
-        ds = xarray_sentinel.slant_range_time_to_ground_range(
-            azimuth_time, slant_range_time, self.coordinate_conversion
+        # the dask graph explodes without the map_blocks due to the interpolations
+        ground_range = xr.map_blocks(
+            xarray_sentinel.slant_range_time_to_ground_range,
+            azimuth_time,
+            args=(slant_range_time,),
+            kwargs={"coordinate_conversion": self.coordinate_conversion},
         )
-        return ds
+        return ground_range
 
     def grid_parameters(
         self,
