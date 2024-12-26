@@ -1,7 +1,7 @@
 import itertools
+import math
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-import numpy as np
 import xarray as xr
 
 
@@ -16,10 +16,10 @@ def compute_chunks_1d(
 
     # -bound is needed to avoid to incorporate the last chunk, if smaller of bound in the previous chunk
     if dim_size > bound:
-        number_of_chunks = int(np.ceil((dim_size - bound) / chunks))
+        number_of_chunks = int(math.ceil((dim_size - bound) / chunks))
     else:
         number_of_chunks = 1
-    for n in np.arange(number_of_chunks):
+    for n in range(number_of_chunks):
         l_int = n * chunks
         if n * chunks - bound > 0:
             l_ext = n * chunks - bound
