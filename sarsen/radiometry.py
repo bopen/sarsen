@@ -1,5 +1,4 @@
 import logging
-from typing import Optional, Tuple
 from unittest import mock
 
 import flox.xarray
@@ -17,7 +16,7 @@ def sum_weights(
     initial_weights: xr.DataArray,
     azimuth_index: xr.DataArray,
     slant_range_index: xr.DataArray,
-    multilook: Optional[Tuple[int, int]] = None,
+    multilook: tuple[int, int] | None = None,
 ) -> xr.DataArray:
     geocoded = initial_weights.assign_coords(
         slant_range_index=slant_range_index, azimuth_index=azimuth_index

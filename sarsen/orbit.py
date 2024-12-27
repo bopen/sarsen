@@ -1,4 +1,4 @@
-from typing import Any, Optional, Tuple
+from typing import Any
 
 import attrs
 import numpy as np
@@ -22,7 +22,7 @@ def polyder(coefficients: xr.DataArray) -> xr.DataArray:
 class OrbitPolyfitIterpolator:
     coefficients: xr.DataArray
     epoch: np.datetime64
-    interval: Tuple[np.datetime64, np.datetime64]
+    interval: tuple[np.datetime64, np.datetime64]
 
     @classmethod
     def from_position(
@@ -30,8 +30,8 @@ class OrbitPolyfitIterpolator:
         position: xr.DataArray,
         dim: str = "azimuth_time",
         deg: int = 5,
-        epoch: Optional[np.datetime64] = None,
-        interval: Optional[Tuple[np.datetime64, np.datetime64]] = None,
+        epoch: np.datetime64 | None = None,
+        interval: tuple[np.datetime64, np.datetime64] | None = None,
     ) -> "OrbitPolyfitIterpolator":
         time = position.coords[dim]
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
@@ -62,9 +62,7 @@ class OrbitPolyfitIterpolator:
             name="azimuth_time",
         )
 
-    def position(
-        self, time: Optional[xr.DataArray] = None, **kwargs: Any
-    ) -> xr.DataArray:
+    def position(self, time: xr.DataArray | None = None, **kwargs: Any) -> xr.DataArray:
         if time is None:
             time = self.azimuth_time_range(**kwargs)
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
@@ -74,9 +72,7 @@ class OrbitPolyfitIterpolator:
         position = position.assign_coords({time.name: time})
         return position.rename("position")
 
-    def velocity(
-        self, time: Optional[xr.DataArray] = None, **kwargs: Any
-    ) -> xr.DataArray:
+    def velocity(self, time: xr.DataArray | None = None, **kwargs: Any) -> xr.DataArray:
         if time is None:
             time = self.azimuth_time_range(**kwargs)
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")

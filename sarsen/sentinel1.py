@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any
 
 import attrs
 import numpy as np
@@ -12,7 +10,7 @@ import sarsen
 try:
     import dask  # noqa: F401
 
-    DEFAULT_MEASUREMENT_CHUNKS: Optional[int] = 2048
+    DEFAULT_MEASUREMENT_CHUNKS: int | None = 2048
 except ModuleNotFoundError:
     DEFAULT_MEASUREMENT_CHUNKS = None
 
@@ -21,11 +19,11 @@ SPEED_OF_LIGHT = 299_792_458.0  # m / s
 
 def open_dataset_autodetect(
     product_urlpath: str,
-    group: Optional[str] = None,
-    chunks: Optional[Union[int, Dict[str, int]]] = None,
+    group: str | None = None,
+    chunks: int | dict[str, int] | None = None,
     check_files_exist: bool = False,
     **kwargs: Any,
-) -> Tuple[xr.Dataset, Dict[str, Any]]:
+) -> tuple[xr.Dataset, dict[str, Any]]:
     kwargs.setdefault("engine", "sentinel-1")
     try:
         ds = xr.open_dataset(
@@ -45,9 +43,9 @@ def open_dataset_autodetect(
 
 
 def azimuth_slant_range_grid(
-    attrs: Dict[str, Any],
-    grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
-) -> Dict[str, Any]:
+    attrs: dict[str, Any],
+    grouping_area_factor: tuple[float, float] = (3.0, 3.0),
+) -> dict[str, Any]:
     if attrs["product_type"] == "SLC":
         slant_range_spacing_m = (
             attrs["range_pixel_spacing"]
@@ -61,7 +59,7 @@ def azimuth_slant_range_grid(
         slant_range_spacing_m * 2 / SPEED_OF_LIGHT  # ignore type
     )
 
-    grid_parameters: Dict[str, Any] = {
+    grid_parameters: dict[str, Any] = {
         "slant_range_time0": attrs["image_slant_range_time"],
         "slant_range_time_interval_s": slant_range_time_interval_s,
         "slant_range_spacing_m": slant_range_spacing_m,
@@ -76,11 +74,11 @@ def azimuth_slant_range_grid(
 @attrs.define(slots=False)
 class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProduct):
     product_urlpath: str
-    measurement_group: Optional[str] = None
-    measurement_chunks: Optional[int] = DEFAULT_MEASUREMENT_CHUNKS
-    kwargs: Dict[str, Any] = {}
+    measurement_group: str | None = None
+    measurement_chunks: int | None = DEFAULT_MEASUREMENT_CHUNKS
+    kwargs: dict[str, Any] = {}
 
-    def all_measurement_groups(self) -> List[str]:
+    def all_measurement_groups(self) -> list[str]:
         ds, self.kwargs = open_dataset_autodetect(
             self.product_urlpath, check_files_exist=True, **self.kwargs
         )
@@ -124,7 +122,7 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
         return ds
 
     @property
-    def coordinate_conversion(self) -> Optional[xr.Dataset]:
+    def coordinate_conversion(self) -> xr.Dataset | None:
         ds = None
         if self.product_type == "GRD":
             ds, self.kwargs = open_dataset_autodetect(
@@ -135,7 +133,7 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
         return ds
 
     @property
-    def azimuth_fm_rate(self) -> Optional[xr.Dataset]:
+    def azimuth_fm_rate(self) -> xr.Dataset | None:
         ds = None
         if self.product_type == "SLC":
             ds, self.kwargs = open_dataset_autodetect(
@@ -146,7 +144,7 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
         return ds
 
     @property
-    def dc_estimate(self) -> Optional[xr.Dataset]:
+    def dc_estimate(self) -> xr.Dataset | None:
         ds = None
         if self.product_type == "SLC":
             ds, self.kwargs = open_dataset_autodetect(
@@ -190,8 +188,8 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
 
     def grid_parameters(
         self,
-        grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
-    ) -> Dict[str, Any]:
+        grouping_area_factor: tuple[float, float] = (3.0, 3.0),
+    ) -> dict[str, Any]:
         return azimuth_slant_range_grid(self.measurement.attrs, grouping_area_factor)
 
     def complex_amplitude(self) -> xr.DataArray:
@@ -208,7 +206,7 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
         else:
             return sarsen.SlantRangeSarProduct.interp_sar(self, *args, **kwargs)
 
-    def product_info(self, **kwargs: Any) -> Dict[str, Any]:
+    def product_info(self, **kwargs: Any) -> dict[str, Any]:
         """Get information about the Sentinel-1 product."""
         measurement_groups = self.all_measurement_groups()
 
