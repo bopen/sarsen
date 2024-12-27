@@ -86,9 +86,9 @@ def upsample(data: xr.DataArray, dtype: str = None, **factors: int) -> xr.DataAr
     coords = {}
     for dim, factor in factors.items():
         coord = data.coords[dim]
-        coord_delta = coord[1] - coord[0]
-        start = coord[0] - coord_delta / 2 + coord_delta / factor / 2
-        stop = coord[-1] + coord_delta / 2 - coord_delta / factor / 2
+        coord_delta = coord[1].values - coord[0].values
+        start = coord[0].values - coord_delta / 2 + coord_delta / factor / 2
+        stop = coord[-1].values + coord_delta / 2 - coord_delta / factor / 2
         values = np.linspace(start, stop, num=coord.size * factor, dtype=dtype)
         coords[dim] = values
     return data.interp(coords, kwargs={"fill_value": "extrapolate"})
