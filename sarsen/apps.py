@@ -86,7 +86,7 @@ def do_terrain_correction_from_ecef(
     grouping_area_factor: tuple[float, float] = (3.0, 3.0),
     radiometry_chunks: int = 2048,
     radiometry_bound: int = 128,
-):
+) -> tuple[xr.DataArray, xr.DataArray | None]:
     logger.info("simulate acquisition")
 
     template_raster = dem_ecef.isel(axis=0).drop_vars(["axis", "spatial_ref"]) * 0.0
