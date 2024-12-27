@@ -89,10 +89,13 @@ def do_terrain_correction_from_ecef(
 ):
     logger.info("simulate acquisition")
 
-    template_raster = dem_ecef.isel(axis=0).drop_vars("axis") * 0.0
+    template_raster = dem_ecef.isel(axis=0).drop_vars(["axis", "spatial_ref"]) * 0.0
 
     acquisition = map_simulate_acquisition(
-        dem_ecef, product.state_vectors(), template_raster, correct_radiometry
+        dem_ecef.drop_vars(["spatial_ref"]),
+        product.state_vectors(),
+        template_raster,
+        correct_radiometry,
     )
 
     simulated_beta_nought = None
