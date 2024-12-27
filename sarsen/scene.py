@@ -82,7 +82,7 @@ def transform_dem_3d(
     return dem_3d_crs
 
 
-def upsample(data: xr.DataArray, dtype=None, **factors: int) -> xr.DataArray:
+def upsample(data: xr.DataArray, dtype: str = None, **factors: int) -> xr.DataArray:
     coords = {}
     for dim, factor in factors.items():
         coord = data.coords[dim]
