@@ -86,11 +86,12 @@ def do_terrain_correction(
     grouping_area_factor: tuple[float, float] = (3.0, 3.0),
     radiometry_chunks: int = 2048,
     radiometry_bound: int = 128,
+    convert_to_dem_ecef_kwargs: dict[str, Any] = {},
 ) -> tuple[xr.DataArray, xr.DataArray | None]:
     logger.info("pre-process DEM")
 
     dem_ecef = xr.map_blocks(
-        scene.convert_to_dem_ecef, dem_raster, kwargs={"source_crs": dem_raster.rio.crs}
+        scene.convert_to_dem_ecef, dem_raster, kwargs=convert_to_dem_ecef_kwargs
     )
     dem_ecef = dem_ecef.drop_vars(dem_ecef.rio.grid_mapping)
 
@@ -208,6 +209,12 @@ def terrain_correction(
     if output_urlpath is None and simulated_urlpath is None:
         raise ValueError("No output selected")
 
+    allowed_product_types = ["GRD", "SLC"]
+    if product.product_type not in allowed_product_types:
+        raise ValueError(
+            f"{product.product_type=}. Must be one of: {allowed_product_types}"
+        )
+
     output_chunks = chunks if chunks is not None else 512
 
     to_raster_kwargs: dict[str, Any] = {}
@@ -225,12 +232,6 @@ def terrain_correction(
         dem_urlpath, chunks=chunks, **open_dem_raster_kwargs
     )
 
-    allowed_product_types = ["GRD", "SLC"]
-    if product.product_type not in allowed_product_types:
-        raise ValueError(
-            f"{product.product_type=}. Must be one of: {allowed_product_types}"
-        )
-
     geocoded, simulated_beta_nought = do_terrain_correction(
         product=product,
         dem_raster=dem_raster,
@@ -239,6 +240,7 @@ def terrain_correction(
         grouping_area_factor=grouping_area_factor,
         radiometry_chunks=radiometry_chunks,
         radiometry_bound=radiometry_bound,
+        convert_to_dem_ecef_kwargs={"source_crs": dem_raster.rio.crs},
     )
 
     if simulated_urlpath is not None:
