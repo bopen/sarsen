@@ -28,7 +28,8 @@ def open_dem_raster(
 
 def make_nd_dataarray(das: list[xr.DataArray], dim: str = "axis") -> xr.DataArray:
     da_nd = xr.concat(das, dim=dim, coords="minimal")
-    return da_nd.assign_coords({dim: range(len(das))})
+    dim_attrs = {"long_name": "cartesian axis index", "units": 1}
+    return da_nd.assign_coords({dim: (dim, range(len(das)), dim_attrs)})
 
 
 def convert_to_dem_3d(
@@ -37,6 +38,8 @@ def convert_to_dem_3d(
     _, dem_raster_x = xr.broadcast(dem_raster, dem_raster.coords[x])
     dem_raster_y = dem_raster.coords[y]
     dem_3d = make_nd_dataarray([dem_raster_x, dem_raster_y, dem_raster], dim=dim)
+    dem_3d.attrs.clear()
+    dem_3d.attrs.update(dem_raster.attrs)
     return dem_3d.rename("dem_3d")
 
 
