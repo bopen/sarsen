@@ -78,22 +78,15 @@ def map_simulate_acquisition(
     return acquisition
 
 
-def do_terrain_correction(
+def do_terrain_correction_from_ecef(
     product: datamodel.SarProduct,
-    dem_raster: xr.DataArray,
+    dem_ecef: xr.DataArray,
     correct_radiometry: str | None = None,
     interp_method: xr.core.types.InterpOptions = "nearest",
     grouping_area_factor: tuple[float, float] = (3.0, 3.0),
     radiometry_chunks: int = 2048,
     radiometry_bound: int = 128,
-    convert_to_dem_ecef_kwargs: dict[str, Any] = {},
-) -> tuple[xr.DataArray, xr.DataArray | None]:
-    logger.info("pre-process DEM")
-
-    dem_ecef = xr.map_blocks(
-        scene.convert_to_dem_ecef, dem_raster, kwargs=convert_to_dem_ecef_kwargs
-    )
-
+):
     logger.info("simulate acquisition")
 
     template_raster = dem_ecef.isel(axis=0).drop_vars("axis") * 0.0
@@ -155,6 +148,21 @@ def do_terrain_correction(
     geocoded.rio.write_crs(dem_ecef.rio.crs, inplace=True)
 
     return geocoded, simulated_beta_nought
+
+
+def do_terrain_correction_from_raster(
+    product: datamodel.SarProduct,
+    dem_raster: xr.DataArray,
+    convert_to_dem_ecef_kwargs: dict[str, Any] = {},
+    **kwargs: Any,
+) -> tuple[xr.DataArray, xr.DataArray | None]:
+    logger.info("pre-process DEM")
+
+    dem_ecef = xr.map_blocks(
+        scene.convert_to_dem_ecef, dem_raster, kwargs=convert_to_dem_ecef_kwargs
+    )
+
+    return do_terrain_correction_from_ecef(product, dem_ecef, **kwargs)
 
 
 def terrain_correction(
@@ -231,7 +239,7 @@ def terrain_correction(
         dem_urlpath, chunks=chunks, **open_dem_raster_kwargs
     )
 
-    geocoded, simulated_beta_nought = do_terrain_correction(
+    geocoded, simulated_beta_nought = do_terrain_correction_from_raster(
         product=product,
         dem_raster=dem_raster,
         correct_radiometry=correct_radiometry,
