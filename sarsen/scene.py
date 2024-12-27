@@ -37,7 +37,7 @@ def convert_to_dem_3d(
     dim: str = "axis",
     x: str = "x",
     y: str = "y",
-    dtype: str = "float32",
+    dtype: str = "float64",
 ) -> xr.DataArray:
     _, dem_raster_x = xr.broadcast(dem_raster, dem_raster.coords[x].astype(dtype))
     dem_raster_y = dem_raster.coords[y].astype(dtype)
@@ -80,6 +80,18 @@ def transform_dem_3d(
     dem_3d_crs.loc[{dim: 1}] = np.reshape(y, shape)
     dem_3d_crs.loc[{dim: 2}] = np.reshape(z, shape)
     return dem_3d_crs
+
+
+def upsample(data: xr.DataArray, dtype=None, **factors: int) -> xr.DataArray:
+    coords = {}
+    for dim, factor in factors.items():
+        coord = data.coords[dim]
+        coord_delta = coord[1] - coord[0]
+        start = coord[0] - coord_delta / 2 + coord_delta / factor / 2
+        stop = coord[-1] + coord_delta / 2 - coord_delta / factor / 2
+        values = np.linspace(start, stop, num=coord.size * factor, dtype=dtype)
+        coords[dim] = values
+    return data.interp(coords, kwargs={"fill_value": "extrapolate"})
 
 
 def convert_to_dem_ecef(

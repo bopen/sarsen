@@ -33,6 +33,13 @@ def test_transform_dem_3d(dem_raster: xr.DataArray) -> None:
     )
 
 
+def test_upsample(dem_raster: xr.DataArray) -> None:
+    res = scene.upsample(dem_raster, x=2)
+
+    assert res.x.size == dem_raster.x.size * 2
+    assert np.allclose(res.isel(x=0).mean(), 78.46527778)
+
+
 def test_compute_dem_oriented_area(dem_raster: xr.DataArray) -> None:
     dem_3d = scene.convert_to_dem_3d(dem_raster)
 
