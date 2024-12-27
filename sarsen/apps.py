@@ -93,11 +93,10 @@ def do_terrain_correction(
     dem_ecef = xr.map_blocks(
         scene.convert_to_dem_ecef, dem_raster, kwargs=convert_to_dem_ecef_kwargs
     )
-    dem_ecef = dem_ecef.drop_vars(dem_ecef.rio.grid_mapping)
 
     logger.info("simulate acquisition")
 
-    template_raster = dem_raster.drop_vars(dem_raster.rio.grid_mapping) * 0.0
+    template_raster = dem_ecef.isel(axis=0).drop_vars("axis") * 0.0
 
     acquisition = map_simulate_acquisition(
         dem_ecef, product.state_vectors(), template_raster, correct_radiometry
@@ -126,9 +125,9 @@ def do_terrain_correction(
         )
         simulated_beta_nought.attrs["long_name"] = "terrain-simulated beta nought"
 
-        simulated_beta_nought.x.attrs.update(dem_raster.x.attrs)
-        simulated_beta_nought.y.attrs.update(dem_raster.y.attrs)
-        simulated_beta_nought.rio.write_crs(dem_raster.rio.crs, inplace=True)
+        simulated_beta_nought.x.attrs.update(dem_ecef.x.attrs)
+        simulated_beta_nought.y.attrs.update(dem_ecef.y.attrs)
+        simulated_beta_nought.rio.write_crs(dem_ecef.rio.crs, inplace=True)
 
     logger.info("calibrate image")
 
@@ -151,9 +150,9 @@ def do_terrain_correction(
         geocoded = geocoded / simulated_beta_nought
         geocoded.attrs["long_name"] = "terrain-corrected gamma nought"
 
-    geocoded.x.attrs.update(dem_raster.x.attrs)
-    geocoded.y.attrs.update(dem_raster.y.attrs)
-    geocoded.rio.write_crs(dem_raster.rio.crs, inplace=True)
+    geocoded.x.attrs.update(dem_ecef.x.attrs)
+    geocoded.y.attrs.update(dem_ecef.y.attrs)
+    geocoded.rio.write_crs(dem_ecef.rio.crs, inplace=True)
 
     return geocoded, simulated_beta_nought
 
@@ -240,7 +239,6 @@ def terrain_correction(
         grouping_area_factor=grouping_area_factor,
         radiometry_chunks=radiometry_chunks,
         radiometry_bound=radiometry_bound,
-        convert_to_dem_ecef_kwargs={"source_crs": dem_raster.rio.crs},
     )
 
     if simulated_urlpath is not None:
