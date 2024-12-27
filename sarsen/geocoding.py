@@ -2,6 +2,7 @@
 
 See: https://sentinel.esa.int/documents/247904/0/Guide-to-Sentinel-1-Geocoding.pdf/e0450150-b4e9-4b2d-9b32-dadf989d3bd3
 """
+
 import functools
 from typing import Any, Callable, Optional, Tuple, TypeVar
 
@@ -75,7 +76,7 @@ def backward_geocode(
     diff_ufunc: float = 1.0,
 ) -> xr.Dataset:
     direction_ecef = (
-        velocity_ecef / xr.dot(velocity_ecef, velocity_ecef, dims=dim) ** 0.5
+        velocity_ecef / xr.dot(velocity_ecef, velocity_ecef, dim=dim) ** 0.5
     )
 
     zero_doppler = functools.partial(

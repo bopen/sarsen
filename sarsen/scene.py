@@ -112,12 +112,12 @@ def compute_dem_oriented_area(dem_ecef: xr.DataArray) -> xr.DataArray:
 
     cross_1 = xr.cross(dx1, dy1, dim="axis") / 2
     sign_1 = np.sign(
-        xr.dot(cross_1, dem_ecef, dims="axis")
+        xr.dot(cross_1, dem_ecef, dim="axis")
     )  # ensure direction out of DEM
 
     cross_2 = xr.cross(dx2, dy2, dim="axis") / 2
     sign_2 = np.sign(
-        xr.dot(cross_2, dem_ecef, dims="axis")
+        xr.dot(cross_2, dem_ecef, dim="axis")
     )  # ensure direction out of DEM
     dem_oriented_area: xr.DataArray = cross_1 * sign_1 + cross_2 * sign_2
 
