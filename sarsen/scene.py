@@ -33,11 +33,16 @@ def make_nd_dataarray(das: list[xr.DataArray], dim: str = "axis") -> xr.DataArra
 
 
 def convert_to_dem_3d(
-    dem_raster: xr.DataArray, dim: str = "axis", x: str = "x", y: str = "y"
+    dem_raster: xr.DataArray,
+    dim: str = "axis",
+    x: str = "x",
+    y: str = "y",
+    dtype: str = "float32",
 ) -> xr.DataArray:
-    _, dem_raster_x = xr.broadcast(dem_raster, dem_raster.coords[x])
-    dem_raster_y = dem_raster.coords[y]
-    dem_3d = make_nd_dataarray([dem_raster_x, dem_raster_y, dem_raster], dim=dim)
+    _, dem_raster_x = xr.broadcast(dem_raster, dem_raster.coords[x].astype(dtype))
+    dem_raster_y = dem_raster.coords[y].astype(dtype)
+    dem_raster_astype = dem_raster.astype(dtype)
+    dem_3d = make_nd_dataarray([dem_raster_x, dem_raster_y, dem_raster_astype], dim=dim)
     dem_3d.attrs.clear()
     dem_3d.attrs.update(dem_raster.attrs)
     return dem_3d.rename("dem_3d")
