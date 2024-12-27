@@ -1,6 +1,6 @@
 import itertools
 import math
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable
 
 import xarray as xr
 
@@ -9,7 +9,7 @@ def compute_chunks_1d(
     dim_size: int,
     chunks: int = 2048,
     bound: int = 128,
-) -> Tuple[List[slice], List[slice], List[slice]]:
+) -> tuple[list[slice], list[slice], list[slice]]:
     ext_slices = []
     ext_slices_bound = []
     int_slices = []
@@ -43,9 +43,9 @@ def compute_chunks_1d(
 
 
 def compute_product(
-    slices: List[List[slice]], dims_name: List[str]
-) -> List[Dict[str, slice]]:
-    product: List[Dict[str, slice]] = []
+    slices: list[list[slice]], dims_name: list[str]
+) -> list[dict[str, slice]]:
+    product: list[dict[str, slice]] = []
 
     for slices_ in itertools.product(*slices):
         product.append({})
@@ -55,10 +55,10 @@ def compute_product(
 
 
 def compute_chunks(
-    dims: Dict[str, int] = {},
+    dims: dict[str, int] = {},
     chunks: int = 2048,
     bound: int = 128,
-) -> Tuple[List[Dict[str, slice]], List[Dict[str, slice]], List[Dict[str, slice]]]:
+) -> tuple[list[dict[str, slice]], list[dict[str, slice]], list[dict[str, slice]]]:
     ext_slices_ = []
     ext_slices_bound_ = []
     int_slices_ = []
@@ -76,11 +76,11 @@ def compute_chunks(
 
 def map_ovelap(
     function: Callable[..., xr.DataArray],
-    obj: Union[xr.Dataset, xr.DataArray],
+    obj: xr.Dataset | xr.DataArray,
     chunks: int = 2048,
     bound: int = 128,
-    kwargs: Dict[Any, Any] = {},
-    template: Optional[xr.DataArray] = None,
+    kwargs: dict[Any, Any] = {},
+    template: xr.DataArray | None = None,
 ) -> xr.DataArray:
     dims = {}
     for d in obj.dims:

@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import xarray as xr
 
@@ -26,9 +26,9 @@ class SarProduct(abc.ABC):
         self,
         data: xr.DataArray,
         azimuth_time: xr.DataArray,
-        slant_range_time: Optional[xr.DataArray] = None,
+        slant_range_time: xr.DataArray | None = None,
         method: xr.core.types.InterpOptions = "nearest",
-        ground_range: Optional[xr.DataArray] = None,
+        ground_range: xr.DataArray | None = None,
     ) -> xr.DataArray:
         ...
 
@@ -36,8 +36,8 @@ class SarProduct(abc.ABC):
     @abc.abstractmethod
     def grid_parameters(
         self,
-        grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
-    ) -> Dict[str, Any]:
+        grouping_area_factor: tuple[float, float] = (3.0, 3.0),
+    ) -> dict[str, Any]:
         ...
 
 
@@ -52,9 +52,9 @@ class GroundRangeSarProduct(SarProduct):
         self,
         data: xr.DataArray,
         azimuth_time: xr.DataArray,
-        slant_range_time: Optional[xr.DataArray] = None,
+        slant_range_time: xr.DataArray | None = None,
         method: xr.core.types.InterpOptions = "nearest",
-        ground_range: Optional[xr.DataArray] = None,
+        ground_range: xr.DataArray | None = None,
     ) -> xr.DataArray:
         if ground_range is None:
             assert slant_range_time is not None
@@ -82,9 +82,9 @@ class SlantRangeSarProduct(SarProduct):
         self,
         data: xr.DataArray,
         azimuth_time: xr.DataArray,
-        slant_range_time: Optional[xr.DataArray] = None,
+        slant_range_time: xr.DataArray | None = None,
         method: xr.core.types.InterpOptions = "nearest",
-        ground_range: Optional[xr.DataArray] = None,
+        ground_range: xr.DataArray | None = None,
     ) -> xr.DataArray:
         assert ground_range is None
         interpolated = data.interp(
