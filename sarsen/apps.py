@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Container, Dict, Optional, Tuple
+from typing import Any, Container
 from unittest import mock
 
 import numpy as np
@@ -53,7 +53,7 @@ def map_simulate_acquisition(
     dem_ecef: xr.DataArray,
     position_ecef: xr.DataArray,
     template_raster: xr.DataArray,
-    correct_radiometry: Optional[str] = None,
+    correct_radiometry: str | None = None,
 ) -> xr.Dataset:
     acquisition_template = xr.Dataset(
         data_vars={
@@ -81,12 +81,12 @@ def map_simulate_acquisition(
 def do_terrain_correction(
     product: datamodel.SarProduct,
     dem_raster: xr.DataArray,
-    correct_radiometry: Optional[str] = None,
+    correct_radiometry: str | None = None,
     interp_method: xr.core.types.InterpOptions = "nearest",
-    grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
+    grouping_area_factor: tuple[float, float] = (3.0, 3.0),
     radiometry_chunks: int = 2048,
     radiometry_bound: int = 128,
-) -> tuple[xr.DataArray, Optional[xr.DataArray]]:
+) -> tuple[xr.DataArray, xr.DataArray | None]:
     logger.info("pre-process DEM")
 
     dem_ecef = xr.map_blocks(
@@ -160,17 +160,17 @@ def do_terrain_correction(
 def terrain_correction(
     product: datamodel.SarProduct,
     dem_urlpath: str,
-    output_urlpath: Optional[str] = "GTC.tif",
-    simulated_urlpath: Optional[str] = None,
-    correct_radiometry: Optional[str] = None,
+    output_urlpath: str | None = "GTC.tif",
+    simulated_urlpath: str | None = None,
+    correct_radiometry: str | None = None,
     interp_method: xr.core.types.InterpOptions = "nearest",
-    grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
-    open_dem_raster_kwargs: Dict[str, Any] = {},
-    chunks: Optional[int] = 1024,
+    grouping_area_factor: tuple[float, float] = (3.0, 3.0),
+    open_dem_raster_kwargs: dict[str, Any] = {},
+    chunks: int | None = 1024,
     radiometry_chunks: int = 2048,
     radiometry_bound: int = 128,
     enable_dask_distributed: bool = False,
-    client_kwargs: Dict[str, Any] = {"processes": False},
+    client_kwargs: dict[str, Any] = {"processes": False},
 ) -> xr.DataArray:
     """Apply the terrain-correction to sentinel-1 SLC and GRD products.
 
@@ -210,7 +210,7 @@ def terrain_correction(
 
     output_chunks = chunks if chunks is not None else 512
 
-    to_raster_kwargs: Dict[str, Any] = {}
+    to_raster_kwargs: dict[str, Any] = {}
     if enable_dask_distributed:
         from dask.distributed import Client, Lock
 
