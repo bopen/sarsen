@@ -16,11 +16,10 @@ SPEED_OF_LIGHT = 299_792_458.0  # m / s
 
 def simulate_acquisition(
     dem_ecef: xr.DataArray,
-    position_ecef: xr.DataArray,
+    orbit_interpolator: orbit.OrbitPolyfitIterpolator,
     include_variables: Container[str] = (),
 ) -> xr.Dataset:
     """Compute the image coordinates of the DEM given the satellite orbit."""
-    orbit_interpolator = orbit.OrbitPolyfitIterpolator.from_position(position_ecef)
     position_ecef = orbit_interpolator.position()
     velocity_ecef = orbit_interpolator.velocity()
 
@@ -51,7 +50,7 @@ def simulate_acquisition(
 
 def map_simulate_acquisition(
     dem_ecef: xr.DataArray,
-    position_ecef: xr.DataArray,
+    orbit_interpolator: orbit.OrbitPolyfitIterpolator,
     template_raster: xr.DataArray,
     correct_radiometry: str | None = None,
 ) -> xr.Dataset:
@@ -70,7 +69,7 @@ def map_simulate_acquisition(
         simulate_acquisition,
         dem_ecef,
         kwargs={
-            "position_ecef": position_ecef,
+            "orbit_interpolator": orbit_interpolator,
             "include_variables": include_variables,
         },
         template=acquisition_template,
@@ -91,9 +90,13 @@ def do_terrain_correction_from_ecef(
 
     template_raster = dem_ecef.isel(axis=0).drop_vars(["axis", "spatial_ref"]) * 0.0
 
+    orbit_interpolator = orbit.OrbitPolyfitIterpolator.from_position(
+        product.state_vectors()
+    )
+
     acquisition = map_simulate_acquisition(
         dem_ecef.drop_vars(["spatial_ref"]),
-        product.state_vectors(),
+        orbit_interpolator,
         template_raster,
         correct_radiometry,
     )
