@@ -17,7 +17,6 @@ classifiers = [
 dependencies = [
   "attrs",
   "flox",
-  "mock",
   "numpy",
   "pandas",
   "rasterio",
