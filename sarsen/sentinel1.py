@@ -1,3 +1,4 @@
+import functools
 from typing import Any
 
 import attrs
@@ -35,9 +36,9 @@ def open_dataset_autodetect(
         )
     except FileNotFoundError:
         # re-try with Planetary Computer option
-        kwargs[
-            "override_product_files"
-        ] = "{dirname}/{prefix}{swath}-{polarization}{ext}"
+        kwargs["override_product_files"] = (
+            "{dirname}/{prefix}{swath}-{polarization}{ext}"
+        )
         ds = xr.open_dataset(product_urlpath, group=group, chunks=chunks, **kwargs)
     return ds, kwargs
 
@@ -98,30 +99,30 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
             ds = xarray_sentinel.mosaic_slc_iw(ds)
         return ds
 
-    @property
+    @functools.cached_property
     def orbit(self) -> xr.Dataset:
         ds, self.kwargs = open_dataset_autodetect(
             self.product_urlpath, group=f"{self.measurement_group}/orbit", **self.kwargs
         )
-        return ds
+        return ds.compute()
 
-    @property
+    @functools.cached_property
     def gcp(self) -> xr.Dataset:
         ds, self.kwargs = open_dataset_autodetect(
             self.product_urlpath, group=f"{self.measurement_group}/gcp", **self.kwargs
         )
-        return ds
+        return ds.compute()
 
-    @property
+    @functools.cached_property
     def calibration(self) -> xr.Dataset:
         ds, self.kwargs = open_dataset_autodetect(
             self.product_urlpath,
             group=f"{self.measurement_group}/calibration",
             **self.kwargs,
         )
-        return ds
+        return ds.compute()
 
-    @property
+    @functools.cached_property
     def coordinate_conversion(self) -> xr.Dataset | None:
         ds = None
         if self.product_type == "GRD":
@@ -130,9 +131,9 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
                 group=f"{self.measurement_group}/coordinate_conversion",
                 **self.kwargs,
             )
-        return ds
+        return ds.compute()
 
-    @property
+    @functools.cached_property
     def azimuth_fm_rate(self) -> xr.Dataset | None:
         ds = None
         if self.product_type == "SLC":
@@ -141,9 +142,9 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
                 group=f"{self.measurement_group}/azimuth_fm_rate",
                 **self.kwargs,
             )
-        return ds
+        return ds.compute()
 
-    @property
+    @functools.cached_property
     def dc_estimate(self) -> xr.Dataset | None:
         ds = None
         if self.product_type == "SLC":
@@ -152,23 +153,27 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
                 group=f"{self.measurement_group}/dc_estimate",
                 **self.kwargs,
             )
-        return ds
+        return ds.compute()
 
     # SarProduct interaface
 
-    @property
+    @functools.cached_property
     def product_type(self) -> Any:
         prod_type = self.measurement.attrs["product_type"]
         assert isinstance(prod_type, str)
         return prod_type
 
-    def beta_nought(self) -> xr.DataArray:
-        measurement = self.measurement.data_vars["measurement"]
-        beta_nought = xarray_sentinel.calibrate_intensity(
-            measurement, self.calibration.betaNought
-        )
-        beta_nought = beta_nought.drop_vars(["pixel", "line"])
-        return beta_nought
+    def beta_nought(self, load=False) -> xr.DataArray:
+        if "_cached_beta_nought" not in vars(self):
+            measurement = self.measurement.data_vars["measurement"]
+            beta_nought = xarray_sentinel.calibrate_intensity(
+                measurement, self.calibration.betaNought
+            )
+            beta_nought = beta_nought.drop_vars(["pixel", "line"])
+            if load:
+                beta_nought = beta_nought.load()
+            self._cached_beta_nought = beta_nought
+        return self._cached_beta_nought
 
     def state_vectors(self) -> xr.DataArray:
         return self.orbit.data_vars["position"]
