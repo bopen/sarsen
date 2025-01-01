@@ -155,6 +155,16 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
             )
         return ds.compute()
 
+    # make class hashable to allow caching methods calls
+
+    def __hash__(self):
+        id = (
+            self.product_urlpath,
+            self.measurement_group,
+            self.measurement_chunks,
+        ) + tuple(self.kwargs.items())
+        return hash(id)
+
     # SarProduct interaface
 
     @functools.cached_property
@@ -163,17 +173,13 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
         assert isinstance(prod_type, str)
         return prod_type
 
-    def beta_nought(self, load=False) -> xr.DataArray:
-        if "_cached_beta_nought" not in vars(self):
-            measurement = self.measurement.data_vars["measurement"]
-            beta_nought = xarray_sentinel.calibrate_intensity(
-                measurement, self.calibration.betaNought
-            )
-            beta_nought = beta_nought.drop_vars(["pixel", "line"])
-            if load:
-                beta_nought = beta_nought.load()
-            self._cached_beta_nought = beta_nought
-        return self._cached_beta_nought
+    @functools.cache
+    def beta_nought(self) -> xr.DataArray:
+        measurement = self.measurement.data_vars["measurement"]
+        beta_nought = xarray_sentinel.calibrate_intensity(
+            measurement, self.calibration.betaNought
+        )
+        return beta_nought.drop_vars(["pixel", "line"])
 
     def state_vectors(self) -> xr.DataArray:
         return self.orbit.data_vars["position"]
@@ -211,6 +217,7 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
         else:
             return sarsen.SlantRangeSarProduct.interp_sar(self, *args, **kwargs)
 
+    @functools.cache
     def product_info(self, **kwargs: Any) -> dict[str, Any]:
         """Get information about the Sentinel-1 product."""
         measurement_groups = self.all_measurement_groups()
