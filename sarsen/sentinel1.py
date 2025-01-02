@@ -130,7 +130,8 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
                 self.product_urlpath,
                 group=f"{self.measurement_group}/coordinate_conversion",
                 **self.kwargs,
-            ).compute()
+            )
+            ds = ds.compute()
         return ds
 
     @functools.cached_property
@@ -141,7 +142,8 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
                 self.product_urlpath,
                 group=f"{self.measurement_group}/azimuth_fm_rate",
                 **self.kwargs,
-            ).compute()
+            )
+            ds = ds.compute()
         return ds
 
     @functools.cached_property
@@ -152,12 +154,13 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
                 self.product_urlpath,
                 group=f"{self.measurement_group}/dc_estimate",
                 **self.kwargs,
-            ).compute()
+            )
+            ds = ds.compute()
         return ds
 
     # make class hashable to allow caching methods calls
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         id = (
             self.product_urlpath,
             self.measurement_group,
