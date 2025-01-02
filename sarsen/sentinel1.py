@@ -36,9 +36,9 @@ def open_dataset_autodetect(
         )
     except FileNotFoundError:
         # re-try with Planetary Computer option
-        kwargs["override_product_files"] = (
-            "{dirname}/{prefix}{swath}-{polarization}{ext}"
-        )
+        kwargs[
+            "override_product_files"
+        ] = "{dirname}/{prefix}{swath}-{polarization}{ext}"
         ds = xr.open_dataset(product_urlpath, group=group, chunks=chunks, **kwargs)
     return ds, kwargs
 
@@ -130,8 +130,8 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
                 self.product_urlpath,
                 group=f"{self.measurement_group}/coordinate_conversion",
                 **self.kwargs,
-            )
-        return ds.compute()
+            ).compute()
+        return ds
 
     @functools.cached_property
     def azimuth_fm_rate(self) -> xr.Dataset | None:
@@ -141,8 +141,8 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
                 self.product_urlpath,
                 group=f"{self.measurement_group}/azimuth_fm_rate",
                 **self.kwargs,
-            )
-        return ds.compute()
+            ).compute()
+        return ds
 
     @functools.cached_property
     def dc_estimate(self) -> xr.Dataset | None:
@@ -152,8 +152,8 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
                 self.product_urlpath,
                 group=f"{self.measurement_group}/dc_estimate",
                 **self.kwargs,
-            )
-        return ds.compute()
+            ).compute()
+        return ds
 
     # make class hashable to allow caching methods calls
 
