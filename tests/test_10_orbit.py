@@ -4,9 +4,9 @@ import xarray as xr
 from sarsen import orbit
 
 
-def test_OrbitPolyfitIterpolator_datetime64(orbit_ds: xr.Dataset) -> None:
+def test_OrbitPolyfitInterpolator_datetime64(orbit_ds: xr.Dataset) -> None:
     position = orbit_ds.data_vars["position"]
-    orbit_interpolator = orbit.OrbitPolyfitIterpolator.from_position(position, deg=4)
+    orbit_interpolator = orbit.OrbitPolyfitInterpolator.from_position(position, deg=4)
 
     res = orbit_interpolator.position(position.azimuth_time)
 
@@ -26,13 +26,13 @@ def test_OrbitPolyfitIterpolator_datetime64(orbit_ds: xr.Dataset) -> None:
     assert res.dims == ("azimuth_time", "axis")
 
 
-def test_OrbitPolyfitIterpolator_timedelta64(orbit_ds: xr.Dataset) -> None:
+def test_OrbitPolyfitInterpolator_timedelta64(orbit_ds: xr.Dataset) -> None:
     position = orbit_ds.data_vars["position"]
     position = position.assign_coords(
         azimuth_time=position.azimuth_time - position.azimuth_time[0]
     )
     epoch = position.azimuth_time.values[0]
-    orbit_interpolator = orbit.OrbitPolyfitIterpolator.from_position(
+    orbit_interpolator = orbit.OrbitPolyfitInterpolator.from_position(
         position, epoch=epoch, deg=4
     )
 

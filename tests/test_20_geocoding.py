@@ -40,7 +40,7 @@ def test_secant_method() -> None:
 def test_zero_doppler_plane_distance(
     dem_ecef: xr.DataArray, orbit_ds: xr.Dataset
 ) -> None:
-    orbit_interpolator = orbit.OrbitPolyfitIterpolator.from_position(orbit_ds.position)
+    orbit_interpolator = orbit.OrbitPolyfitInterpolator.from_position(orbit_ds.position)
 
     res0, (res1, res2) = geocoding.zero_doppler_plane_distance(
         dem_ecef,
@@ -55,7 +55,7 @@ def test_zero_doppler_plane_distance(
 
 
 def test_backward_geocode(dem_ecef: xr.DataArray, orbit_ds: xr.Dataset) -> None:
-    orbit_interpolator = orbit.OrbitPolyfitIterpolator.from_position(orbit_ds.position)
+    orbit_interpolator = orbit.OrbitPolyfitInterpolator.from_position(orbit_ds.position)
 
     res = geocoding.backward_geocode(
         dem_ecef,
