@@ -19,7 +19,7 @@ def polyder(coefficients: xr.DataArray) -> xr.DataArray:
 
 
 @attrs.define
-class OrbitPolyfitIterpolator:
+class OrbitPolyfitInterpolator:
     coefficients: xr.DataArray
     epoch: np.datetime64
     interval: tuple[np.datetime64, np.datetime64]
@@ -32,7 +32,7 @@ class OrbitPolyfitIterpolator:
         deg: int = 5,
         epoch: np.datetime64 | None = None,
         interval: tuple[np.datetime64, np.datetime64] | None = None,
-    ) -> "OrbitPolyfitIterpolator":
+    ) -> "OrbitPolyfitInterpolator":
         time = position.coords[dim]
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
 
@@ -83,3 +83,6 @@ class OrbitPolyfitIterpolator:
         velocity = xr.polyval(time - self.epoch, velocity_coefficients)
         velocity = velocity.assign_coords({time.name: time})
         return velocity.rename("velocity")
+
+# keep wrong spelling used elsewhere
+OrbitPolyfitIterpolator = OrbitPolyfitInterpolator
