@@ -84,5 +84,6 @@ class OrbitPolyfitInterpolator:
         velocity = velocity.assign_coords({time.name: time})
         return velocity.rename("velocity")
 
+
 # keep wrong spelling used elsewhere
 OrbitPolyfitIterpolator = OrbitPolyfitInterpolator
