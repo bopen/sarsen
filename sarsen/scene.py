@@ -82,7 +82,7 @@ def transform_dem_3d(
     return dem_3d_crs
 
 
-def upsample(
+def upsample_coords(
     data: xr.DataArray, dtype: str | None = None, **factors: int
 ) -> xr.DataArray:
     coords = {}
@@ -93,6 +93,13 @@ def upsample(
         stop = coord[-1].values + coord_delta / 2 - coord_delta / factor / 2
         values = np.linspace(start, stop, num=coord.size * factor, dtype=dtype)
         coords[dim] = values
+    return coords
+
+
+def upsample(
+    data: xr.DataArray, dtype: str | None = None, **factors: int
+) -> xr.DataArray:
+    coords = upsample_coords(data, dtype, **factors)
     return data.interp(coords, kwargs={"fill_value": "extrapolate"})
 
 
