@@ -165,7 +165,7 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
             self.product_urlpath,
             self.measurement_group,
             self.measurement_chunks,
-        ) + tuple(self.kwargs.items())
+        ) + tuple(repr(self.kwargs))
         return hash(id)
 
     # SarProduct interaface
