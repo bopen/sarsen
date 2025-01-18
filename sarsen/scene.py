@@ -84,7 +84,7 @@ def transform_dem_3d(
 
 def upsample_coords(
     data: xr.DataArray, dtype: str | None = None, **factors: int
-) -> xr.DataArray:
+) -> dict[str, np.ndarray[Any, Any]]:
     coords = {}
     for dim, factor in factors.items():
         coord = data.coords[dim]
