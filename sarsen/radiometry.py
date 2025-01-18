@@ -9,7 +9,7 @@ from . import scene
 
 logger = logging.getLogger(__name__)
 
-ONE_SECOND = np.timedelta64(1, "s")
+ONE_SECOND = np.timedelta64(10**9, "ns")
 
 
 def sum_weights(
