@@ -14,6 +14,24 @@ logger = logging.getLogger(__name__)
 SPEED_OF_LIGHT = 299_792_458.0  # m / s
 
 
+def make_simulate_acquisition_template(
+    template_raster: xr.DataArray,
+    correct_radiometry: str | None = None,
+) -> xr.Dataset:
+    acquisition_template = xr.Dataset(
+        data_vars={
+            "slant_range_time": template_raster,
+            "azimuth_time": template_raster.astype("datetime64[ns]"),
+        }
+    )
+    include_variables = {"slant_range_time", "azimuth_time"}
+    if correct_radiometry is not None:
+        acquisition_template["gamma_area"] = template_raster
+        include_variables.add("gamma_area")
+
+    return acquisition_template
+
+
 def simulate_acquisition(
     dem_ecef: xr.DataArray,
     orbit_interpolator: orbit.OrbitPolyfitInterpolator,
@@ -54,23 +72,15 @@ def map_simulate_acquisition(
     template_raster: xr.DataArray,
     correct_radiometry: str | None = None,
 ) -> xr.Dataset:
-    acquisition_template = xr.Dataset(
-        data_vars={
-            "slant_range_time": template_raster,
-            "azimuth_time": template_raster.astype("datetime64[ns]"),
-        }
+    acquisition_template = make_simulate_acquisition_template(
+        template_raster, correct_radiometry
     )
-    include_variables = {"slant_range_time", "azimuth_time"}
-    if correct_radiometry is not None:
-        acquisition_template["gamma_area"] = template_raster
-        include_variables.add("gamma_area")
-
     acquisition = xr.map_blocks(
         simulate_acquisition,
         dem_ecef,
         kwargs={
             "orbit_interpolator": orbit_interpolator,
-            "include_variables": include_variables,
+            "include_variables": list(acquisition_template.data_vars),
         },
         template=acquisition_template,
     )
