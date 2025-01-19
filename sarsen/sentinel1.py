@@ -177,11 +177,13 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
         return prod_type
 
     @functools.cache
-    def beta_nought(self) -> xr.DataArray:
+    def beta_nought(self, persist=False) -> xr.DataArray:
         measurement = self.measurement.data_vars["measurement"]
         beta_nought = xarray_sentinel.calibrate_intensity(
             measurement, self.calibration.betaNought
         )
+        if persist:
+            beta_nought = beta_nought.persist()
         return beta_nought.drop_vars(["pixel", "line"])
 
     def state_vectors(self) -> xr.DataArray:
