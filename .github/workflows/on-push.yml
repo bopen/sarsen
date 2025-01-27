@@ -230,6 +230,6 @@ jobs:
       with:
         name: distribution
         path: dist
-    - uses: pypa/gh-action-pypi-publish@v1.12.3
+    - uses: pypa/gh-action-pypi-publish@v1.12.4
       with:
         verbose: true
