@@ -67,7 +67,6 @@ class OrbitPolyfitInterpolator:
             time = self.azimuth_time_range(**kwargs)
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
 
-        position: xr.DataArray
         position = xr.polyval(time - self.epoch, self.coefficients)
         position = position.assign_coords({time.name: time})
         return position.rename("position")
