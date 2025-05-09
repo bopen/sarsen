@@ -100,7 +100,7 @@ def map_ovelap(
     )  # type ignore
 
     try:
-        from dask.array import empty_like  # type: ignore
+        from dask.array import empty_like
     except ModuleNotFoundError:
         from numpy import empty_like  # type: ignore
 
