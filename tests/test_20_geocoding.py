@@ -43,10 +43,7 @@ def test_zero_doppler_plane_distance(
     orbit_interpolator = orbit.OrbitPolyfitInterpolator.from_position(orbit_ds.position)
 
     res0, (res1, res2) = geocoding.zero_doppler_plane_distance(
-        dem_ecef,
-        orbit_interpolator.position(),
-        orbit_interpolator.velocity(),
-        orbit_ds.azimuth_time,
+        dem_ecef, orbit_interpolator, orbit_ds.azimuth_time
     )
 
     assert isinstance(res0, xr.DataArray)
