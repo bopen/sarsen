@@ -1,3 +1,4 @@
+import functools
 from typing import Any
 
 import attrs
@@ -71,15 +72,16 @@ class OrbitPolyfitInterpolator:
         position = position.assign_coords({time.name: time})
         return position.rename("position")
 
+    @functools.cached_property
+    def velocity_coefficients(self) -> xr.DataArray:
+        return polyder(self.coefficients) * S_TO_NS
+
     def velocity(self, time: xr.DataArray | None = None, **kwargs: Any) -> xr.DataArray:
         if time is None:
             time = self.azimuth_time_range(**kwargs)
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
 
-        velocity_coefficients = polyder(self.coefficients) * S_TO_NS
-
-        velocity: xr.DataArray
-        velocity = xr.polyval(time - self.epoch, velocity_coefficients)
+        velocity = xr.polyval(time - self.epoch, self.velocity_coefficients)
         velocity = velocity.assign_coords({time.name: time})
         return velocity.rename("velocity")
 
