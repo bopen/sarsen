@@ -34,7 +34,6 @@ class OrbitPolyfitInterpolator:
         interval: tuple[np.datetime64, np.datetime64] | None = None,
     ) -> "OrbitPolyfitInterpolator":
         time = position.coords[dim]
-        assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
 
         if epoch is None:
             # NOTE: summing two datetime64 is not defined and we cannot use:
