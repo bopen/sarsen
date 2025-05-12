@@ -62,9 +62,9 @@ def zero_doppler_plane_distance(
 ) -> Tuple[xr.DataArray, Tuple[xr.DataArray, xr.DataArray]]:
     dem_distance = dem_ecef - orbit_interpolator.position(azimuth_time)
     satellite_velocity = orbit_interpolator.velocity(azimuth_time)
-    plane_distance = (dem_distance * satellite_velocity).sum(dim, skipna=False)
-    plane_distance /= (satellite_velocity**2).sum(dim) ** 0.5
-    return plane_distance, (dem_distance, satellite_velocity)
+    satellite_direction = satellite_velocity / (satellite_velocity**2).sum(dim) ** 0.5
+    plane_distance = (dem_distance * satellite_direction).sum(dim, skipna=False)
+    return plane_distance, (dem_distance, satellite_direction)
 
 
 def backward_geocode_secant_method(
