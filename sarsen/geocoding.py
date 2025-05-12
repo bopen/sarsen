@@ -4,7 +4,7 @@ See: https://sentinel.esa.int/documents/247904/0/Guide-to-Sentinel-1-Geocoding.p
 """
 
 import functools
-from typing import Any, Callable, Optional, Tuple, TypeVar
+from typing import Any, Callable, Tuple, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -63,16 +63,16 @@ def zero_doppler_plane_distance(
     dem_distance = dem_ecef - orbit_interpolator.position(azimuth_time)
     satellite_velocity = orbit_interpolator.velocity(azimuth_time)
     plane_distance = (dem_distance * satellite_velocity).sum(dim, skipna=False)
+    plane_distance /= (satellite_velocity**2).sum(dim) ** 0.5
     return plane_distance, (dem_distance, satellite_velocity)
 
 
 def backward_geocode_secant_method(
     dem_ecef: xr.DataArray,
     orbit_interpolator: orbit.OrbitPolyfitIterpolator,
-    azimuth_time: Optional[xr.DataArray] = None,
+    azimuth_time: xr.DataArray | None = None,
     dim: str = "axis",
     diff_ufunc: float = 1.0,
-    satellite_speed: float = 7500.0,  # typical satellite velocity in m / s
 ) -> xr.Dataset:
     zero_doppler = functools.partial(
         zero_doppler_plane_distance, dem_ecef, orbit_interpolator
@@ -89,7 +89,7 @@ def backward_geocode_secant_method(
         zero_doppler,
         t_prev,
         t_curr,
-        diff_ufunc * satellite_speed,
+        diff_ufunc,
     )
     acquisition = xr.Dataset(
         data_vars={
@@ -103,10 +103,9 @@ def backward_geocode_secant_method(
 def backward_geocode(
     dem_ecef: xr.DataArray,
     orbit_interpolator: orbit.OrbitPolyfitIterpolator,
-    azimuth_time: Optional[xr.DataArray] = None,
+    azimuth_time: xr.DataArray | None = None,
     dim: str = "axis",
     diff_ufunc: float = 1.0,
-    satellite_speed: float = 7500.0,  # typical satellite velocity in m / s
 ) -> xr.Dataset:
     zero_doppler = functools.partial(
         zero_doppler_plane_distance, dem_ecef, orbit_interpolator
@@ -123,7 +122,7 @@ def backward_geocode(
         zero_doppler,
         t_prev,
         t_curr,
-        diff_ufunc * satellite_speed,
+        diff_ufunc,
     )
     acquisition = xr.Dataset(
         data_vars={
