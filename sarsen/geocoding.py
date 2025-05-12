@@ -58,13 +58,12 @@ def zero_doppler_plane_distance(
     dem_ecef: xr.DataArray,
     orbit_interpolator: orbit.OrbitPolyfitInterpolator,
     azimuth_time: TimedeltaArrayLike,
-    satellite_speed: float = 7_500.0,  # typical satellite speed in m / s
     dim: str = "axis",
 ) -> Tuple[xr.DataArray, Tuple[xr.DataArray, xr.DataArray]]:
     dem_distance = dem_ecef - orbit_interpolator.position(azimuth_time)
-    satellite_direction = orbit_interpolator.velocity(azimuth_time) / satellite_speed
-    plane_distance = (dem_distance * satellite_direction).sum(dim, skipna=False)
-    return plane_distance, (dem_distance, satellite_direction)
+    satellite_velocity = orbit_interpolator.velocity(azimuth_time)
+    plane_distance = (dem_distance * satellite_velocity).sum(dim, skipna=False)
+    return plane_distance, (dem_distance, satellite_velocity)
 
 
 def backward_geocode_secant_method(
@@ -76,10 +75,7 @@ def backward_geocode_secant_method(
     satellite_speed: float = 7500.0,  # typical satellite velocity in m / s
 ) -> xr.Dataset:
     zero_doppler = functools.partial(
-        zero_doppler_plane_distance,
-        dem_ecef,
-        orbit_interpolator,
-        satellite_speed=satellite_speed,
+        zero_doppler_plane_distance, dem_ecef, orbit_interpolator
     )
 
     if azimuth_time is None:
@@ -89,16 +85,16 @@ def backward_geocode_secant_method(
     t_curr = xr.full_like(t_template, azimuth_time.values[-1], dtype=azimuth_time.dtype)
 
     # NOTE: dem_distance has the associated azimuth_time as a coordinate already
-    _, _, _, (dem_distance, satellite_direction) = secant_method(
+    _, _, _, (dem_distance, satellite_velocity) = secant_method(
         zero_doppler,
         t_prev,
         t_curr,
-        diff_ufunc,
+        diff_ufunc * satellite_speed,
     )
     acquisition = xr.Dataset(
         data_vars={
             "dem_distance": dem_distance,
-            "satellite_direction": satellite_direction.transpose(*dem_distance.dims),
+            "satellite_velocity": satellite_velocity.transpose(*dem_distance.dims),
         }
     )
     return acquisition.reset_coords("azimuth_time")
@@ -113,10 +109,7 @@ def backward_geocode(
     satellite_speed: float = 7500.0,  # typical satellite velocity in m / s
 ) -> xr.Dataset:
     zero_doppler = functools.partial(
-        zero_doppler_plane_distance,
-        dem_ecef,
-        orbit_interpolator,
-        satellite_speed=satellite_speed,
+        zero_doppler_plane_distance, dem_ecef, orbit_interpolator
     )
 
     if azimuth_time is None:
@@ -126,16 +119,16 @@ def backward_geocode(
     t_curr = xr.full_like(t_template, azimuth_time.values[-1], dtype=azimuth_time.dtype)
 
     # NOTE: dem_distance has the associated azimuth_time as a coordinate already
-    _, _, _, (dem_distance, satellite_direction) = secant_method(
+    _, _, _, (dem_distance, satellite_velocity) = secant_method(
         zero_doppler,
         t_prev,
         t_curr,
-        diff_ufunc,
+        diff_ufunc * satellite_speed,
     )
     acquisition = xr.Dataset(
         data_vars={
             "dem_distance": dem_distance,
-            "satellite_direction": satellite_direction.transpose(*dem_distance.dims),
+            "satellite_velocity": satellite_velocity.transpose(*dem_distance.dims),
         }
     )
     return acquisition.reset_coords("azimuth_time")

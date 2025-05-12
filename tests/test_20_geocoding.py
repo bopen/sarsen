@@ -51,6 +51,16 @@ def test_zero_doppler_plane_distance(
     assert isinstance(res2, xr.DataArray)
 
 
+def test_backward_geocode_secant_method(
+    dem_ecef: xr.DataArray, orbit_ds: xr.Dataset
+) -> None:
+    orbit_interpolator = orbit.OrbitPolyfitInterpolator.from_position(orbit_ds.position)
+
+    res = geocoding.backward_geocode_secant_method(dem_ecef, orbit_interpolator)
+
+    assert isinstance(res, xr.Dataset)
+
+
 def test_backward_geocode(dem_ecef: xr.DataArray, orbit_ds: xr.Dataset) -> None:
     orbit_interpolator = orbit.OrbitPolyfitInterpolator.from_position(orbit_ds.position)
 
