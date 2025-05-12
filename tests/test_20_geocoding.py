@@ -44,8 +44,7 @@ def test_zero_doppler_plane_distance(
 
     res0, (res1, res2) = geocoding.zero_doppler_plane_distance(
         dem_ecef,
-        orbit_interpolator.position(),
-        orbit_interpolator.velocity(),
+        orbit_interpolator,
         orbit_ds.azimuth_time,
     )
 
@@ -59,8 +58,7 @@ def test_backward_geocode(dem_ecef: xr.DataArray, orbit_ds: xr.Dataset) -> None:
 
     res = geocoding.backward_geocode(
         dem_ecef,
-        orbit_interpolator.position(),
-        orbit_interpolator.velocity(),
+        orbit_interpolator,
     )
 
     assert isinstance(res, xr.Dataset)
