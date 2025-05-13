@@ -52,6 +52,36 @@ def secant_method(
     return t_curr, t_prev, f_curr, payload_curr
 
 
+def newton_raphson_method(
+    ufunc: Callable[[TimedeltaArrayLike], Tuple[FloatArrayLike, FloatArrayLike]],
+    ufunc_prime: Callable[[TimedeltaArrayLike, Any], Tuple[FloatArrayLike]],
+    t_curr: TimedeltaArrayLike,
+    diff_ufunc: float = 1.0,
+    diff_t: np.timedelta64 = np.timedelta64(0, "ns"),
+) -> Tuple[TimedeltaArrayLike, TimedeltaArrayLike, FloatArrayLike, Any]:
+    """Return the root of ufunc calculated using the Newton method."""
+    # implementation based on https://en.wikipedia.org/wiki/Newton%27s_method
+    # strong convergence, all points below one of the two thresholds
+    while True:
+        f_curr, payload_curr = ufunc(t_curr)
+
+        # the `not np.any` construct let us accept `np.nan` as good values
+        if not np.any((np.abs(f_curr) > diff_ufunc)):
+            break
+
+        fp_curr = ufunc_prime(t_curr, payload_curr)
+
+        delta_curr = f_curr / fp_curr
+
+        # the `not np.any` construct let us accept `np.nat` as good values
+        # if not np.any(np.abs(delta_curr) > diff_t):
+        #    break
+
+        t_curr = t_curr - np.timedelta64(10**9, "ns") * delta_curr
+
+    return t_curr, f_curr, payload_curr
+
+
 def zero_doppler_plane_distance_velocity(
     dem_ecef: xr.DataArray,
     orbit_interpolator: orbit.OrbitPolyfitInterpolator,
@@ -64,12 +94,28 @@ def zero_doppler_plane_distance_velocity(
     return plane_distance_velocity, (dem_distance, satellite_velocity)
 
 
+def zero_doppler_plane_distance_velocity_prime(
+    orbit_interpolator: orbit.OrbitPolyfitInterpolator,
+    azimuth_time: xr.DataArray,
+    payload: Tuple[xr.DataArray, xr.DataArray],
+    dim: str = "axis",
+) -> xr.DataArray:
+    dem_distance, satellite_velocity = payload
+
+    plane_distance_velocity_prime = (
+        dem_distance * orbit_interpolator.acceleration(azimuth_time)
+        - satellite_velocity**2
+    ).sum(dim)
+    return plane_distance_velocity_prime
+
+
 def backward_geocode_secant_method(
     dem_ecef: xr.DataArray,
     orbit_interpolator: orbit.OrbitPolyfitInterpolator,
     azimuth_time: xr.DataArray | None = None,
     dim: str = "axis",
     diff_ufunc: float = 1.0,
+    satellite_speed: float = 7_500.0,
 ) -> xr.Dataset:
     zero_doppler = functools.partial(
         zero_doppler_plane_distance_velocity, dem_ecef, orbit_interpolator
@@ -79,14 +125,18 @@ def backward_geocode_secant_method(
         azimuth_time = orbit_interpolator.position().azimuth_time
     t_template = dem_ecef.isel({dim: 0}).drop_vars(dim).rename("azimuth_time")
     t_prev = xr.full_like(t_template, azimuth_time.values[0], dtype=azimuth_time.dtype)
-    t_curr = xr.full_like(t_template, azimuth_time.values[-1], dtype=azimuth_time.dtype)
+    t_curr = xr.full_like(
+        t_template,
+        azimuth_time.values[azimuth_time.size // 2],
+        dtype=azimuth_time.dtype,
+    )
 
     # NOTE: dem_distance has the associated azimuth_time as a coordinate already
     _, _, _, (dem_distance, satellite_velocity) = secant_method(
         zero_doppler,
         t_prev,
         t_curr,
-        diff_ufunc,
+        diff_ufunc * satellite_speed,
     )
     acquisition = xr.Dataset(
         data_vars={
@@ -108,17 +158,23 @@ def backward_geocode(
     zero_doppler = functools.partial(
         zero_doppler_plane_distance_velocity, dem_ecef, orbit_interpolator
     )
+    zero_doppler_prime = functools.partial(
+        zero_doppler_plane_distance_velocity_prime, orbit_interpolator
+    )
 
     if azimuth_time is None:
         azimuth_time = orbit_interpolator.position().azimuth_time
     t_template = dem_ecef.isel({dim: 0}).drop_vars(dim).rename("azimuth_time")
-    t_prev = xr.full_like(t_template, azimuth_time.values[0], dtype=azimuth_time.dtype)
-    t_curr = xr.full_like(t_template, azimuth_time.values[-1], dtype=azimuth_time.dtype)
+    t_curr = xr.full_like(
+        t_template,
+        azimuth_time.values[azimuth_time.size // 2],
+        dtype=azimuth_time.dtype,
+    )
 
     # NOTE: dem_distance has the associated azimuth_time as a coordinate already
-    _, _, _, (dem_distance, satellite_velocity) = secant_method(
+    _, _, (dem_distance, satellite_velocity) = newton_raphson_method(
         zero_doppler,
-        t_prev,
+        zero_doppler_prime,
         t_curr,
         diff_ufunc * satellite_speed,
     )
