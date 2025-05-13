@@ -85,7 +85,7 @@ def backward_geocode_secant_method(
     t_curr = xr.full_like(t_template, azimuth_time.values[-1], dtype=azimuth_time.dtype)
 
     # NOTE: dem_distance has the associated azimuth_time as a coordinate already
-    _, _, _, (dem_distance, satellite_velocity) = secant_method(
+    _, _, _, (dem_distance, satellite_direction) = secant_method(
         zero_doppler,
         t_prev,
         t_curr,
@@ -94,7 +94,7 @@ def backward_geocode_secant_method(
     acquisition = xr.Dataset(
         data_vars={
             "dem_distance": dem_distance,
-            "satellite_velocity": satellite_velocity.transpose(*dem_distance.dims),
+            "satellite_direction": satellite_direction.transpose(*dem_distance.dims),
         }
     )
     return acquisition.reset_coords("azimuth_time")
@@ -102,7 +102,7 @@ def backward_geocode_secant_method(
 
 def backward_geocode(
     dem_ecef: xr.DataArray,
-    orbit_interpolator: orbit.OrbitPolyfitIterpolator,
+    orbit_interpolator: orbit.OrbitPolyfitInterpolator,
     azimuth_time: xr.DataArray | None = None,
     dim: str = "axis",
     diff_ufunc: float = 1.0,
@@ -118,7 +118,7 @@ def backward_geocode(
     t_curr = xr.full_like(t_template, azimuth_time.values[-1], dtype=azimuth_time.dtype)
 
     # NOTE: dem_distance has the associated azimuth_time as a coordinate already
-    _, _, _, (dem_distance, satellite_velocity) = secant_method(
+    _, _, _, (dem_distance, satellite_direction) = secant_method(
         zero_doppler,
         t_prev,
         t_curr,
@@ -127,7 +127,7 @@ def backward_geocode(
     acquisition = xr.Dataset(
         data_vars={
             "dem_distance": dem_distance,
-            "satellite_velocity": satellite_velocity.transpose(*dem_distance.dims),
+            "satellite_direction": satellite_direction.transpose(*dem_distance.dims),
         }
     )
     return acquisition.reset_coords("azimuth_time")
