@@ -69,7 +69,7 @@ def zero_doppler_plane_distance(
 
 def backward_geocode_secant_method(
     dem_ecef: xr.DataArray,
-    orbit_interpolator: orbit.OrbitPolyfitIterpolator,
+    orbit_interpolator: orbit.OrbitPolyfitInterpolator,
     azimuth_time: xr.DataArray | None = None,
     dim: str = "axis",
     diff_ufunc: float = 1.0,
