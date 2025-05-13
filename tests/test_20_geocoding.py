@@ -37,12 +37,12 @@ def test_secant_method() -> None:
     assert np.all(res == np.timedelta64(-25, "ns"))
 
 
-def test_zero_doppler_plane_distance(
+def test_zero_doppler_plane_distance_velocity(
     dem_ecef: xr.DataArray, orbit_ds: xr.Dataset
 ) -> None:
     orbit_interpolator = orbit.OrbitPolyfitInterpolator.from_position(orbit_ds.position)
 
-    res0, (res1, res2) = geocoding.zero_doppler_plane_distance(
+    res0, (res1, res2) = geocoding.zero_doppler_plane_distance_velocity(
         dem_ecef, orbit_interpolator, orbit_ds.azimuth_time
     )
 
