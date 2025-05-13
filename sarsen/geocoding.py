@@ -147,7 +147,7 @@ def backward_geocode_secant_method(
     return acquisition.reset_coords("azimuth_time")
 
 
-def backward_geocode(
+def backward_geocode_newton_raphson_method(
     dem_ecef: xr.DataArray,
     orbit_interpolator: orbit.OrbitPolyfitInterpolator,
     azimuth_time: xr.DataArray | None = None,
@@ -185,3 +185,6 @@ def backward_geocode(
         }
     )
     return acquisition.reset_coords("azimuth_time")
+
+
+backward_geocode = backward_geocode_secant_method

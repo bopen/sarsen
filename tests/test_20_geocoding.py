@@ -61,6 +61,16 @@ def test_backward_geocode_secant_method(
     assert isinstance(res, xr.Dataset)
 
 
+def test_backward_geocode_newton_raphson_method(
+    dem_ecef: xr.DataArray, orbit_ds: xr.Dataset
+) -> None:
+    orbit_interpolator = orbit.OrbitPolyfitInterpolator.from_position(orbit_ds.position)
+
+    res = geocoding.backward_geocode_newton_raphson_method(dem_ecef, orbit_interpolator)
+
+    assert isinstance(res, xr.Dataset)
+
+
 def test_backward_geocode(dem_ecef: xr.DataArray, orbit_ds: xr.Dataset) -> None:
     orbit_interpolator = orbit.OrbitPolyfitInterpolator.from_position(orbit_ds.position)
 
