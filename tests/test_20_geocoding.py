@@ -22,19 +22,19 @@ def test_secant_method() -> None:
 
     assert isinstance(res, np.ndarray)
     assert res.size == 1
-    assert res[0] == np.timedelta64(-27, "ns")
+    assert res[0] == np.timedelta64(-25, "ns")
 
     # stop with dt threshold
     res, _, _, _ = geocoding.secant_method(ufunc, -t_start, t_start, diff_ufunc=0.01)
 
-    assert res[0] == np.timedelta64(-27, "ns")
+    assert res[0] == np.timedelta64(-26, "ns")
 
     t_start = np.ones((2, 2), dtype="timedelta64[ns]") * 100
 
     res, _, _, _ = geocoding.secant_method(ufunc, -t_start, t_start, diff_ufunc=0.1)
 
     assert res.shape == t_start.shape
-    assert np.all(res == np.timedelta64(-27, "ns"))
+    assert np.all(res == np.timedelta64(-25, "ns"))
 
 
 def test_zero_doppler_plane_distance(
