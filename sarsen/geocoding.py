@@ -4,7 +4,7 @@ See: https://sentinel.esa.int/documents/247904/0/Guide-to-Sentinel-1-Geocoding.p
 """
 
 import functools
-from typing import Any, Callable, Optional, Tuple, TypeVar
+from typing import Any, Callable, Tuple, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -70,7 +70,7 @@ def zero_doppler_plane_distance(
 def backward_geocode(
     dem_ecef: xr.DataArray,
     orbit_interpolator: orbit.OrbitPolyfitInterpolator,
-    azimuth_time: Optional[xr.DataArray] = None,
+    azimuth_time: xr.DataArray | None = None,
     dim: str = "axis",
     diff_ufunc: float = 1.0,
 ) -> xr.Dataset:
