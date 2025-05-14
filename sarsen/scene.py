@@ -14,10 +14,8 @@ LOGGER = logging.getLogger(__name__)
 ECEF_CRS = "EPSG:4978"
 
 
-def open_dem_raster(
-    dem_urlpath: str, engine: str = "rasterio", **kwargs: Any
-) -> xr.DataArray:
-    dem_raster = xr.open_dataarray(dem_urlpath, engine=engine, **kwargs)
+def open_dem_raster(dem_urlpath: str, **kwargs: Any) -> xr.DataArray:
+    dem_raster = xr.open_dataarray(dem_urlpath, engine="rasterio", **kwargs)
     if dem_raster.y.diff("y").values[0] < 0:
         dem_raster = dem_raster.isel(y=slice(None, None, -1))
     dem_raster.attrs["long_name"] = "elevation"
@@ -28,29 +26,21 @@ def open_dem_raster(
 
 def make_nd_dataarray(das: list[xr.DataArray], dim: str = "axis") -> xr.DataArray:
     da_nd = xr.concat(das, dim=dim, coords="minimal")
-    dim_attrs = {"long_name": "cartesian axis index", "units": 1}
-    return da_nd.assign_coords({dim: (dim, range(len(das)), dim_attrs)})
+    return da_nd.assign_coords({dim: range(len(das))})
 
 
 def convert_to_dem_3d(
-    dem_raster: xr.DataArray,
-    dim: str = "axis",
-    x: str = "x",
-    y: str = "y",
-    dtype: str = "float64",
+    dem_raster: xr.DataArray, dim: str = "axis", x: str = "x", y: str = "y"
 ) -> xr.DataArray:
-    _, dem_raster_x = xr.broadcast(dem_raster, dem_raster.coords[x].astype(dtype))
-    dem_raster_y = dem_raster.coords[y].astype(dtype)
-    dem_raster_astype = dem_raster.astype(dtype)
-    dem_3d = make_nd_dataarray([dem_raster_x, dem_raster_y, dem_raster_astype], dim=dim)
-    dem_3d.attrs.clear()
-    dem_3d.attrs.update(dem_raster.attrs)
+    _, dem_raster_x = xr.broadcast(dem_raster, dem_raster.coords[x])
+    dem_raster_y = dem_raster.coords[y]
+    dem_3d = make_nd_dataarray([dem_raster_x, dem_raster_y, dem_raster], dim=dim)
     return dem_3d.rename("dem_3d")
 
 
 def transform_dem_3d(
     dem_3d: xr.DataArray,
-    source_crs: str | None = None,
+    source_crs: str = None,
     target_crs: str = ECEF_CRS,
     dim: str = "axis",
 ) -> xr.DataArray:
@@ -80,27 +70,6 @@ def transform_dem_3d(
     dem_3d_crs.loc[{dim: 1}] = np.reshape(y, shape)
     dem_3d_crs.loc[{dim: 2}] = np.reshape(z, shape)
     return dem_3d_crs
-
-
-def upsample_coords(
-    data: xr.DataArray, dtype: str | None = None, **factors: int
-) -> dict[str, np.ndarray[Any, Any]]:
-    coords = {}
-    for dim, factor in factors.items():
-        coord = data.coords[dim]
-        coord_delta = coord[1].values - coord[0].values
-        start = coord[0].values - coord_delta / 2 + coord_delta / factor / 2
-        stop = coord[-1].values + coord_delta / 2 - coord_delta / factor / 2
-        values = np.linspace(start, stop, num=coord.size * factor, dtype=dtype)
-        coords[dim] = values
-    return coords
-
-
-def upsample(
-    data: xr.DataArray, dtype: str | None = None, **factors: int
-) -> xr.DataArray:
-    coords = upsample_coords(data, dtype, **factors)
-    return data.interp(coords, kwargs={"fill_value": "extrapolate"})
 
 
 def convert_to_dem_ecef(
@@ -141,12 +110,12 @@ def compute_dem_oriented_area(dem_ecef: xr.DataArray) -> xr.DataArray:
 
     cross_1 = xr.cross(dx1, dy1, dim="axis") / 2
     sign_1 = np.sign(
-        xr.dot(cross_1, dem_ecef, dim="axis")
+        xr.dot(cross_1, dem_ecef, dims="axis")
     )  # ensure direction out of DEM
 
     cross_2 = xr.cross(dx2, dy2, dim="axis") / 2
     sign_2 = np.sign(
-        xr.dot(cross_2, dem_ecef, dim="axis")
+        xr.dot(cross_2, dem_ecef, dims="axis")
     )  # ensure direction out of DEM
     dem_oriented_area: xr.DataArray = cross_1 * sign_1 + cross_2 * sign_2
 
