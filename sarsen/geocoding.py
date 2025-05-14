@@ -54,12 +54,12 @@ def secant_method(
 
 
 def newton_raphson_method(
-    ufunc: Callable[[TimedeltaArrayLike], Tuple[FloatArrayLike, FloatArrayLike]],
-    ufunc_prime: Callable[[TimedeltaArrayLike, Any], Tuple[FloatArrayLike]],
+    ufunc: Callable[[TimedeltaArrayLike], Tuple[FloatArrayLike, Any]],
+    ufunc_prime: Callable[[TimedeltaArrayLike, Any], FloatArrayLike],
     t_curr: TimedeltaArrayLike,
     diff_ufunc: float = 1.0,
     diff_t: np.timedelta64 = np.timedelta64(0, "ns"),
-) -> Tuple[TimedeltaArrayLike, TimedeltaArrayLike, FloatArrayLike, Any]:
+) -> Tuple[TimedeltaArrayLike, FloatArrayLike, Any]:
     """Return the root of ufunc calculated using the Newton method."""
     # implementation based on https://en.wikipedia.org/wiki/Newton%27s_method
     # strong convergence, all points below one of the two thresholds
@@ -72,7 +72,7 @@ def newton_raphson_method(
 
         fp_curr = ufunc_prime(t_curr, payload_curr)
 
-        t_diff = (f_curr / fp_curr) * np.timedelta64(10**9, "ns")
+        t_diff = (f_curr / fp_curr) * np.timedelta64(10**9, "ns")  # type: ignore
 
         # the `not np.any` construct let us accept `np.nat` as good values
         if not np.any(np.abs(t_diff) > diff_t):
