@@ -77,7 +77,12 @@ def newton_raphson_method(
         # if not np.any(np.abs(delta_curr) > diff_t):
         #    break
 
-        t_curr = t_curr - np.timedelta64(10**9, "ns") * delta_curr
+        t_diff = (np.timedelta64(10**9, "ns") * delta_curr).rename("azimuth_time")
+        t_curr = t_curr - t_diff
+
+        # the `not np.any` construct let us accept `np.nat` as good values
+        if not np.any(np.abs(t_diff) > diff_t):
+            break
 
     return t_curr, f_curr, payload_curr
 
