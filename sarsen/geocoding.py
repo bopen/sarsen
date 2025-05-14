@@ -39,15 +39,16 @@ def secant_method(
         q: FloatArrayLike
 
         t_diff = t_curr - t_prev  # type: ignore
+
+        # the `not np.any` construct let us accept `np.nat` as good values
+        if not np.any(np.abs(t_diff) > diff_t):
+            break
+
         q = f_curr - f_prev  # type: ignore
 
         # NOTE: in same cases f_curr * t_diff overflows datetime64[ns] before the division by q
         t_prev, t_curr = t_curr, t_curr - np.where(q != 0, f_curr / q, 0) * t_diff  # type: ignore
         f_prev = f_curr
-
-        # the `not np.any` construct let us accept `np.nat` as good values
-        if not np.any(np.abs(t_diff) > diff_t):
-            break
 
     return t_curr, t_prev, f_curr, payload_curr
 
@@ -71,18 +72,13 @@ def newton_raphson_method(
 
         fp_curr = ufunc_prime(t_curr, payload_curr)
 
-        delta_curr = f_curr / fp_curr
-
-        # the `not np.any` construct let us accept `np.nat` as good values
-        # if not np.any(np.abs(delta_curr) > diff_t):
-        #    break
-
-        t_diff = (np.timedelta64(10**9, "ns") * delta_curr).rename("azimuth_time")
-        t_curr = t_curr - t_diff
+        t_diff = (f_curr / fp_curr) * np.timedelta64(10**9, "ns")
 
         # the `not np.any` construct let us accept `np.nat` as good values
         if not np.any(np.abs(t_diff) > diff_t):
             break
+
+        t_curr = t_curr - t_diff.rename("azimuth_time")
 
     return t_curr, f_curr, payload_curr
 
