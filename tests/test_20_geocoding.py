@@ -37,18 +37,38 @@ def test_secant_method() -> None:
     assert np.all(res == np.timedelta64(-25, "ns"))
 
 
-def test_zero_doppler_plane_distance(
+def test_zero_doppler_plane_distance_velocity(
     dem_ecef: xr.DataArray, orbit_ds: xr.Dataset
 ) -> None:
     orbit_interpolator = orbit.OrbitPolyfitInterpolator.from_position(orbit_ds.position)
 
-    res0, (res1, res2) = geocoding.zero_doppler_plane_distance(
+    res0, (res1, res2) = geocoding.zero_doppler_plane_distance_velocity(
         dem_ecef, orbit_interpolator, orbit_ds.azimuth_time
     )
 
     assert isinstance(res0, xr.DataArray)
     assert isinstance(res1, xr.DataArray)
     assert isinstance(res2, xr.DataArray)
+
+
+def test_backward_geocode_secant_method(
+    dem_ecef: xr.DataArray, orbit_ds: xr.Dataset
+) -> None:
+    orbit_interpolator = orbit.OrbitPolyfitInterpolator.from_position(orbit_ds.position)
+
+    res = geocoding.backward_geocode_secant_method(dem_ecef, orbit_interpolator)
+
+    assert isinstance(res, xr.Dataset)
+
+
+def test_backward_geocode_newton_raphson_method(
+    dem_ecef: xr.DataArray, orbit_ds: xr.Dataset
+) -> None:
+    orbit_interpolator = orbit.OrbitPolyfitInterpolator.from_position(orbit_ds.position)
+
+    res = geocoding.backward_geocode_newton_raphson_method(dem_ecef, orbit_interpolator)
+
+    assert isinstance(res, xr.Dataset)
 
 
 def test_backward_geocode(dem_ecef: xr.DataArray, orbit_ds: xr.Dataset) -> None:

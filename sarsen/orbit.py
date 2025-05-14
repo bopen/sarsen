@@ -1,3 +1,4 @@
+import functools
 from typing import Any
 
 import attrs
@@ -66,22 +67,37 @@ class OrbitPolyfitInterpolator:
             time = self.azimuth_time_range(**kwargs)
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
 
-        position: xr.DataArray
         position = xr.polyval(time - self.epoch, self.coefficients)
         position = position.assign_coords({time.name: time})
         return position.rename("position")
+
+    @functools.cached_property
+    def velocity_coefficients(self) -> xr.DataArray:
+        return polyder(self.coefficients) * S_TO_NS
 
     def velocity(self, time: xr.DataArray | None = None, **kwargs: Any) -> xr.DataArray:
         if time is None:
             time = self.azimuth_time_range(**kwargs)
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
 
-        velocity_coefficients = polyder(self.coefficients) * S_TO_NS
-
-        velocity: xr.DataArray
-        velocity = xr.polyval(time - self.epoch, velocity_coefficients)
+        velocity = xr.polyval(time - self.epoch, self.velocity_coefficients)
         velocity = velocity.assign_coords({time.name: time})
         return velocity.rename("velocity")
+
+    @functools.cached_property
+    def acceleration_coefficients(self) -> xr.DataArray:
+        return polyder(self.velocity_coefficients) * S_TO_NS
+
+    def acceleration(
+        self, time: xr.DataArray | None = None, **kwargs: Any
+    ) -> xr.DataArray:
+        if time is None:
+            time = self.azimuth_time_range(**kwargs)
+        assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
+
+        acceleration = xr.polyval(time - self.epoch, self.acceleration_coefficients)
+        acceleration = acceleration.assign_coords({time.name: time})
+        return acceleration.rename("acceleration")
 
 
 # keep wrong spelling used elsewhere
