@@ -113,17 +113,14 @@ def zero_doppler_plane_distance_velocity_prime(
 def backward_geocode_secant_method(
     dem_ecef: xr.DataArray,
     orbit_interpolator: orbit.OrbitPolyfitInterpolator,
-    azimuth_time: xr.DataArray | None = None,
+    azimuth_time: xr.DataArray,
     dim: str = "axis",
-    diff_ufunc: float = 1.0,
-    satellite_speed: float = 7_500.0,
+    diff_ufunc: float = 7_500.0,
 ) -> xr.Dataset:
     zero_doppler = functools.partial(
         zero_doppler_plane_distance_velocity, dem_ecef, orbit_interpolator
     )
 
-    if azimuth_time is None:
-        azimuth_time = orbit_interpolator.position().azimuth_time
     t_template = dem_ecef.isel({dim: 0}).drop_vars(dim).rename("azimuth_time")
     t_prev = xr.full_like(t_template, azimuth_time.values[0], dtype=azimuth_time.dtype)
     t_curr = xr.full_like(
@@ -137,24 +134,17 @@ def backward_geocode_secant_method(
         zero_doppler,
         t_prev,
         t_curr,
-        diff_ufunc * satellite_speed,
+        diff_ufunc,
     )
-    acquisition = xr.Dataset(
-        data_vars={
-            "dem_distance": dem_distance,
-            "satellite_velocity": satellite_velocity.transpose(*dem_distance.dims),
-        }
-    )
-    return acquisition.reset_coords("azimuth_time")
+    return dem_distance, satellite_velocity
 
 
 def backward_geocode_newton_raphson_method(
     dem_ecef: xr.DataArray,
     orbit_interpolator: orbit.OrbitPolyfitInterpolator,
-    azimuth_time: xr.DataArray | None = None,
+    azimuth_time: xr.DataArray,
     dim: str = "axis",
-    diff_ufunc: float = 1.0,
-    satellite_speed: float = 7_500.0,
+    diff_ufunc: float = 7_500.0,
 ) -> xr.Dataset:
     zero_doppler = functools.partial(
         zero_doppler_plane_distance_velocity, dem_ecef, orbit_interpolator
@@ -163,8 +153,6 @@ def backward_geocode_newton_raphson_method(
         zero_doppler_plane_distance_velocity_prime, orbit_interpolator
     )
 
-    if azimuth_time is None:
-        azimuth_time = orbit_interpolator.position().azimuth_time
     t_template = dem_ecef.isel({dim: 0}).drop_vars(dim).rename("azimuth_time")
     t_curr = xr.full_like(
         t_template,
@@ -177,8 +165,58 @@ def backward_geocode_newton_raphson_method(
         zero_doppler,
         zero_doppler_prime,
         t_curr,
-        diff_ufunc * satellite_speed,
+        diff_ufunc,
     )
+    return dem_distance, satellite_velocity
+
+
+def backward_geocode_simple(
+    dem_ecef: xr.DataArray,
+    orbit_interpolator: orbit.OrbitPolyfitInterpolator,
+    azimuth_time: xr.DataArray | None = None,
+    dim: str = "axis",
+    zero_doppler_distance: float = 1.0,
+    satellite_speed: float = 7_500.0,
+    method: str = "secant",
+) -> tuple[xr.DataArray, xr.DataArray]:
+    if azimuth_time is None:
+        azimuth_time = orbit_interpolator.position().azimuth_time
+    diff_ufunc = zero_doppler_distance * satellite_speed
+
+    if method == "secant":
+        dem_distance, satellite_velocity = backward_geocode_secant_method(
+            dem_ecef, orbit_interpolator, azimuth_time, dim, diff_ufunc
+        )
+    elif method in {"newton", "newton_raphson"}:
+        dem_distance, satellite_velocity = backward_geocode_newton_raphson_method(
+            dem_ecef, orbit_interpolator, azimuth_time, dim, diff_ufunc
+        )
+    return dem_distance, satellite_velocity
+
+
+def backward_geocode(
+    dem_ecef: xr.DataArray,
+    orbit_interpolator: orbit.OrbitPolyfitInterpolator,
+    azimuth_time: xr.DataArray | None = None,
+    dim: str = "axis",
+    zero_doppler_distance: float = 1.0,
+    satellite_speed: float = 7_500.0,
+    method: str = "secant",
+    seed_shape: tuple[int, int] | None = None,
+) -> xr.Dataset:
+    if seed_shape is not None:
+        azimuth_time = azimuth_time
+
+    dem_distance, satellite_velocity = backward_geocode_simple(
+        dem_ecef,
+        orbit_interpolator,
+        azimuth_time,
+        dim,
+        zero_doppler_distance,
+        satellite_speed,
+        method,
+    )
+
     acquisition = xr.Dataset(
         data_vars={
             "dem_distance": dem_distance,
@@ -186,6 +224,3 @@ def backward_geocode_newton_raphson_method(
         }
     )
     return acquisition.reset_coords("azimuth_time")
-
-
-backward_geocode = backward_geocode_secant_method
