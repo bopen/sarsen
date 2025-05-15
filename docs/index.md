@@ -1,4 +1,4 @@
-# Welcome to sarsen's documentation!
+# Welcome to sarsen's documentation
 
 Sarsen.
 
@@ -6,6 +6,7 @@ Sarsen.
 :caption: 'Contents:'
 :maxdepth: 2
 
+README.md
 API Reference <_api/sarsen/index>
 ```
 

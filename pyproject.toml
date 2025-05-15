@@ -1,5 +1,6 @@
 [build-system]
-requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools>=64", "setuptools_scm>=8"]
 
 [project]
 classifiers = [
@@ -12,7 +13,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
-  "Topic :: Scientific/Engineering"
+  "Topic :: Scientific/Engineering",
 ]
 dependencies = [
   "attrs",
@@ -23,11 +24,11 @@ dependencies = [
   "rioxarray",
   "typer",
   "xarray >= 2023.12.0",
-  "xarray-sentinel >= 0.9.3"
+  "xarray-sentinel >= 0.9.3",
 ]
 description = "Algorithms and utilities for Synthetic Aperture Radar (SAR) sensors"
 dynamic = ["version"]
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 name = "sarsen"
 readme = "README.md"
 
@@ -46,13 +47,15 @@ ignore_missing_imports = true
 module = ["py", "rasterio"]
 
 [tool.ruff]
-ignore = [
-  # pydocstyle: Missing Docstrings
-  "D1"
-]
 # Same as Black.
 indent-width = 4
 line-length = 88
+
+[tool.ruff.lint]
+ignore = [
+  # pydocstyle: Missing Docstrings
+  "D1",
+]
 select = [
   # pyflakes
   "F",
@@ -62,7 +65,7 @@ select = [
   # isort
   "I",
   # pydocstyle
-  "D"
+  "D",
 ]
 
 [tool.ruff.lint.pycodestyle]
@@ -78,6 +81,7 @@ packages = ["sarsen"]
 sarsen = ["py.typed"]
 
 [tool.setuptools_scm]
+fallback_version = "999"
 write_to = "sarsen/version.py"
 write_to_template = '''
 # Do not change! Do not track in version control!

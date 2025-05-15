@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/cruft/cruft
-  rev: 2.15.0
+  rev: 2.16.0
   hooks:
   - id: cruft
     entry: cruft update -y

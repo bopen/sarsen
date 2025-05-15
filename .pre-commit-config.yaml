@@ -1,6 +1,6 @@
 repos:
 - repo: https://github.com/pre-commit/pre-commit-hooks
-  rev: v4.5.0
+  rev: v5.0.0
   hooks:
   - id: trailing-whitespace
   - id: end-of-file-fixer
@@ -17,23 +17,23 @@ repos:
   - id: blackdoc
     additional_dependencies: [black==23.11.0]
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.1.13
+  rev: v0.11.9
   hooks:
   - id: ruff
     args: [--fix, --show-fixes]
   - id: ruff-format
 - repo: https://github.com/executablebooks/mdformat
-  rev: 0.7.17
+  rev: 0.7.22
   hooks:
   - id: mdformat
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-  rev: v2.12.0
+  rev: v2.14.0
   hooks:
   - id: pretty-format-yaml
     args: [--autofix, --preserve-quotes]
   - id: pretty-format-toml
     args: [--autofix]
 - repo: https://github.com/gitleaks/gitleaks
-  rev: v8.18.1
+  rev: v8.25.1
   hooks:
   - id: gitleaks
