@@ -110,66 +110,6 @@ def zero_doppler_plane_distance_velocity_prime(
     return plane_distance_velocity_prime
 
 
-def backward_geocode_secant_method(
-    dem_ecef: xr.DataArray,
-    orbit_interpolator: orbit.OrbitPolyfitInterpolator,
-    azimuth_time: xr.DataArray,
-    dim: str = "axis",
-    diff_ufunc: float = 7_500.0,
-) -> xr.Dataset:
-    zero_doppler = functools.partial(
-        zero_doppler_plane_distance_velocity, dem_ecef, orbit_interpolator
-    )
-
-    t_template = dem_ecef.isel({dim: 0}).drop_vars(dim).rename("azimuth_time")
-    t_prev = xr.full_like(t_template, azimuth_time.values[0], dtype=azimuth_time.dtype)
-    t_curr = xr.full_like(
-        t_template,
-        azimuth_time.values[azimuth_time.size // 2],
-        dtype=azimuth_time.dtype,
-    )
-
-    # NOTE: dem_distance has the associated azimuth_time as a coordinate already
-    _, _, _, (dem_distance, satellite_velocity) = secant_method(
-        zero_doppler,
-        t_prev,
-        t_curr,
-        diff_ufunc,
-    )
-    return dem_distance, satellite_velocity
-
-
-def backward_geocode_newton_raphson_method(
-    dem_ecef: xr.DataArray,
-    orbit_interpolator: orbit.OrbitPolyfitInterpolator,
-    azimuth_time: xr.DataArray,
-    dim: str = "axis",
-    diff_ufunc: float = 7_500.0,
-) -> xr.Dataset:
-    zero_doppler = functools.partial(
-        zero_doppler_plane_distance_velocity, dem_ecef, orbit_interpolator
-    )
-    zero_doppler_prime = functools.partial(
-        zero_doppler_plane_distance_velocity_prime, orbit_interpolator
-    )
-
-    t_template = dem_ecef.isel({dim: 0}).drop_vars(dim).rename("azimuth_time")
-    t_curr = xr.full_like(
-        t_template,
-        azimuth_time.values[azimuth_time.size // 2],
-        dtype=azimuth_time.dtype,
-    )
-
-    # NOTE: dem_distance has the associated azimuth_time as a coordinate already
-    _, _, (dem_distance, satellite_velocity) = newton_raphson_method(
-        zero_doppler,
-        zero_doppler_prime,
-        t_curr,
-        diff_ufunc,
-    )
-    return dem_distance, satellite_velocity
-
-
 def backward_geocode_simple(
     dem_ecef: xr.DataArray,
     orbit_interpolator: orbit.OrbitPolyfitInterpolator,
@@ -183,14 +123,38 @@ def backward_geocode_simple(
         azimuth_time = orbit_interpolator.position().azimuth_time
     diff_ufunc = zero_doppler_distance * satellite_speed
 
+    zero_doppler = functools.partial(
+        zero_doppler_plane_distance_velocity, dem_ecef, orbit_interpolator
+    )
+
+    t_template = dem_ecef.isel({dim: 0}).drop_vars(dim).rename("azimuth_time")
+    t_curr = xr.full_like(
+        t_template,
+        azimuth_time.values[azimuth_time.size // 2],
+        dtype=azimuth_time.dtype,
+    )
+
     if method == "secant":
-        dem_distance, satellite_velocity = backward_geocode_secant_method(
-            dem_ecef, orbit_interpolator, azimuth_time, dim, diff_ufunc
+        t_prev = xr.full_like(
+            t_template, azimuth_time.values[0], dtype=azimuth_time.dtype
+        )
+        _, _, _, (dem_distance, satellite_velocity) = secant_method(
+            zero_doppler,
+            t_prev,
+            t_curr,
+            diff_ufunc,
         )
     elif method in {"newton", "newton_raphson"}:
-        dem_distance, satellite_velocity = backward_geocode_newton_raphson_method(
-            dem_ecef, orbit_interpolator, azimuth_time, dim, diff_ufunc
+        zero_doppler_prime = functools.partial(
+            zero_doppler_plane_distance_velocity_prime, orbit_interpolator
         )
+        _, _, (dem_distance, satellite_velocity) = newton_raphson_method(
+            zero_doppler,
+            zero_doppler_prime,
+            t_curr,
+            diff_ufunc,
+        )
+    # NOTE: dem_distance has the associated azimuth_time as a coordinate already
     return dem_distance, satellite_velocity
 
 
