@@ -10,16 +10,13 @@ class SarProduct(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def product_type(self) -> str:
-        ...
+    def product_type(self) -> str: ...
 
     @abc.abstractmethod
-    def state_vectors(self) -> xr.DataArray:
-        ...
+    def state_vectors(self) -> xr.DataArray: ...
 
     @abc.abstractmethod
-    def beta_nought(self) -> xr.DataArray:
-        ...
+    def beta_nought(self) -> xr.DataArray: ...
 
     @abc.abstractmethod
     def interp_sar(
@@ -29,24 +26,21 @@ class SarProduct(abc.ABC):
         slant_range_time: xr.DataArray | None = None,
         method: xr.core.types.InterpOptions = "nearest",
         ground_range: xr.DataArray | None = None,
-    ) -> xr.DataArray:
-        ...
+    ) -> xr.DataArray: ...
 
     # FIXME: design a better interface
     @abc.abstractmethod
     def grid_parameters(
         self,
         grouping_area_factor: tuple[float, float] = (3.0, 3.0),
-    ) -> dict[str, Any]:
-        ...
+    ) -> dict[str, Any]: ...
 
 
 class GroundRangeSarProduct(SarProduct):
     @abc.abstractmethod
     def slant_range_time_to_ground_range(
         self, azimuth_time: xr.DataArray, slant_range_time: xr.DataArray
-    ) -> xr.DataArray:
-        ...
+    ) -> xr.DataArray: ...
 
     def interp_sar(
         self,
@@ -69,8 +63,7 @@ class GroundRangeSarProduct(SarProduct):
 
 class SlantRangeSarProduct(SarProduct):
     @abc.abstractmethod
-    def complex_amplitude(self) -> xr.DataArray:
-        ...
+    def complex_amplitude(self) -> xr.DataArray: ...
 
     def beta_nought(self) -> xr.DataArray:
         amplitude = self.complex_amplitude()

@@ -4,7 +4,7 @@ Requirements status: :white_check_mark: for final and :construction: for draft
 
 ## General
 
-1. :white_check_mark: _Package type_:	Command line tool and python library
+1. :white_check_mark: _Package type_: Command line tool and python library
 
 1. :white_check_mark: _License_: Apache v2
 
