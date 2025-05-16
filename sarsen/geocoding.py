@@ -4,7 +4,7 @@ See: https://sentinel.esa.int/documents/247904/0/Guide-to-Sentinel-1-Geocoding.p
 """
 
 import functools
-from typing import Any, Callable, Tuple, TypeVar
+from typing import Any, Callable, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -12,17 +12,17 @@ import xarray as xr
 
 from . import orbit
 
-TimedeltaArrayLike = TypeVar("TimedeltaArrayLike", bound=npt.ArrayLike)
+ArrayLike = TypeVar("ArrayLike", bound=npt.ArrayLike)
 FloatArrayLike = TypeVar("FloatArrayLike", bound=npt.ArrayLike)
 
 
 def secant_method(
-    ufunc: Callable[[TimedeltaArrayLike], Tuple[FloatArrayLike, FloatArrayLike]],
-    t_prev: TimedeltaArrayLike,
-    t_curr: TimedeltaArrayLike,
+    ufunc: Callable[[ArrayLike], tuple[FloatArrayLike, Any]],
+    t_prev: ArrayLike,
+    t_curr: ArrayLike,
     diff_ufunc: float = 1.0,
-    diff_t: np.timedelta64 = np.timedelta64(0, "ns"),
-) -> Tuple[TimedeltaArrayLike, TimedeltaArrayLike, FloatArrayLike, Any]:
+    diff_t: Any = np.timedelta64(0, "ns"),
+) -> tuple[ArrayLike, ArrayLike, FloatArrayLike, Any]:
     """Return the root of ufunc calculated using the secant method."""
     # implementation modified from https://en.wikipedia.org/wiki/Secant_method
     f_prev, _ = ufunc(t_prev)
@@ -34,9 +34,6 @@ def secant_method(
         # the `not np.any` construct let us accept `np.nan` as good values
         if not np.any((np.abs(f_curr) > diff_ufunc)):
             break
-
-        t_diff: TimedeltaArrayLike
-        q: FloatArrayLike
 
         t_diff = t_curr - t_prev  # type: ignore
 
@@ -54,12 +51,12 @@ def secant_method(
 
 
 def newton_raphson_method(
-    ufunc: Callable[[TimedeltaArrayLike], Tuple[FloatArrayLike, Any]],
-    ufunc_prime: Callable[[TimedeltaArrayLike, Any], FloatArrayLike],
-    t_curr: TimedeltaArrayLike,
+    ufunc: Callable[[ArrayLike], tuple[FloatArrayLike, Any]],
+    ufunc_prime: Callable[[ArrayLike, Any], FloatArrayLike],
+    t_curr: ArrayLike,
     diff_ufunc: float = 1.0,
-    diff_t: np.timedelta64 = np.timedelta64(0, "ns"),
-) -> Tuple[TimedeltaArrayLike, FloatArrayLike, Any]:
+    diff_t: Any = np.timedelta64(0, "ns"),
+) -> tuple[ArrayLike, FloatArrayLike, Any]:
     """Return the root of ufunc calculated using the Newton method."""
     # implementation based on https://en.wikipedia.org/wiki/Newton%27s_method
     # strong convergence, all points below one of the two thresholds
@@ -88,7 +85,7 @@ def zero_doppler_plane_distance_velocity(
     orbit_interpolator: orbit.OrbitPolyfitInterpolator,
     azimuth_time: xr.DataArray,
     dim: str = "axis",
-) -> Tuple[xr.DataArray, Tuple[xr.DataArray, xr.DataArray]]:
+) -> tuple[xr.DataArray, tuple[xr.DataArray, xr.DataArray]]:
     dem_distance = dem_ecef - orbit_interpolator.position(azimuth_time)
     satellite_velocity = orbit_interpolator.velocity(azimuth_time)
     plane_distance_velocity = (dem_distance * satellite_velocity).sum(dim, skipna=False)
@@ -98,7 +95,7 @@ def zero_doppler_plane_distance_velocity(
 def zero_doppler_plane_distance_velocity_prime(
     orbit_interpolator: orbit.OrbitPolyfitInterpolator,
     azimuth_time: xr.DataArray,
-    payload: Tuple[xr.DataArray, xr.DataArray],
+    payload: tuple[xr.DataArray, xr.DataArray],
     dim: str = "axis",
 ) -> xr.DataArray:
     dem_distance, satellite_velocity = payload
