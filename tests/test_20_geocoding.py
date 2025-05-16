@@ -17,20 +17,20 @@ def test_secant_method() -> None:
     t_start = np.array([-100.0])
 
     # stop with df threshold
-    res, _, _, _ = geocoding.secant_method(ufunc, -t_start, t_start, diff_ufunc=0.1)
+    res, _, _, _, _ = geocoding.secant_method(ufunc, -t_start, t_start, diff_ufunc=0.1)
 
     assert isinstance(res, np.ndarray)
     assert res.size == 1
     assert np.allclose(res, -25.1724)
 
     # stop with dt threshold
-    res, _, _, _ = geocoding.secant_method(ufunc, -t_start, t_start, diff_ufunc=0.01)
+    res, _, _, _, _ = geocoding.secant_method(ufunc, -t_start, t_start, diff_ufunc=0.01)
 
     assert np.allclose(res, -26.3065)
 
     t_start = np.ones((2, 2))
 
-    res, _, _, _ = geocoding.secant_method(ufunc, -t_start, t_start, diff_ufunc=0.01)
+    res, _, _, _, _ = geocoding.secant_method(ufunc, -t_start, t_start, diff_ufunc=0.01)
 
     assert res.shape == t_start.shape
     assert np.allclose(res, -26.102)
