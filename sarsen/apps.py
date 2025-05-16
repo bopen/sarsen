@@ -36,7 +36,7 @@ def simulate_acquisition(
     dem_ecef: xr.DataArray,
     orbit_interpolator: orbit.OrbitPolyfitInterpolator,
     include_variables: Container[str] = (),
-    azimuth_time: xr.DataArray | None = None,
+    azimuth_time: xr.DataArray | float = 0.0,
 ) -> xr.Dataset:
     """Compute the image coordinates of the DEM given the satellite orbit."""
     acquisition = geocoding.backward_geocode(dem_ecef, orbit_interpolator, azimuth_time)
