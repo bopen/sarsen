@@ -86,8 +86,8 @@ def zero_doppler_plane_distance_velocity(
     orbit_time: xr.DataArray,
     dim: str = "axis",
 ) -> tuple[xr.DataArray, tuple[xr.DataArray, xr.DataArray]]:
-    dem_distance = dem_ecef - orbit_interpolator.position_from_seconds(orbit_time)
-    satellite_velocity = orbit_interpolator.velocity_from_seconds(orbit_time)
+    dem_distance = dem_ecef - orbit_interpolator.position_from_orbit_time(orbit_time)
+    satellite_velocity = orbit_interpolator.velocity_from_orbit_time(orbit_time)
     plane_distance_velocity = (dem_distance * satellite_velocity).sum(dim, skipna=False)
     return plane_distance_velocity, (dem_distance, satellite_velocity)
 
@@ -101,7 +101,7 @@ def zero_doppler_plane_distance_velocity_prime(
     dem_distance, satellite_velocity = payload
 
     plane_distance_velocity_prime = (
-        dem_distance * orbit_interpolator.acceleration_from_seconds(orbit_time)
+        dem_distance * orbit_interpolator.acceleration_from_orbit_time(orbit_time)
         - satellite_velocity**2
     ).sum(dim)
     return plane_distance_velocity_prime
@@ -151,7 +151,6 @@ def backward_geocode_simple(
             orbit_time_guess,
             diff_ufunc,
         )
-    # NOTE: dem_distance has the associated azimuth_time as a coordinate already
     return orbit_time, dem_distance, satellite_velocity
 
 
@@ -180,9 +179,7 @@ def backward_geocode(
 
     acquisition = xr.Dataset(
         data_vars={
-            "azimuth_time": orbit_interpolator.seconds_to_datetime64(orbit_time).rename(
-                "azimuth_time"
-            ),
+            "azimuth_time": orbit_interpolator.orbit_time_to_azimuth_time(orbit_time),
             "dem_distance": dem_distance,
             "satellite_velocity": satellite_velocity.transpose(*dem_distance.dims),
         }
