@@ -22,14 +22,17 @@ def secant_method(
     t_curr: ArrayLike,
     diff_ufunc: float = 1.0,
     diff_t: Any = 1e-6,
-) -> tuple[ArrayLike, ArrayLike, FloatArrayLike, Any]:
+    maxiter: int = 10,
+) -> tuple[ArrayLike, ArrayLike, FloatArrayLike, int, Any]:
     """Return the root of ufunc calculated using the secant method."""
     # implementation modified from https://en.wikipedia.org/wiki/Secant_method
     f_prev, _ = ufunc(t_prev)
 
     # strong convergence, all points below one of the two thresholds
-    while True:
+    for k in range(maxiter):
         f_curr, payload_curr = ufunc(t_curr)
+
+        # print(f"{f_curr / 7500}")
 
         # the `not np.any` construct let us accept `np.nan` as good values
         if not np.any((np.abs(f_curr) > diff_ufunc)):
@@ -47,7 +50,7 @@ def secant_method(
         t_prev, t_curr = t_curr, t_curr - np.where(q != 0, f_curr / q, 0) * t_diff  # type: ignore
         f_prev = f_curr
 
-    return t_curr, t_prev, f_curr, payload_curr
+    return t_curr, t_prev, f_curr, k, payload_curr
 
 
 def newton_raphson_method(
@@ -56,12 +59,15 @@ def newton_raphson_method(
     t_curr: ArrayLike,
     diff_ufunc: float = 1.0,
     diff_t: Any = 1e-6,
-) -> tuple[ArrayLike, FloatArrayLike, Any]:
+    maxiter: int = 10,
+) -> tuple[ArrayLike, FloatArrayLike, int, Any]:
     """Return the root of ufunc calculated using the Newton method."""
     # implementation based on https://en.wikipedia.org/wiki/Newton%27s_method
     # strong convergence, all points below one of the two thresholds
-    while True:
+    for k in range(maxiter):
         f_curr, payload_curr = ufunc(t_curr)
+
+        # print(f"{f_curr / 7500}")
 
         # the `not np.any` construct let us accept `np.nan` as good values
         if not np.any((np.abs(f_curr) > diff_ufunc)):
@@ -77,7 +83,7 @@ def newton_raphson_method(
 
         t_curr = t_curr - t_diff
 
-    return t_curr, f_curr, payload_curr
+    return t_curr, f_curr, k, payload_curr
 
 
 def zero_doppler_plane_distance_velocity(
@@ -116,6 +122,7 @@ def backward_geocode_simple(
     satellite_speed: float = 7_500.0,
     method: str = "secant",
     orbit_time_prev_shift: float = -1.0,
+    maxiter: int = 10,
 ) -> tuple[xr.DataArray, xr.DataArray, xr.DataArray]:
     diff_ufunc = zero_doppler_distance * satellite_speed
 
@@ -135,22 +142,25 @@ def backward_geocode_simple(
 
     if method == "secant":
         orbit_time_guess_prev = orbit_time_guess + orbit_time_prev_shift
-        orbit_time, _, _, (dem_distance, satellite_velocity) = secant_method(
+        orbit_time, _, _, k, (dem_distance, satellite_velocity) = secant_method(
             zero_doppler,
             orbit_time_guess_prev,
             orbit_time_guess,
             diff_ufunc,
+            maxiter=maxiter,
         )
     elif method in {"newton", "newton_raphson"}:
         zero_doppler_prime = functools.partial(
             zero_doppler_plane_distance_velocity_prime, orbit_interpolator
         )
-        orbit_time, _, (dem_distance, satellite_velocity) = newton_raphson_method(
+        orbit_time, _, k, (dem_distance, satellite_velocity) = newton_raphson_method(
             zero_doppler,
             zero_doppler_prime,
             orbit_time_guess,
             diff_ufunc,
+            maxiter=maxiter,
         )
+    # print(f"iterations: {k}")
     return orbit_time, dem_distance, satellite_velocity
 
 
@@ -161,8 +171,9 @@ def backward_geocode(
     dim: str = "axis",
     zero_doppler_distance: float = 1.0,
     satellite_speed: float = 7_500.0,
-    method: str = "newton",
+    method: str = "secant",
     seed_step: tuple[int, int] | None = None,
+    maxiter: int = 10,
 ) -> xr.Dataset:
     if seed_step is not None:
         dem_ecef_seed = dem_ecef.sel(
@@ -181,6 +192,7 @@ def backward_geocode(
         orbit_time_guess = orbit_time_seed.interp_like(
             dem_ecef.sel(axis=0), kwargs={"fill_value": "extrapolate"}
         )
+        maxiter = 1
 
     orbit_time, dem_distance, satellite_velocity = backward_geocode_simple(
         dem_ecef,
@@ -190,6 +202,7 @@ def backward_geocode(
         zero_doppler_distance,
         satellite_speed,
         method,
+        maxiter=maxiter,
     )
 
     acquisition = xr.Dataset(
