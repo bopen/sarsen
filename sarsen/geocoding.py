@@ -21,7 +21,7 @@ def secant_method(
     t_prev: ArrayLike,
     t_curr: ArrayLike,
     diff_ufunc: float = 1.0,
-    diff_t: Any = 0.0001,
+    diff_t: Any = 1e-6,
 ) -> tuple[ArrayLike, ArrayLike, FloatArrayLike, Any]:
     """Return the root of ufunc calculated using the secant method."""
     # implementation modified from https://en.wikipedia.org/wiki/Secant_method
@@ -55,7 +55,7 @@ def newton_raphson_method(
     ufunc_prime: Callable[[ArrayLike, Any], FloatArrayLike],
     t_curr: ArrayLike,
     diff_ufunc: float = 1.0,
-    diff_t: Any = 0.0001,
+    diff_t: Any = 1e-6,
 ) -> tuple[ArrayLike, FloatArrayLike, Any]:
     """Return the root of ufunc calculated using the Newton method."""
     # implementation based on https://en.wikipedia.org/wiki/Newton%27s_method
@@ -161,11 +161,26 @@ def backward_geocode(
     dim: str = "axis",
     zero_doppler_distance: float = 1.0,
     satellite_speed: float = 7_500.0,
-    method: str = "secant",
-    seed_shape: tuple[int, int] | None = None,
+    method: str = "newton",
+    seed_step: tuple[int, int] | None = None,
 ) -> xr.Dataset:
-    if seed_shape is not None:
-        pass
+    if seed_step is not None:
+        dem_ecef_seed = dem_ecef.sel(
+            y=slice(seed_step[0] // 2, None, seed_step[0]),
+            x=slice(seed_step[1] // 2, None, seed_step[1]),
+        )
+        orbit_time_seed, _, _ = backward_geocode_simple(
+            dem_ecef_seed,
+            orbit_interpolator,
+            orbit_time_guess,
+            dim,
+            zero_doppler_distance,
+            satellite_speed,
+            method,
+        )
+        orbit_time_guess = orbit_time_seed.interp_like(
+            dem_ecef.sel(axis=0), kwargs={"fill_value": "extrapolate"}
+        )
 
     orbit_time, dem_distance, satellite_velocity = backward_geocode_simple(
         dem_ecef,
