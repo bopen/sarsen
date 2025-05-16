@@ -7,15 +7,15 @@ from sarsen import orbit
 def test_seconds_to_datetime64() -> None:
     epoch = np.datetime64("2025-05-16T08:38:12.123456789", "ns")
 
-    res = orbit.seconds_to_datetime64(0.0, epoch)
+    res = orbit.seconds_to_datetime64(xr.DataArray(0.0), epoch)
 
     assert res == epoch
 
-    res = orbit.seconds_to_datetime64(-120.2, epoch)
+    res = orbit.seconds_to_datetime64(xr.DataArray(-120.2), epoch)
 
     assert res == epoch - np.timedelta64(120200, "ms")
 
-    res = orbit.seconds_to_datetime64(1e-10, epoch)
+    res = orbit.seconds_to_datetime64(xr.DataArray(1e-10), epoch)
 
     assert res == epoch
 
@@ -23,7 +23,7 @@ def test_seconds_to_datetime64() -> None:
 def test_datetime64_to_seconds() -> None:
     epoch = np.datetime64("2025-05-16T08:38:12.123456789", "ns")
     seconds = -120.43256234
-    date = orbit.seconds_to_datetime64(seconds, epoch)
+    date = orbit.seconds_to_datetime64(xr.DataArray(seconds), epoch)
 
     res = orbit.datetime64_to_seconds(date, epoch)
 
