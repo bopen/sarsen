@@ -81,7 +81,7 @@ def newton_raphson_method(
         if not np.any(np.abs(t_diff) > diff_t):
             break
 
-        t_curr = t_curr - t_diff
+        t_curr = t_curr - t_diff  # type: ignore
 
     return t_curr, f_curr, k, payload_curr
 

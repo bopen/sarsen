@@ -11,8 +11,8 @@ def test_secant_method() -> None:
     def ufunc(
         t: npt.ArrayLike,
     ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-        retval = 1.0 + 0.015 * t - 0.0001 * t**2 + 0.00003 * t**3
-        return retval, retval
+        retval = 1.0 + 0.015 * t - 0.0001 * t**2 + 0.00003 * t**3  # type: ignore
+        return retval, retval  # type: ignore
 
     t_start = np.array([-100.0])
 
