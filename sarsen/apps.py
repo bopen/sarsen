@@ -234,8 +234,8 @@ def terrain_correction(
     if enable_dask_distributed:
         from dask.distributed import Client, Lock
 
-        client = Client(**client_kwargs)  # type: ignore
-        to_raster_kwargs["lock"] = Lock("rio", client=client)  # type: ignore
+        client = Client(**client_kwargs)
+        to_raster_kwargs["lock"] = Lock("rio", client=client)
         to_raster_kwargs["compute"] = False
         print(f"Dask distributed dashboard at: {client.dashboard_link}")
 
