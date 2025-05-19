@@ -1,8 +1,10 @@
-from typer.testing import CliRunner
 import pytest
+from typer.testing import CliRunner
+
 from sarsen import __main__
 
 runner = CliRunner()
+
 
 @pytest.mark.xfail()
 def test_main() -> None:
