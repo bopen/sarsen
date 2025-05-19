@@ -141,41 +141,50 @@ jobs:
         make docs-build
 
   integration-tests:
-    needs: [combine-environments, unit-tests]
+    needs: [unit-tests]
+    if: |
+      success() && true
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version:
+        - "3.10"
+        - "3.11"
+        - "3.12"
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install uv and set the python version
+      uses: astral-sh/setup-uv@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install the project
+      run: uv sync --locked --dev
+
+    - name: Run tests
+      run: uv run pytest -vv
+
+  minver-tests:
+    needs: [unit-tests]
     if: |
       success() && true
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        include:
-        - python-version: '3.10'
-          extra: -integration
-
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/download-artifact@v4
+
+    - name: Install uv and set the python version
+      uses: astral-sh/setup-uv@v5
       with:
-        name: combined-environments
-        path: ci
-    - name: Get current date
-      id: date
-      run: echo "date=$(date +%Y-%m-%d)" >> "${GITHUB_OUTPUT}"
-    - uses: mamba-org/setup-micromamba@v2
-      with:
-        environment-file: ci/combined-environment${{ matrix.extra }}.yml
-        environment-name: DEVELOP${{ matrix.extra }}
-        cache-environment: true
-        cache-environment-key: environment-${{ steps.date.outputs.date }}
-        cache-downloads-key: downloads-${{ steps.date.outputs.date }}
-        create-args: >-
-          python=${{ matrix.python-version }}
-    - name: Install package
-      run: |
-        python -m pip install --no-deps -e .
+        python-version: "3.10"
+
+    - name: Install the project
+      run: uv sync --dev --resolution lowest-direct
+
     - name: Run tests
-      run: |
-        make unit-tests COV_REPORT=xml
+      run: uv run pytest -vv
 
   distribution:
     runs-on: ubuntu-latest
