@@ -81,7 +81,7 @@ def map_simulate_acquisition(
     )
     acquisition = xr.map_blocks(
         simulate_acquisition,
-        dem_ecef,
+        dem_ecef.drop_vars("spatial_ref"),
         kwargs={
             "orbit_interpolator": orbit_interpolator,
             "include_variables": list(acquisition_template.data_vars),
@@ -111,17 +111,16 @@ def do_terrain_correction(
 
     logger.info("simulate acquisition")
 
-    template_raster = dem_ecef.isel(axis=0).drop_vars(["axis"]) * 0.0
+    template_raster = dem_ecef.isel(axis=0).drop_vars(["axis", "spatial_ref"]) * 0.0
 
     orbit_interpolator = orbit.OrbitPolyfitInterpolator.from_position(
         product.state_vectors()
     )
 
     acquisition = map_simulate_acquisition(
-        dem_ecef.drop_vars(["spatial_ref"]),
+        dem_ecef,
         orbit_interpolator,
-        template_raster,
-        correct_radiometry,
+        correct_radiometry=correct_radiometry,
         seed_step=seed_step,
     )
 
