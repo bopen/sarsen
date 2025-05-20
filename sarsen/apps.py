@@ -111,7 +111,7 @@ def do_terrain_correction(
 
     logger.info("simulate acquisition")
 
-    template_raster = dem_ecef.isel(axis=0).drop_vars(["axis", "spatial_ref"]) * 0.0
+    template_raster = dem_ecef.isel(axis=0).drop_vars(["axis"]) * 0.0
 
     orbit_interpolator = orbit.OrbitPolyfitInterpolator.from_position(
         product.state_vectors()
