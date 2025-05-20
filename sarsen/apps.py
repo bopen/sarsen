@@ -37,9 +37,12 @@ def simulate_acquisition(
     orbit_interpolator: orbit.OrbitPolyfitInterpolator,
     include_variables: Container[str] = (),
     azimuth_time: xr.DataArray | float = 0.0,
+    seed_step: tuple[int, int] | None = None,
 ) -> xr.Dataset:
     """Compute the image coordinates of the DEM given the satellite orbit."""
-    acquisition = geocoding.backward_geocode(dem_ecef, orbit_interpolator, azimuth_time)
+    acquisition = geocoding.backward_geocode(
+        dem_ecef, orbit_interpolator, azimuth_time, seed_step=seed_step
+    )
 
     slant_range = (acquisition.dem_distance**2).sum(dim="axis") ** 0.5
     slant_range_time = 2.0 / SPEED_OF_LIGHT * slant_range
@@ -69,6 +72,7 @@ def map_simulate_acquisition(
     orbit_interpolator: orbit.OrbitPolyfitInterpolator,
     template_raster: xr.DataArray,
     correct_radiometry: str | None = None,
+    seed_step: tuple[int, int] | None = None,
 ) -> xr.Dataset:
     acquisition_template = make_simulate_acquisition_template(
         template_raster, correct_radiometry
@@ -79,6 +83,7 @@ def map_simulate_acquisition(
         kwargs={
             "orbit_interpolator": orbit_interpolator,
             "include_variables": list(acquisition_template.data_vars),
+            "seed_step": seed_step,
         },
         template=acquisition_template,
     )
@@ -94,6 +99,7 @@ def do_terrain_correction(
     grouping_area_factor: tuple[float, float] = (3.0, 3.0),
     radiometry_chunks: int = 2048,
     radiometry_bound: int = 128,
+    seed_step: tuple[int, int] | None = None,
 ) -> tuple[xr.DataArray, xr.DataArray | None]:
     logger.info("pre-process DEM")
 
@@ -114,6 +120,7 @@ def do_terrain_correction(
         orbit_interpolator,
         template_raster,
         correct_radiometry,
+        seed_step=seed_step,
     )
 
     simulated_beta_nought = None
@@ -185,6 +192,7 @@ def terrain_correction(
     radiometry_bound: int = 128,
     enable_dask_distributed: bool = False,
     client_kwargs: dict[str, Any] = {"processes": False},
+    seed_step: tuple[int, int] | None = None,
 ) -> xr.DataArray:
     """Apply the terrain-correction to sentinel-1 SLC and GRD products.
 
@@ -253,6 +261,7 @@ def terrain_correction(
         grouping_area_factor=grouping_area_factor,
         radiometry_chunks=radiometry_chunks,
         radiometry_bound=radiometry_bound,
+        seed_step=seed_step,
     )
 
     if simulated_urlpath is not None:

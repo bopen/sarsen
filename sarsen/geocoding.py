@@ -176,7 +176,7 @@ def backward_geocode(
     maxiter: int = 10,
 ) -> xr.Dataset:
     if seed_step is not None:
-        dem_ecef_seed = dem_ecef.sel(
+        dem_ecef_seed = dem_ecef.isel(
             y=slice(seed_step[0] // 2, None, seed_step[0]),
             x=slice(seed_step[1] // 2, None, seed_step[1]),
         )

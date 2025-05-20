@@ -60,6 +60,7 @@ def test_terrain_correction_fast_rtc(
         str(DEM_RASTER),
         correct_radiometry="gamma_nearest",
         output_urlpath=out,
+        seed_step=(128, 128),
     )
 
     assert isinstance(res, xr.DataArray)
@@ -104,6 +105,7 @@ def test_terrain_correction_gtc_dask(
         str(DEM_RASTER),
         output_urlpath=out,
         chunks=1024,
+        seed_step=(128, 128),
     )
 
     assert isinstance(res, xr.DataArray)
@@ -127,6 +129,7 @@ def test_terrain_correction_fast_rtc_dask(
         correct_radiometry="gamma_nearest",
         output_urlpath=out,
         chunks=1024,
+        seed_step=(128, 128),
     )
 
     assert isinstance(res, xr.DataArray)
@@ -150,6 +153,7 @@ def test_terrain_correction_rtc_dask(
         correct_radiometry="gamma_bilinear",
         output_urlpath=out,
         chunks=1024,
+        seed_step=(128, 128),
     )
 
     assert isinstance(res, xr.DataArray)
