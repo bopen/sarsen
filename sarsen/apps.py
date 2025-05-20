@@ -70,10 +70,12 @@ def simulate_acquisition(
 def map_simulate_acquisition(
     dem_ecef: xr.DataArray,
     orbit_interpolator: orbit.OrbitPolyfitInterpolator,
-    template_raster: xr.DataArray,
+    template_raster: xr.DataArray | None = None,
     correct_radiometry: str | None = None,
     **kwargs: Any,
 ) -> xr.Dataset:
+    if template_raster is None:
+        template_raster = dem_ecef.isel(axis=0).drop_vars(["axis", "spatial_ref"]) * 0.0
     acquisition_template = make_simulate_acquisition_template(
         template_raster, correct_radiometry
     )
