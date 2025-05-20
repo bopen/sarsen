@@ -37,11 +37,11 @@ def simulate_acquisition(
     orbit_interpolator: orbit.OrbitPolyfitInterpolator,
     include_variables: Container[str] = (),
     azimuth_time: xr.DataArray | float = 0.0,
-    seed_step: tuple[int, int] | None = None,
+    **kwargs: Any,
 ) -> xr.Dataset:
     """Compute the image coordinates of the DEM given the satellite orbit."""
     acquisition = geocoding.backward_geocode(
-        dem_ecef, orbit_interpolator, azimuth_time, seed_step=seed_step
+        dem_ecef, orbit_interpolator, azimuth_time, **kwargs
     )
 
     slant_range = (acquisition.dem_distance**2).sum(dim="axis") ** 0.5
@@ -72,7 +72,7 @@ def map_simulate_acquisition(
     orbit_interpolator: orbit.OrbitPolyfitInterpolator,
     template_raster: xr.DataArray,
     correct_radiometry: str | None = None,
-    seed_step: tuple[int, int] | None = None,
+    **kwargs: Any,
 ) -> xr.Dataset:
     acquisition_template = make_simulate_acquisition_template(
         template_raster, correct_radiometry
@@ -83,8 +83,8 @@ def map_simulate_acquisition(
         kwargs={
             "orbit_interpolator": orbit_interpolator,
             "include_variables": list(acquisition_template.data_vars),
-            "seed_step": seed_step,
-        },
+        }
+        | kwargs,
         template=acquisition_template,
     )
     return acquisition
