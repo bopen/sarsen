@@ -121,7 +121,7 @@ def backward_geocode_simple(
     zero_doppler_distance: float = 1.0,
     satellite_speed: float = 7_500.0,
     method: str = "secant",
-    orbit_time_prev_shift: float = -1.0,
+    orbit_time_prev_shift: float = -0.1,
     maxiter: int = 10,
 ) -> tuple[xr.DataArray, xr.DataArray, xr.DataArray]:
     diff_ufunc = zero_doppler_distance * satellite_speed
@@ -171,9 +171,11 @@ def backward_geocode(
     dim: str = "axis",
     zero_doppler_distance: float = 1.0,
     satellite_speed: float = 7_500.0,
-    method: str = "secant",
+    method: str = "newton",
     seed_step: tuple[int, int] | None = None,
     maxiter: int = 10,
+    maxiter_after_seed: int = 1,
+    orbit_time_prev_shift: float = -0.1,
 ) -> xr.Dataset:
     if seed_step is not None:
         dem_ecef_seed = dem_ecef.isel(
@@ -188,11 +190,12 @@ def backward_geocode(
             zero_doppler_distance,
             satellite_speed,
             method,
+            orbit_time_prev_shift=orbit_time_prev_shift,
         )
         orbit_time_guess = orbit_time_seed.interp_like(
             dem_ecef.sel(axis=0), kwargs={"fill_value": "extrapolate"}
         )
-        maxiter = 1
+        maxiter = maxiter_after_seed
 
     orbit_time, dem_distance, satellite_velocity = backward_geocode_simple(
         dem_ecef,
@@ -203,6 +206,7 @@ def backward_geocode(
         satellite_speed,
         method,
         maxiter=maxiter,
+        orbit_time_prev_shift=orbit_time_prev_shift,
     )
 
     acquisition = xr.Dataset(
