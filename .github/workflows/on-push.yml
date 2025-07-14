@@ -40,7 +40,7 @@ jobs:
         version: "0.7.20"
         enable-cache: true
     - name: "Set up Python"
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v5
       with:
         python-version-file: ".python-version"
     - name: Run unit tests
@@ -58,7 +58,7 @@ jobs:
         version: "0.7.20"
         enable-cache: true
     - name: "Set up Python"
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v5
       with:
         python-version-file: ".python-version"
     - name: Run type checking
@@ -76,7 +76,7 @@ jobs:
         version: "0.7.20"
         enable-cache: true
     - name: "Set up Python"
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v5
       with:
         python-version-file: ".python-version"
     - name: Build documentation
