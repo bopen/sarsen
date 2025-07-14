@@ -39,8 +39,10 @@ jobs:
       with:
         version: "0.7.20"
         enable-cache: true
+    - name: "Set up Python"
+      uses: actions/setup-python@v6
+      with:
         python-version-file: ".python-version"
-
     - name: Run unit tests
       run: uv run --frozen -m pytest -vv .
 
@@ -55,8 +57,10 @@ jobs:
       with:
         version: "0.7.20"
         enable-cache: true
+    - name: "Set up Python"
+      uses: actions/setup-python@v6
+      with:
         python-version-file: ".python-version"
-
     - name: Run type checking
       run: uv run --frozen -m mypy .
 
@@ -71,6 +75,9 @@ jobs:
       with:
         version: "0.7.20"
         enable-cache: true
+    - name: "Set up Python"
+      uses: actions/setup-python@v6
+      with:
         python-version-file: ".python-version"
     - name: Build documentation
       run: make docs-build
