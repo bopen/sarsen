@@ -28,111 +28,59 @@ jobs:
         python-version: 3.x
     - uses: pre-commit/action@v3.0.1
 
-  combine-environments:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
-      with:
-        python-version: 3.x
-    - name: Install conda-merge
-      run: |
-        python -m pip install conda-merge
-    - name: Combine environments
-      run: |
-        for SUFFIX in ci integration; do
-        conda-merge ci/environment-$SUFFIX.yml environment.yml > ci/combined-environment-$SUFFIX.yml || exit
-        done
-    - uses: actions/upload-artifact@v4
-      with:
-        name: combined-environments
-        path: ci/combined-environment-*.yml
-
   unit-tests:
     name: unit-tests
-    needs: combine-environments
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.13']
-
-    steps:
-    - uses: actions/checkout@v4
-    - uses: actions/download-artifact@v4
-      with:
-        name: combined-environments
-        path: ci
-    - name: Get current date
-      id: date
-      run: echo "date=$(date +%Y-%m-%d)" >> "${GITHUB_OUTPUT}"
-    - uses: mamba-org/setup-micromamba@v2
-      with:
-        environment-file: ci/combined-environment-ci.yml
-        environment-name: DEVELOP
-        cache-environment: true
-        cache-environment-key: environment-${{ steps.date.outputs.date }}
-        cache-downloads-key: downloads-${{ steps.date.outputs.date }}
-        create-args: >-
-          python=${{ matrix.python-version }}
-    - name: Install package
-      run: |
-        python -m pip install --no-deps -e .
-    - name: Run tests
-      run: |
-        make unit-tests COV_REPORT=xml
-
-  type-check:
-    needs: [combine-environments, unit-tests]
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
-
     - name: Install uv
-      uses: astral-sh/setup-uv@v5
+      uses: astral-sh/setup-uv@v6
       with:
+        version: "0.7.20"
         enable-cache: true
-        cache-dependency-glob: "uv.lock"
-
     - name: "Set up Python"
       uses: actions/setup-python@v5
       with:
         python-version-file: ".python-version"
-    - name: Install the project
-      run: uv sync --locked --all-extras --dev
-    - name: Run tests
-      # For example, using `pytest`
-      run: uv run mypy .
+    - name: Run unit tests
+      run: uv run --frozen -m pytest .
 
-  docs-build:
-    needs: [combine-environments, unit-tests]
+  type-check:
+    needs: [unit-tests]
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/download-artifact@v4
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
       with:
-        name: combined-environments
-        path: ci
-    - name: Get current date
-      id: date
-      run: echo "date=$(date +%Y-%m-%d)" >> "${GITHUB_OUTPUT}"
-    - uses: mamba-org/setup-micromamba@v2
+        version: "0.7.20"
+        enable-cache: true
+    - name: "Set up Python"
+      uses: actions/setup-python@v5
       with:
-        environment-file: ci/combined-environment-ci.yml
-        environment-name: DEVELOP
-        cache-environment: true
-        cache-environment-key: environment-${{ steps.date.outputs.date }}
-        cache-downloads-key: downloads-${{ steps.date.outputs.date }}
-        create-args: >-
-          python=3.11
-    - name: Install package
-      run: |
-        python -m pip install --no-deps -e .
+        python-version-file: ".python-version"
+    - name: Run type checking
+      run: uv run --frozen -m mypy .
+
+  docs-build:
+    needs: [unit-tests]
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+      with:
+        version: "0.7.20"
+        enable-cache: true
+    - name: "Set up Python"
+      uses: actions/setup-python@v5
+      with:
+        python-version-file: ".python-version"
     - name: Build documentation
-      run: |
-        make docs-build
+      run: uv run --frozen make docs-build
 
   integration-tests:
     needs: [unit-tests]
@@ -142,23 +90,20 @@ jobs:
     strategy:
       matrix:
         python-version:
-        - "3.10"
         - "3.11"
         - "3.12"
 
     steps:
     - uses: actions/checkout@v4
-
     - name: Install uv and set the python version
-      uses: astral-sh/setup-uv@v5
+      uses: astral-sh/setup-uv@v6
       with:
+        version: "0.7.20"
+        enable-cache: true
         python-version: ${{ matrix.python-version }}
 
-    - name: Install the project
-      run: uv sync --locked --dev
-
-    - name: Run tests
-      run: uv run pytest -vv
+    - name: Run unit tests
+      run: uv run --frozen -m pytest .
 
   minver-tests:
     needs: [unit-tests]
@@ -172,13 +117,10 @@ jobs:
     - name: Install uv and set the python version
       uses: astral-sh/setup-uv@v5
       with:
-        python-version: "3.10"
-
-    - name: Install the project
-      run: uv sync --dev --resolution lowest-direct
+        python-version: "3.11"
 
     - name: Run tests
-      run: uv run pytest -vv
+      run: uv run --resolution lowest-direct -m pytest .
 
   distribution:
     runs-on: ubuntu-latest
