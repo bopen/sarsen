@@ -80,7 +80,7 @@ jobs:
       with:
         python-version-file: ".python-version"
     - name: Build documentation
-      run: make docs-build
+      run: uv run --frozen make docs-build
 
   integration-tests:
     needs: [unit-tests]
