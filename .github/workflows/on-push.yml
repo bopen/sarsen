@@ -44,7 +44,7 @@ jobs:
         for SUFFIX in ci integration; do
         conda-merge ci/environment-$SUFFIX.yml environment.yml > ci/combined-environment-$SUFFIX.yml || exit
         done
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: combined-environments
         path: ci/combined-environment-*.yml
@@ -209,7 +209,7 @@ jobs:
         python -m twine check --strict * || exit
         python -c "import sarsen" || exit
         cd ..
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@v5
       with:
         name: distribution
         path: dist
