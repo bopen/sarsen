@@ -1435,10 +1435,10 @@ requires-dist = [
     { name = "flox", specifier = ">=0.9" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "pandas", specifier = ">=2.2" },
-    { name = "rasterio", specifier = ">=1.3" },
+    { name = "rasterio", specifier = ">=1.3.5" },
     { name = "rioxarray", specifier = ">=0.15.0" },
     { name = "scipy", specifier = ">=1.13" },
-    { name = "typer", specifier = ">=0.11" },
+    { name = "typer", specifier = ">=0.12" },
     { name = "xarray", specifier = ">=2023.12.0" },
     { name = "xarray-sentinel", specifier = ">=0.9.3" },
 ]
