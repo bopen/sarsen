@@ -7,6 +7,7 @@ dev = [
   "cfchecker>=4.1.0",
   "mypy>=1.15.0",
   "pandas-stubs>=1.4.0",
+  "psutil",
   "pytest>=7.0",
   "pytest-cov>=5.0",
   "setuptools>=64.0",

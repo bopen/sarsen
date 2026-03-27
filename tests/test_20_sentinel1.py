@@ -1,6 +1,8 @@
 import pathlib
+import sys
 
 import numpy as np
+import psutil
 import pytest
 import xarray as xr
 
@@ -18,6 +20,11 @@ DATA_PATHS = [
 GROUPS = ["IW/VV", "IW1/VV"]
 
 
+@pytest.mark.skipif(
+    psutil.virtual_memory().available < (8 * 1024 * 1024 * 1024) or
+    not sys.maxsize > 2**32,
+    reason="Process gets killed"
+)
 @pytest.mark.parametrize("data_path,group", zip(DATA_PATHS, GROUPS))
 def test_Sentinel1SarProduct(data_path: str, group: str) -> None:
     res = sentinel1.Sentinel1SarProduct(data_path, group)
