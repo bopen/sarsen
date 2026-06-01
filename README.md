@@ -16,7 +16,7 @@ This Open Source project is sponsored by B-Open - https://www.bopen.eu.
     - *accurate mode*: for interferometric processing
   - radiometric terrain correction (gamma flattening)
 - accesses SAR data via [*xarray-sentinel*](https://github.com/bopen/xarray-sentinel):
-  - supports most Sentinel-1 data products as [distributed by ESA](https://scihub.copernicus.eu/dhus/#/home):
+  - supports most Sentinel-1 data products as [distributed by ESA](https://browser.dataspace.copernicus.eu/):
     - Sentinel-1 Single Look Complex (SLC) SM/IW/EW
     - Sentinel-1 Ground Range Detected (GRD) SM/IW/EW
   - reads uncompressed and compressed SAFE data products on the local computer or
@@ -61,17 +61,16 @@ by the topography of the scene.
 
 ## Install
 
-The easiest way to install *sarsen* is in a *conda* environment.
-The following commands create a new environment, activate it, install the package and its dependencies:
+The easiest way to install *sarsen* is in a *pip* environment.
 
 ```shell
-  conda create -n SARSEN
-  conda activate SARSEN
-  conda install -c conda-forge dask proj-data sarsen
+  pip install sarsen
 ```
 
-Note that the `proj-data` package is rather large (500+Mb) and it is only needed to handle input DEM whose
-vertical coordinate is not on a known ellipsoid, for example *SRTM DEM* with heigths over the *EGM96 geoid*.
+Note that in order to handle input DEM whose vertical coordinate is not on a known ellipsoid,
+for example *SRTM DEM* with heights over the *EGM96 geoid*, you need to download and configure
+the appropriate
+[PROJ transformation grids](https://pyproj4.github.io/pyproj/stable/transformation_grids.html).
 
 ## Command line usage
 
@@ -106,12 +105,12 @@ The following code applies the geometric terrain correction to the VV polarizati
 ```python
 >>> import sarsen
 >>> product = sarsen.Sentinel1SarProduct(
-...   "tests/data/S1B_IW_GRDH_1SDV_20211223T051122_20211223T051147_030148_039993_5371.SAFE",
-...   measurement_group="IW/VV",
+...     "tests/data/S1B_IW_GRDH_1SDV_20211223T051122_20211223T051147_030148_039993_5371.SAFE",
+...     measurement_group="IW/VV",
 ... )
 >>> gtc = sarsen.terrain_correction(
-...   product,
-...   dem_urlpath="tests/data/Rome-30m-DEM.tif",
+...     product,
+...     dem_urlpath="tests/data/Rome-30m-DEM.tif",
 ... )
 
 ```
@@ -120,9 +119,9 @@ The radiometric correction can be activated using the key `correct_radiometry`:
 
 ```python
 >>> rtc = sarsen.terrain_correction(
-...   product,
-...   dem_urlpath="tests/data/Rome-30m-DEM.tif",
-...   correct_radiometry="gamma_nearest"
+...     product,
+...     dem_urlpath="tests/data/Rome-30m-DEM.tif",
+...     correct_radiometry="gamma_nearest",
 ... )
 
 ```
