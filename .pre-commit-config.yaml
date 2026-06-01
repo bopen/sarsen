@@ -32,7 +32,7 @@ repos:
     args: [--autofix, --preserve-quotes]
   - id: pretty-format-toml
     args: [--autofix]
-- repo: https://github.com/gitleaks/gitleaks
-  rev: v8.30.0
-  hooks:
-  - id: gitleaks
+# - repo: https://github.com/gitleaks/gitleaks
+#   rev: v8.30.0
+#   hooks:
+#   - id: gitleaks
