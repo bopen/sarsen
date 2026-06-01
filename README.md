@@ -61,17 +61,16 @@ by the topography of the scene.
 
 ## Install
 
-The easiest way to install *sarsen* is in a *conda* environment.
-The following commands create a new environment, activate it, install the package and its dependencies:
+The easiest way to install *sarsen* is in a *pip* environment.
 
 ```shell
-  conda create -n SARSEN
-  conda activate SARSEN
-  conda install -c conda-forge dask proj-data sarsen
+  pip install sarsen
 ```
 
-Note that the `proj-data` package is rather large (500+Mb) and it is only needed to handle input DEM whose
-vertical coordinate is not on a known ellipsoid, for example *SRTM DEM* with heigths over the *EGM96 geoid*.
+Note that in order to handle input DEM whose vertical coordinate is not on a known ellipsoid,
+for example *SRTM DEM* with heights over the *EGM96 geoid*, you need to download and configure
+the appropriate
+[PROJ transformation grids](https://pyproj4.github.io/pyproj/stable/transformation_grids.html).
 
 ## Command line usage
 
