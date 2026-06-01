@@ -12,11 +12,11 @@ repos:
   - id: debug-statements
   - id: mixed-line-ending
 - repo: https://github.com/keewis/blackdoc
-  rev: v0.4.5
+  rev: v0.4.6
   hooks:
   - id: blackdoc
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.14.3
+  rev: v0.15.15
   hooks:
   - id: ruff
     args: [--fix, --show-fixes]
@@ -26,13 +26,13 @@ repos:
   hooks:
   - id: mdformat
 - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
-  rev: v2.15.0
+  rev: v2.16.0
   hooks:
   - id: pretty-format-yaml
     args: [--autofix, --preserve-quotes]
   - id: pretty-format-toml
     args: [--autofix]
 - repo: https://github.com/gitleaks/gitleaks
-  rev: v8.29.0
+  rev: v8.30.0
   hooks:
   - id: gitleaks
