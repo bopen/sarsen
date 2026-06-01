@@ -29,6 +29,7 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
   "Topic :: Scientific/Engineering"
 ]
 dependencies = [
@@ -110,6 +111,11 @@ write_to_template = '''
 # Do not change! Do not track in version control!
 __version__ = "{version}"
 '''
+
+[tool.uv]
+# Wait before upgrading to the newest versions to avoid
+# regressions and supply-chain attacks
+exclude-newer = "7 days"
 
 [tool.uv.sources]
 xarray-sentinel = {git = "https://github.com/bopen/xarray-sentinel"}
