@@ -16,7 +16,7 @@ This Open Source project is sponsored by B-Open - https://www.bopen.eu.
     - *accurate mode*: for interferometric processing
   - radiometric terrain correction (gamma flattening)
 - accesses SAR data via [*xarray-sentinel*](https://github.com/bopen/xarray-sentinel):
-  - supports most Sentinel-1 data products as [distributed by ESA](https://scihub.copernicus.eu/dhus/#/home):
+  - supports most Sentinel-1 data products as [distributed by ESA](https://browser.dataspace.copernicus.eu/):
     - Sentinel-1 Single Look Complex (SLC) SM/IW/EW
     - Sentinel-1 Ground Range Detected (GRD) SM/IW/EW
   - reads uncompressed and compressed SAFE data products on the local computer or
