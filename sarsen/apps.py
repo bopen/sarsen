@@ -188,6 +188,7 @@ def terrain_correction(
     interp_method: xr.core.types.InterpOptions = "nearest",
     grouping_area_factor: tuple[float, float] = (3.0, 3.0),
     open_dem_raster_kwargs: dict[str, Any] = {},
+    dem_raster_sel: dict[str, slice] = {},
     chunks: int | None = 1024,
     radiometry_chunks: int = 2048,
     radiometry_bound: int = 128,
@@ -253,6 +254,8 @@ def terrain_correction(
     dem_raster = scene.open_dem_raster(
         dem_urlpath, chunks=chunks, **open_dem_raster_kwargs
     )
+    if dem_raster_sel:
+        dem_raster = dem_raster.sel(dem_raster_sel)
 
     geocoded, simulated_beta_nought = do_terrain_correction(
         product=product,
