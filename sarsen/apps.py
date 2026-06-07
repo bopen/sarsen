@@ -195,6 +195,7 @@ def terrain_correction(
     enable_dask_distributed: bool = False,
     client_kwargs: dict[str, Any] = {"processes": False},
     seed_step: tuple[int, int] | None = None,
+    convert_to_dem_ecef_kwargs: dict[str, Any] = {},
 ) -> xr.DataArray:
     """Apply the terrain-correction to sentinel-1 SLC and GRD products.
 
@@ -266,6 +267,7 @@ def terrain_correction(
         radiometry_chunks=radiometry_chunks,
         radiometry_bound=radiometry_bound,
         seed_step=seed_step,
+        convert_to_dem_ecef_kwargs=convert_to_dem_ecef_kwargs,
     )
 
     if simulated_urlpath is not None:
