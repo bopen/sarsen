@@ -76,7 +76,7 @@ def azimuth_slant_range_grid(
 class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProduct):
     product_urlpath: str
     measurement_group: str | None = None
-    measurement_chunks: int | None = DEFAULT_MEASUREMENT_CHUNKS
+    measurement_chunks: int | dict[str, int] | None = DEFAULT_MEASUREMENT_CHUNKS
     kwargs: dict[str, Any] = {}
 
     def all_measurement_groups(self) -> list[str]:
@@ -164,7 +164,7 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
         id = (
             self.product_urlpath,
             self.measurement_group,
-            self.measurement_chunks,
+            repr(self.measurement_chunks),
         ) + tuple(repr(self.kwargs))
         return hash(id)
 
