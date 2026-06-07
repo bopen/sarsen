@@ -43,7 +43,7 @@ dependencies = [
   "scipy>=1.13",
   "typer>=0.16",
   "xarray>=2023.12.0",
-  "xarray-sentinel>=0.9.6rc1"
+  "xarray-sentinel>=0.9.6rc1",
 ]
 description = "Algorithms and utilities for Synthetic Aperture Radar (SAR) sensors"
 dynamic = ["version"]
@@ -52,6 +52,14 @@ name = "sarsen"
 readme = "README.md"
 requires-python = ">=3.11"
 
+[project.optional-dependencies]
+lab = [
+  "jupyterlab>=4.5.7",
+  "jupyterlab-execute-time>=3.3.0",
+  "matplotlib>=3.10.9",
+  "s3fs>=2026.4.0"
+]
+
 [project.scripts]
 sarsen = "sarsen.__main__:app"
 
@@ -59,7 +67,6 @@ sarsen = "sarsen.__main__:app"
 branch = true
 
 [tool.mypy]
-plugins = "numpy.typing.mypy_plugin"
 strict = true
 
 [[tool.mypy.overrides]]
@@ -118,4 +125,9 @@ __version__ = "{version}"
 exclude-newer = "7 days"
 
 [tool.uv.sources]
-xarray-sentinel = {git = "https://github.com/bopen/xarray-sentinel"}
+xarray-sentinel = { workspace = true }
+
+[tool.uv.workspace]
+members = [
+    "/Users/amici/devel/misc/xarray-sentinel",
+]
