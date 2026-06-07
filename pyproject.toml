@@ -54,6 +54,8 @@ requires-python = ">=3.11"
 
 [project.optional-dependencies]
 lab = [
+  "bokeh>=3.9.0",
+  "distributed>=2026.3.0",
   "jupyterlab>=4.5.7",
   "jupyterlab-execute-time>=3.3.0",
   "matplotlib>=3.10.9",
