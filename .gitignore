@@ -1,5 +1,6 @@
 # project specific
 *.tif
+*.bck
 
 # setuptools-scm
 version.py
