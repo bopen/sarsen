@@ -2,9 +2,11 @@ import logging
 from typing import Any, Container
 from unittest import mock
 
+import dask
 import numpy as np
 import rioxarray
 import xarray as xr
+import xarray_sentinel
 
 from . import chunking, datamodel, geocoding, orbit, radiometry, scene
 
@@ -65,6 +67,34 @@ def simulate_acquisition(
             acquisition = acquisition.drop_vars(coord_name)  # type: ignore
 
     return acquisition
+
+
+def geocode_grd_chunk(
+    acquisition: xr.Dataset,
+    product: datamodel.GroundRangeSarProduct,
+    dask_config: dict[str, Any] = {},
+    **kwargs: Any,
+) -> xr.DataArray:
+    beta_nought = product.beta_nought()
+
+    if acquisition.slant_range_time.size > 0:
+        ground_range = xarray_sentinel.slant_range_time_to_ground_range(
+            acquisition.azimuth_time,
+            acquisition.slant_range_time,
+            product.coordinate_conversion,
+        )
+
+        geocoded = beta_nought.interp(
+            azimuth_time=acquisition.azimuth_time, ground_range=ground_range, **kwargs
+        ).drop_vars(["azimuth_time", "ground_range"])
+
+        with dask.config.set({"scheduler": "threads"} | dask_config):
+            geocoded = geocoded.compute()
+    else:
+        # This ensures map_blocks auto-detect the template
+        geocoded = acquisition.slant_range_time
+
+    return geocoded.rename("gtc").assign_attrs(beta_nought.attrs)
 
 
 def map_simulate_acquisition(
@@ -151,21 +181,27 @@ def do_terrain_correction(
         simulated_beta_nought.y.attrs.update(dem_ecef.y.attrs)
         simulated_beta_nought.rio.write_crs(dem_ecef.rio.crs, inplace=True)
 
-    logger.info("calibrate image")
-
-    beta_nought = product.beta_nought()
-
     logger.info("terrain-correct image")
 
-    # HACK: we monkey-patch away an optimisation in xr.DataArray.interp that actually makes
-    #   the interpolation much slower when indeces are dask arrays.
-    with mock.patch("xarray.core.missing._localize", lambda o, i: (o, i)):
-        geocoded = product.interp_sar(
-            beta_nought,
-            azimuth_time=acquisition.azimuth_time,
-            slant_range_time=acquisition.slant_range_time,
-            method=interp_method,
+    if product.product_type == "GRD":
+        # optimized GRD processing
+        geocoded = xr.map_blocks(
+            geocode_grd_chunk,
+            acquisition,
+            kwargs={"product": product, "method": interp_method},
         )
+    else:
+        beta_nought = product.beta_nought()
+
+        # HACK: we monkey-patch away an optimisation in xr.DataArray.interp that actually makes
+        #   the interpolation much slower when indeces are dask arrays.
+        with mock.patch("xarray.core.missing._localize", lambda o, i: (o, i)):
+            geocoded = product.interp_sar(
+                beta_nought,
+                azimuth_time=acquisition.azimuth_time,
+                slant_range_time=acquisition.slant_range_time,
+                method=interp_method,
+            )
 
     if correct_radiometry is not None:
         assert simulated_beta_nought is not None
