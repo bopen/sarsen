@@ -16,7 +16,7 @@ sys.path.insert(0, os.path.abspath("../"))
 # -- Project information -----------------------------------------------------
 
 project = "sarsen"
-copyright = "2016, B-Open Solutions srl"
+copyright = "2016-2026 B-Open Solutions srl"
 author = "B-Open Solutions srl"
 version = sarsen.__version__
 release = sarsen.__version__
