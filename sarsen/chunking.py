@@ -119,8 +119,8 @@ def apply_dask_overlap(
     obj: xr.Dataset,
     depth: int = 128,
     boundary: Any = "none",
-    func=dask.array.overlap.overlap,
-    **kwargs,
+    func: Any = dask.array.overlap.overlap,
+    **kwargs: Any,
 ) -> xr.Dataset:
     obj = obj.reset_index(list(obj.chunksizes)).chunk(obj.chunksizes)
 
