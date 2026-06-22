@@ -123,7 +123,6 @@ def apply_dask_overlap(
     **kwargs,
 ) -> xr.Dataset:
     obj = obj.reset_index(list(obj.chunksizes)).chunk(obj.chunksizes)
-    print(obj)
 
     coords = {}
     for name, dataarray in obj.coords.items():
