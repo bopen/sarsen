@@ -167,7 +167,7 @@ def do_terrain_correction(
 
         acquisition = acquisition.persist()
 
-        simulated_beta_nought = chunking.map_ovelap(
+        simulated_beta_nought = chunking.map_overlap(
             obj=acquisition,
             function=gamma_weights,
             chunks=radiometry_chunks,

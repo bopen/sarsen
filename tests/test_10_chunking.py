@@ -58,11 +58,18 @@ def test_compute_chunks() -> None:
     assert {"x": slice(0, 10), "y": slice(2, 13)} in ext_chunks_bound
 
 
-def test_map_ovelap() -> None:
-    arr = xr.DataArray(np.arange(22 * 31).reshape((22, 31)), dims=("x", "y"))
+def test_map_overlap() -> None:
+    ds = (
+        xr.DataArray(
+            np.arange(20 * 30).reshape((20, 30)),
+            coords={"x": np.arange(0, 20), "y": np.arange(0, 30)},
+        )
+        .chunk(10)
+        .to_dataset(name="data")
+    )
 
-    def function(x: xr.DataArray) -> xr.DataArray:
-        return x
+    def function(x: xr.Dataset) -> xr.DataArray:
+        return x.data_vars["data"]
 
-    res = chunking.map_ovelap(function=function, obj=arr, chunks=10, bound=2)
-    assert res.equals(arr)
+    res = chunking.map_overlap(function, obj=ds, chunks=10, bound=2)
+    assert res.equals(ds.data_vars["data"])

@@ -2,6 +2,7 @@ import itertools
 import math
 from typing import Any, Callable
 
+import dask
 import xarray as xr
 
 
@@ -74,7 +75,7 @@ def compute_chunks(
     return ext_slices, ext_slices_bound, int_slices
 
 
-def map_ovelap(
+def sync_map_overlap(
     function: Callable[..., xr.DataArray],
     obj: xr.Dataset | xr.DataArray,
     chunks: int = 2048,
@@ -112,3 +113,52 @@ def map_ovelap(
         out_chunk = function(obj.isel(ext_chunk), **kwargs)
         out[int_chunk] = out_chunk.isel(ext_chunk_bounds)
     return out
+
+
+def apply_dask_overlap(
+    obj: xr.Dataset,
+    depth: int = 128,
+    boundary: Any = "none",
+    func=dask.array.overlap.overlap,
+    **kwargs,
+) -> xr.Dataset:
+    obj = obj.reset_index(list(obj.chunksizes)).chunk(obj.chunksizes)
+    print(obj)
+
+    coords = {}
+    for name, dataarray in obj.coords.items():
+        data = func(dataarray.data, depth=depth, boundary=boundary, **kwargs)
+        coords[name] = xr.DataArray(
+            data, dims=dataarray.dims, name=name, attrs=dataarray.attrs
+        )
+
+    data_vars = {}
+    for name, dataarray in obj.data_vars.items():
+        data = func(dataarray.data, depth=depth, boundary=boundary, **kwargs)
+        data_vars[name] = xr.DataArray(
+            data, dims=dataarray.dims, name=name, attrs=dataarray.attrs
+        )
+
+    return xr.Dataset(data_vars, coords=coords, attrs=obj.attrs)
+
+
+def simple_dask_map_overlap(
+    function: Callable[..., xr.DataArray],
+    obj: xr.Dataset,
+    chunks: int = 2048,
+    bound: int = 128,
+    kwargs: dict[Any, Any] = {},
+    template: xr.DataArray | None = None,
+) -> xr.DataArray:
+
+    obj_ovelap = apply_dask_overlap(obj, depth=bound, allow_rechunk=False)
+
+    result_overlap = xr.map_blocks(function, obj_ovelap, kwargs=kwargs)
+
+    mapped = apply_dask_overlap(
+        result_overlap.to_dataset(), depth=bound, func=dask.array.overlap.trim_overlap
+    )
+    return mapped.data_vars[result_overlap.name]
+
+
+map_overlap = simple_dask_map_overlap
