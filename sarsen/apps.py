@@ -130,6 +130,7 @@ def do_terrain_correction(
     radiometry_chunks: int = 2048,
     radiometry_bound: int = 128,
     seed_step: tuple[int, int] | None = None,
+    persist_simulation: bool = False,
 ) -> tuple[xr.DataArray, xr.DataArray | None]:
     logger.info("pre-process DEM")
 
@@ -163,8 +164,6 @@ def do_terrain_correction(
         elif correct_radiometry == "gamma_nearest":
             gamma_weights = radiometry.gamma_weights_nearest
 
-        acquisition = acquisition.persist()
-
         simulated_beta_nought = chunking.map_overlap(
             obj=acquisition,
             function=gamma_weights,
@@ -173,6 +172,8 @@ def do_terrain_correction(
             kwargs=grid_parameters,
             template=template_raster,
         )
+        if persist_simulation:
+            simulated_beta_nought = simulated_beta_nought.persist()
         simulated_beta_nought.attrs["long_name"] = "terrain-simulated beta nought"
 
         simulated_beta_nought.x.attrs.update(dem_ecef.x.attrs)
@@ -292,6 +293,10 @@ def terrain_correction(
     if dem_raster_sel:
         dem_raster = dem_raster.sel(dem_raster_sel)
 
+    persist_simulation = False
+    if simulated_urlpath is not None:
+        persist_simulation = True
+
     geocoded, simulated_beta_nought = do_terrain_correction(
         product=product,
         dem_raster=dem_raster,
@@ -302,13 +307,11 @@ def terrain_correction(
         radiometry_bound=radiometry_bound,
         seed_step=seed_step,
         convert_to_dem_ecef_kwargs=convert_to_dem_ecef_kwargs,
+        persist_simulation=persist_simulation,
     )
 
     if simulated_urlpath is not None:
         assert simulated_beta_nought is not None
-        if output_urlpath is not None:
-            simulated_beta_nought.persist()
-
         logger.info("save simulated")
 
         maybe_delayed = simulated_beta_nought.rio.to_raster(
