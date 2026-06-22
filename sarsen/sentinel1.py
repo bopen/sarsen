@@ -193,12 +193,10 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
         self, azimuth_time: xr.DataArray, slant_range_time: xr.DataArray
     ) -> xr.DataArray:
         assert self.coordinate_conversion is not None
-        # the dask graph explodes without the map_blocks due to the interpolations
-        ground_range = xr.map_blocks(
-            xarray_sentinel.slant_range_time_to_ground_range,
+        ground_range = xarray_sentinel.slant_range_time_to_ground_range(
             azimuth_time,
-            args=(slant_range_time,),
-            kwargs={"coordinate_conversion": self.coordinate_conversion},
+            slant_range_time,
+            coordinate_conversion=self.coordinate_conversion,
         )
         return ground_range
 

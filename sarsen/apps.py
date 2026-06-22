@@ -6,7 +6,6 @@ import dask
 import numpy as np
 import rioxarray
 import xarray as xr
-import xarray_sentinel
 
 from . import chunking, datamodel, geocoding, orbit, radiometry, scene
 
@@ -78,10 +77,9 @@ def geocode_grd_chunk(
     beta_nought = product.beta_nought()
 
     if acquisition.slant_range_time.size > 0:
-        ground_range = xarray_sentinel.slant_range_time_to_ground_range(
+        ground_range = product.slant_range_time_to_ground_range(
             acquisition.azimuth_time,
             acquisition.slant_range_time,
-            product.coordinate_conversion,
         )
 
         geocoded = beta_nought.interp(
