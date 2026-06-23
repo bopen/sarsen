@@ -28,6 +28,8 @@ This Open Source project is sponsored by B-Open - https://www.bopen.eu.
   - efficient geometric terrain-correction for a full GRD
   - efficient radiometric terrain-correction for a full GRD.
 
+Sarsen can run on fully remote data, for example taking the DEM on-demand from [the Earth Data Hub](https://earthdatahub.destine.eu/collections/copernicus-dem-utm) and the Sentinel-1 products from the [CDSE S3 store](https://documentation.dataspace.copernicus.eu/APIs/S3.html). See the notebooks for examples on how to setup remote processing.
+
 Overall, the software is in the **beta** phase and the usual caveats apply.
 
 Current limitations:
