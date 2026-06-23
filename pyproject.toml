@@ -125,3 +125,4 @@ __version__ = "{version}"
 # Wait before upgrading to the newest versions to avoid
 # regressions and supply-chain attacks
 exclude-newer = "7 days"
+exclude-newer-package = {"xarray-sentinel" = false}
