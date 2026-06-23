@@ -68,9 +68,10 @@ The easiest way to install *sarsen* is in a *pip* environment.
 ```
 
 Note that in order to handle input DEM whose vertical coordinate is not on a known ellipsoid,
-for example *SRTM DEM* with heights over the *EGM96 geoid*, you need to download and configure
+for example *SRTM DEM* with heights over the *EGM96 geoid*, you need to configure
 the appropriate
-[PROJ transformation grids](https://pyproj4.github.io/pyproj/stable/transformation_grids.html).
+[PROJ transformation grids](https://pyproj4.github.io/pyproj/stable/transformation_grids.html),
+The software can do it automatically setting the the environment variable `PROJ_NETWORK=ON`.
 
 ## Command line usage
 
