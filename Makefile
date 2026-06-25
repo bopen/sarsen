@@ -1,7 +1,7 @@
 COV_REPORT := html
 PYTHON := uv run --frozen
 
-default: qa unit-tests type-check
+default: qa unit-tests check-typing
 
 qa:
 	$(PYTHON) -m pre_commit run --all-files
@@ -9,7 +9,7 @@ qa:
 unit-tests:
 	$(PYTHON) -m pytest -vv --cov=. --cov-report=$(COV_REPORT)
 
-type-check:
+check-typing:
 	$(PYTHON) -m mypy .
 
 docs-build:
