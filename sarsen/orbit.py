@@ -6,6 +6,8 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from . import datamodel
+
 S_TO_NS = 10**9
 
 
@@ -34,7 +36,7 @@ def azimuth_time_to_orbit_time(
 
 
 @attrs.define
-class OrbitPolyfitInterpolator:
+class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
     coefficients: xr.DataArray
     epoch: np.datetime64
     interval: tuple[np.datetime64, np.datetime64]
@@ -65,11 +67,11 @@ class OrbitPolyfitInterpolator:
 
         return cls(polyfit_results.polyfit_coefficients, epoch, interval)
 
-    def orbit_time_to_azimuth_time(self, azimuth_time: xr.DataArray) -> xr.DataArray:
-        return orbit_time_to_azimuth_time(azimuth_time, self.epoch)
+    def orbit_time_to_azimuth_time(self, orbit_time: xr.DataArray) -> xr.DataArray:
+        return orbit_time_to_azimuth_time(orbit_time, self.epoch)
 
-    def azimuth_time_to_orbit_time(self, orbit_time: xr.DataArray) -> xr.DataArray:
-        return azimuth_time_to_orbit_time(orbit_time, self.epoch)
+    def azimuth_time_to_orbit_time(self, azimuth_time: xr.DataArray) -> xr.DataArray:
+        return azimuth_time_to_orbit_time(azimuth_time, self.epoch)
 
     def azimuth_time_range(self, freq_s: float = 0.02) -> xr.DataArray:
         azimuth_time_values = pd.date_range(

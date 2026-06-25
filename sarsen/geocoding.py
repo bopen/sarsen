@@ -10,7 +10,7 @@ import numpy as np
 import numpy.typing as npt
 import xarray as xr
 
-from . import orbit
+from . import datamodel
 
 ArrayLike = TypeVar("ArrayLike", bound=npt.ArrayLike)
 FloatArrayLike = TypeVar("FloatArrayLike", bound=npt.ArrayLike)
@@ -31,8 +31,6 @@ def secant_method(
     # strong convergence, all points below one of the two thresholds
     for k in range(maxiter):
         f_curr, payload_curr = ufunc(t_curr)
-
-        # print(f"{f_curr / 7500}")
 
         # the `not np.any` construct let us accept `np.nan` as good values
         if not np.any((np.abs(f_curr) > diff_ufunc)):
@@ -67,8 +65,6 @@ def newton_raphson_method(
     for k in range(maxiter):
         f_curr, payload_curr = ufunc(t_curr)
 
-        # print(f"{f_curr / 7500}")
-
         # the `not np.any` construct let us accept `np.nan` as good values
         if not np.any((np.abs(f_curr) > diff_ufunc)):
             break
@@ -88,7 +84,7 @@ def newton_raphson_method(
 
 def zero_doppler_plane_distance_velocity(
     dem_ecef: xr.DataArray,
-    orbit_interpolator: orbit.OrbitPolyfitInterpolator,
+    orbit_interpolator: datamodel.OrbitInterpolator,
     orbit_time: xr.DataArray,
     dim: str = "axis",
 ) -> tuple[xr.DataArray, tuple[xr.DataArray, xr.DataArray]]:
@@ -99,7 +95,7 @@ def zero_doppler_plane_distance_velocity(
 
 
 def zero_doppler_plane_distance_velocity_prime(
-    orbit_interpolator: orbit.OrbitPolyfitInterpolator,
+    orbit_interpolator: datamodel.OrbitInterpolator,
     orbit_time: xr.DataArray,
     payload: tuple[xr.DataArray, xr.DataArray],
     dim: str = "axis",
@@ -115,7 +111,7 @@ def zero_doppler_plane_distance_velocity_prime(
 
 def backward_geocode_simple(
     dem_ecef: xr.DataArray,
-    orbit_interpolator: orbit.OrbitPolyfitInterpolator,
+    orbit_interpolator: datamodel.OrbitInterpolator,
     orbit_time_guess: xr.DataArray | float = 0.0,
     dim: str = "axis",
     zero_doppler_distance: float = 1.0,
@@ -160,13 +156,15 @@ def backward_geocode_simple(
             diff_ufunc,
             maxiter=maxiter,
         )
-    # print(f"iterations: {k}")
+    else:
+        raise TypeError("method must be one of: 'secant', 'newton', 'newton_raphson'")
+
     return orbit_time, dem_distance, satellite_velocity
 
 
 def backward_geocode(
     dem_ecef: xr.DataArray,
-    orbit_interpolator: orbit.OrbitPolyfitInterpolator,
+    orbit_interpolator: datamodel.OrbitInterpolator,
     orbit_time_guess: xr.DataArray | float = 0.0,
     dim: str = "axis",
     zero_doppler_distance: float = 1.0,

@@ -73,7 +73,7 @@ strict = true
 
 [[tool.mypy.overrides]]
 ignore_missing_imports = true
-module = ["py", "rasterio"]
+module = ["distributed", "py", "rasterio"]
 
 [tool.ruff]
 # Same as Black.

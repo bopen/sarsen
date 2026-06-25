@@ -35,7 +35,7 @@ def make_simulate_acquisition_template(
 
 def simulate_acquisition(
     dem_ecef: xr.DataArray,
-    orbit_interpolator: orbit.OrbitPolyfitInterpolator,
+    orbit_interpolator: datamodel.OrbitInterpolator,
     include_variables: Container[str] = (),
     azimuth_time: xr.DataArray | float = 0.0,
     **kwargs: Any,
@@ -97,7 +97,7 @@ def geocode_grd_chunk(
 
 def map_simulate_acquisition(
     dem_ecef: xr.DataArray,
-    orbit_interpolator: orbit.OrbitPolyfitInterpolator,
+    orbit_interpolator: datamodel.OrbitInterpolator,
     template_raster: xr.DataArray | None = None,
     correct_radiometry: str | None = None,
     **kwargs: Any,

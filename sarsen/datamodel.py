@@ -1,7 +1,32 @@
 import abc
 from typing import Any
 
+import numpy as np
 import xarray as xr
+
+
+class OrbitInterpolator(abc.ABC):
+    epoch: np.datetime64
+    interval: tuple[np.datetime64, np.datetime64]
+
+    @abc.abstractmethod
+    def position_from_orbit_time(self, orbit_time: xr.DataArray) -> xr.DataArray: ...
+
+    @abc.abstractmethod
+    def velocity_from_orbit_time(self, orbit_time: xr.DataArray) -> xr.DataArray: ...
+
+    @abc.abstractmethod
+    def acceleration_from_orbit_time(
+        self, orbit_time: xr.DataArray
+    ) -> xr.DataArray: ...
+
+    @abc.abstractmethod
+    def orbit_time_to_azimuth_time(self, orbit_time: xr.DataArray) -> xr.DataArray: ...
+
+    @abc.abstractmethod
+    def azimuth_time_to_orbit_time(
+        self, azimuth_time: xr.DataArray
+    ) -> xr.DataArray: ...
 
 
 class SarProduct(abc.ABC):
