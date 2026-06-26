@@ -21,17 +21,15 @@ def polyder(coefficients: xr.DataArray) -> xr.DataArray:
     return derivative_coefficients
 
 
-def orbit_time_to_azimuth_time(
-    orbit_time: xr.DataArray, epoch: np.datetime64
+def to_calendar_time(
+    orbit_time: xr.DataArray, epoch: np.datetime64, name: str = "calendar_time"
 ) -> xr.DataArray:
-    azimuth_time = orbit_time * np.timedelta64(S_TO_NS, "ns") + epoch
-    return azimuth_time.rename("azimuth_time")
+    calendar_time = orbit_time * np.timedelta64(S_TO_NS, "ns") + epoch
+    return calendar_time.rename(name)
 
 
-def azimuth_time_to_orbit_time(
-    azimuth_time: xr.DataArray, epoch: np.datetime64
-) -> xr.DataArray:
-    orbit_time = (azimuth_time - epoch) / np.timedelta64(S_TO_NS, "ns")
+def to_orbit_time(calendar_time: xr.DataArray, epoch: np.datetime64) -> xr.DataArray:
+    orbit_time = (calendar_time - epoch) / np.timedelta64(S_TO_NS, "ns")
     return orbit_time.rename("orbit_time")
 
 
@@ -60,18 +58,18 @@ class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
         if interval is None:
             interval = (time.values[0], time.values[-1])
 
-        orbit_time = azimuth_time_to_orbit_time(time, epoch)
+        orbit_time = to_orbit_time(time, epoch)
         data = position.assign_coords({dim: orbit_time})
         polyfit_results = data.polyfit(dim=dim, deg=deg)
         # TODO: raise if the fit is not good enough
 
         return cls(polyfit_results.polyfit_coefficients, epoch, interval)
 
-    def orbit_time_to_azimuth_time(self, orbit_time: xr.DataArray) -> xr.DataArray:
-        return orbit_time_to_azimuth_time(orbit_time, self.epoch)
+    def to_calendar_time(self, orbit_time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
+        return to_calendar_time(orbit_time, self.epoch, **kwargs)
 
-    def azimuth_time_to_orbit_time(self, azimuth_time: xr.DataArray) -> xr.DataArray:
-        return azimuth_time_to_orbit_time(azimuth_time, self.epoch)
+    def to_orbit_time(self, calendar_time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
+        return to_orbit_time(calendar_time, self.epoch, **kwargs)
 
     def azimuth_time_range(self, freq_s: float = 0.02) -> xr.DataArray:
         azimuth_time_values = pd.date_range(
@@ -94,7 +92,7 @@ class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
             time = self.azimuth_time_range(**kwargs)
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
 
-        position = self.position_from_orbit_time(self.azimuth_time_to_orbit_time(time))
+        position = self.position_from_orbit_time(self.to_orbit_time(time))
         return position.assign_coords({time.name: time})
 
     @functools.cached_property
@@ -110,7 +108,7 @@ class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
             time = self.azimuth_time_range(**kwargs)
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
 
-        velocity = self.velocity_from_orbit_time(self.azimuth_time_to_orbit_time(time))
+        velocity = self.velocity_from_orbit_time(self.to_orbit_time(time))
         return velocity.assign_coords({time.name: time})
 
     @functools.cached_property
@@ -128,9 +126,7 @@ class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
             time = self.azimuth_time_range(**kwargs)
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
 
-        acceleration = self.acceleration_from_orbit_time(
-            self.azimuth_time_to_orbit_time(time)
-        )
+        acceleration = self.acceleration_from_orbit_time(self.to_orbit_time(time))
         return acceleration.assign_coords({time.name: time})
 
 
