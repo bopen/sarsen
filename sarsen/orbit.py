@@ -1,4 +1,3 @@
-import functools
 from typing import Any
 
 import attrs
@@ -35,9 +34,11 @@ def to_orbit_time(calendar_time: xr.DataArray, epoch: np.datetime64) -> xr.DataA
 
 @attrs.define
 class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
-    coefficients: xr.DataArray
     epoch: np.datetime64
     interval: tuple[np.datetime64, np.datetime64]
+    position_coefficients: xr.DataArray
+    velocity_coefficients: xr.DataArray
+    acceleration_coefficients: xr.DataArray
 
     @classmethod
     def from_position(
@@ -63,7 +64,17 @@ class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
         polyfit_results = data.polyfit(dim=dim, deg=deg)
         # TODO: raise if the fit is not good enough
 
-        return cls(polyfit_results.polyfit_coefficients, epoch, interval)
+        position_coefficients = polyfit_results.polyfit_coefficients
+        velocity_coefficients = polyder(position_coefficients)
+        acceleration_coefficients = polyder(velocity_coefficients)
+        self = cls(
+            epoch,
+            interval,
+            position_coefficients,
+            velocity_coefficients,
+            acceleration_coefficients,
+        )
+        return self
 
     def to_calendar_time(self, orbit_time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
         return to_calendar_time(orbit_time, self.epoch, **kwargs)
@@ -84,7 +95,7 @@ class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
         )
 
     def position_from_orbit_time(self, orbit_time: xr.DataArray) -> xr.DataArray:
-        position = xr.polyval(orbit_time, self.coefficients)
+        position = xr.polyval(orbit_time, self.position_coefficients)
         return position.rename("position")
 
     def position(self, time: xr.DataArray | None = None, **kwargs: Any) -> xr.DataArray:
@@ -94,10 +105,6 @@ class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
 
         position = self.position_from_orbit_time(self.to_orbit_time(time))
         return position.assign_coords({time.name: time})
-
-    @functools.cached_property
-    def velocity_coefficients(self) -> xr.DataArray:
-        return polyder(self.coefficients)
 
     def velocity_from_orbit_time(self, orbit_time: xr.DataArray) -> xr.DataArray:
         velocity = xr.polyval(orbit_time, self.velocity_coefficients)
@@ -110,10 +117,6 @@ class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
 
         velocity = self.velocity_from_orbit_time(self.to_orbit_time(time))
         return velocity.assign_coords({time.name: time})
-
-    @functools.cached_property
-    def acceleration_coefficients(self) -> xr.DataArray:
-        return polyder(self.velocity_coefficients)
 
     def acceleration_from_orbit_time(self, orbit_time: xr.DataArray) -> xr.DataArray:
         velocity = xr.polyval(orbit_time, self.acceleration_coefficients)
