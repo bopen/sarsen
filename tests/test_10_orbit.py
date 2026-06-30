@@ -45,12 +45,6 @@ def test_OrbitPolyfitInterpolator_datetime64(orbit_ds: xr.Dataset) -> None:
     assert res.dims == ("azimuth_time", "axis")
     assert np.allclose(res, expected_velocity, rtol=0, atol=0.02)
 
-    res = orbit_interpolator.position()
-    assert res.dims == ("azimuth_time", "axis")
-
-    res = orbit_interpolator.velocity()
-    assert res.dims == ("azimuth_time", "axis")
-
 
 def test_OrbitPolyfitInterpolator_timedelta64(orbit_ds: xr.Dataset) -> None:
     position = orbit_ds.data_vars["position"]
@@ -78,14 +72,20 @@ def test_OrbitPolyfitInterpolator_values(orbit_ds: xr.Dataset) -> None:
     position = orbit_ds.data_vars["position"]
     orbit_interpolator = orbit.OrbitPolyfitInterpolator.from_position(position, deg=4)
 
-    distance = np.linalg.norm(orbit_interpolator.position(), axis=1)
+    distance = np.linalg.norm(
+        orbit_interpolator.position(position.azimuth_time), axis=1
+    )
 
     assert np.allclose(distance, 7_068_663, rtol=0.001)
 
-    velocity = np.linalg.norm(orbit_interpolator.velocity(), axis=1)
+    velocity = np.linalg.norm(
+        orbit_interpolator.velocity(position.azimuth_time), axis=1
+    )
 
     assert np.allclose(velocity, 7_590, rtol=0.001)
 
-    acceleration = np.linalg.norm(orbit_interpolator.acceleration(), axis=1)
+    acceleration = np.linalg.norm(
+        orbit_interpolator.acceleration(position.azimuth_time), axis=1
+    )
 
     assert np.allclose(acceleration, 8.18, rtol=0.001)
