@@ -52,8 +52,9 @@ def secant_method(
 
 
 def newton_raphson_method(
-    ufunc: Callable[[ArrayLike], tuple[FloatArrayLike, Any]],
-    ufunc_prime: Callable[[ArrayLike, Any], FloatArrayLike],
+    ufunc_and_ufunc_prime: Callable[
+        [ArrayLike], tuple[FloatArrayLike, FloatArrayLike, Any]
+    ],
     t_curr: ArrayLike,
     diff_ufunc: float = 1.0,
     diff_t: Any = 1e-6,
@@ -63,13 +64,11 @@ def newton_raphson_method(
     # implementation based on https://en.wikipedia.org/wiki/Newton%27s_method
     # strong convergence, all points below one of the two thresholds
     for k in range(maxiter):
-        f_curr, payload_curr = ufunc(t_curr)
+        f_curr, fp_curr, payload_curr = ufunc_and_ufunc_prime(t_curr)
 
         # the `not np.any` construct let us accept `np.nan` as good values
         if not np.any((np.abs(f_curr) > diff_ufunc)):
             break
-
-        fp_curr = ufunc_prime(t_curr, payload_curr)
 
         t_diff = f_curr / fp_curr  # type: ignore
 
@@ -94,19 +93,27 @@ def zero_doppler_plane_distance_velocity(
     return plane_distance_velocity, (dem_distance, satellite_velocity)
 
 
-def zero_doppler_plane_distance_velocity_prime(
+def zero_doppler_plane_distance_velocity_and_prime(
+    dem_ecef: xr.DataArray,
     orbit_interpolator: datamodel.OrbitInterpolator,
     orbit_time: xr.DataArray,
-    payload: tuple[xr.DataArray, xr.DataArray],
     dim: str = "axis",
-) -> xr.DataArray:
-    dem_distance, satellite_velocity = payload
+) -> tuple[xr.DataArray, xr.DataArray, tuple[xr.DataArray, xr.DataArray]]:
+    plane_distance_velocity, (dem_distance, satellite_velocity) = (
+        zero_doppler_plane_distance_velocity(
+            dem_ecef, orbit_interpolator, orbit_time, dim
+        )
+    )
 
     plane_distance_velocity_prime = (
         dem_distance * orbit_interpolator.acceleration_from_orbit_time(orbit_time)
         - satellite_velocity**2
     ).sum(dim)
-    return plane_distance_velocity_prime
+    return (
+        plane_distance_velocity,
+        plane_distance_velocity_prime,
+        (dem_distance, satellite_velocity),
+    )
 
 
 def backward_geocode_simple(
@@ -122,10 +129,6 @@ def backward_geocode_simple(
 ) -> tuple[xr.DataArray, xr.DataArray, xr.DataArray]:
     diff_ufunc = zero_doppler_distance * satellite_speed
 
-    zero_doppler = functools.partial(
-        zero_doppler_plane_distance_velocity, dem_ecef, orbit_interpolator
-    )
-
     if isinstance(orbit_time_guess, xr.DataArray):
         pass
     else:
@@ -137,6 +140,9 @@ def backward_geocode_simple(
         )
 
     if method == "secant":
+        zero_doppler = functools.partial(
+            zero_doppler_plane_distance_velocity, dem_ecef, orbit_interpolator
+        )
         orbit_time_guess_prev = orbit_time_guess + orbit_time_prev_shift
         orbit_time, _, _, k, (dem_distance, satellite_velocity) = secant_method(
             zero_doppler,
@@ -146,12 +152,11 @@ def backward_geocode_simple(
             maxiter=maxiter,
         )
     elif method in {"newton", "newton_raphson"}:
-        zero_doppler_prime = functools.partial(
-            zero_doppler_plane_distance_velocity_prime, orbit_interpolator
+        zero_doppler_and_prime = functools.partial(
+            zero_doppler_plane_distance_velocity_and_prime, dem_ecef, orbit_interpolator
         )
         orbit_time, _, k, (dem_distance, satellite_velocity) = newton_raphson_method(
-            zero_doppler,
-            zero_doppler_prime,
+            zero_doppler_and_prime,
             orbit_time_guess,
             diff_ufunc,
             maxiter=maxiter,
