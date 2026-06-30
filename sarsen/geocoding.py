@@ -103,21 +103,16 @@ def zero_doppler_plane_distance_velocity_and_prime(
     orbit_time: xr.DataArray,
     dim: str = "axis",
 ) -> tuple[xr.DataArray, xr.DataArray, tuple[xr.DataArray, xr.DataArray]]:
-    plane_distance_velocity, (dem_distance, satellite_velocity) = (
-        zero_doppler_plane_distance_velocity(
-            dem_ecef, orbit_interpolator, orbit_time, dim
-        )
+    plane_distance_velocity, payload = zero_doppler_plane_distance_velocity(
+        dem_ecef, orbit_interpolator, orbit_time, dim
     )
+    dem_distance, satellite_velocity = payload
 
     plane_distance_velocity_prime = (
         dem_distance * orbit_interpolator.acceleration_from_orbit_time(orbit_time)
         - satellite_velocity**2
     ).sum(dim)
-    return (
-        plane_distance_velocity,
-        plane_distance_velocity_prime,
-        (dem_distance, satellite_velocity),
-    )
+    return plane_distance_velocity, plane_distance_velocity_prime, payload
 
 
 def backward_geocode_simple(
