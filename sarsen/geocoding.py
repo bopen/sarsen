@@ -47,6 +47,8 @@ def secant_method(
         # NOTE: in same cases f_curr * t_diff overflows datetime64[ns] before the division by q
         t_prev, t_curr = t_curr, t_curr - np.where(q != 0, f_curr / q, 0) * t_diff  # type: ignore
         f_prev = f_curr
+    else:
+        raise TypeError("maxiter must be greater than 1")
 
     return t_curr, t_prev, f_curr, k, payload_curr
 
@@ -77,6 +79,8 @@ def newton_raphson_method(
             break
 
         t_curr = t_curr - t_diff  # type: ignore
+    else:
+        raise TypeError("maxiter must be greater than 1")
 
     return t_curr, f_curr, k, payload_curr
 
