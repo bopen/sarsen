@@ -33,12 +33,17 @@ def to_orbit_time(calendar_time: xr.DataArray, epoch: np.datetime64) -> xr.DataA
 
 @attrs.define
 class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
+    """Creates an OrbitInterpolator from a set of state vectors using polyfit."""
+
     epoch: np.datetime64
     interval: tuple[np.datetime64, np.datetime64]
     position_coefficients: xr.DataArray
     velocity_coefficients: xr.DataArray
     acceleration_coefficients: xr.DataArray
 
+    #
+    # custom methods
+    #
     @classmethod
     def from_position(
         cls,
@@ -75,25 +80,11 @@ class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
         )
         return self
 
-    def to_calendar_time(self, orbit_time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
-        return to_calendar_time(orbit_time, self.epoch, **kwargs)
-
-    def to_orbit_time(self, calendar_time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
-        return to_orbit_time(calendar_time, self.epoch, **kwargs)
-
-    def position_from_orbit_time(self, orbit_time: xr.DataArray) -> xr.DataArray:
-        position = xr.polyval(orbit_time, self.position_coefficients)
-        return position.rename("position")
-
     def position(self, time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
 
         position = self.position_from_orbit_time(self.to_orbit_time(time))
         return position.assign_coords({time.name: time})
-
-    def velocity_from_orbit_time(self, orbit_time: xr.DataArray) -> xr.DataArray:
-        velocity = xr.polyval(orbit_time, self.velocity_coefficients)
-        return velocity.rename("velocity")
 
     def velocity(self, time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
@@ -101,12 +92,29 @@ class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
         velocity = self.velocity_from_orbit_time(self.to_orbit_time(time))
         return velocity.assign_coords({time.name: time})
 
-    def acceleration_from_orbit_time(self, orbit_time: xr.DataArray) -> xr.DataArray:
-        velocity = xr.polyval(orbit_time, self.acceleration_coefficients)
-        return velocity.rename("acceleration")
-
     def acceleration(self, time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
 
         acceleration = self.acceleration_from_orbit_time(self.to_orbit_time(time))
         return acceleration.assign_coords({time.name: time})
+
+    #
+    # OrbitInterpolator interface
+    #
+    def to_orbit_time(self, calendar_time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
+        return to_orbit_time(calendar_time, self.epoch, **kwargs)
+
+    def to_calendar_time(self, orbit_time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
+        return to_calendar_time(orbit_time, self.epoch, **kwargs)
+
+    def position_from_orbit_time(self, orbit_time: xr.DataArray) -> xr.DataArray:
+        position = xr.polyval(orbit_time, self.position_coefficients)
+        return position.rename("position")
+
+    def velocity_from_orbit_time(self, orbit_time: xr.DataArray) -> xr.DataArray:
+        velocity = xr.polyval(orbit_time, self.velocity_coefficients)
+        return velocity.rename("velocity")
+
+    def acceleration_from_orbit_time(self, orbit_time: xr.DataArray) -> xr.DataArray:
+        velocity = xr.polyval(orbit_time, self.acceleration_coefficients)
+        return velocity.rename("acceleration")
