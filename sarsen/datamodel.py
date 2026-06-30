@@ -6,8 +6,17 @@ import xarray as xr
 
 
 class OrbitInterpolator(abc.ABC):
-    epoch: np.datetime64
-    interval: tuple[np.datetime64, np.datetime64]
+    """Orbit as a function of calendar time or orbit time, defined as seconds from an epoch."""
+
+    @property
+    @abc.abstractmethod
+    def epoch(self) -> np.datetime64: ...
+
+    @abc.abstractmethod
+    def to_orbit_time(self, calendar_time: xr.DataArray) -> xr.DataArray: ...
+
+    @abc.abstractmethod
+    def to_calendar_time(self, orbit_time: xr.DataArray) -> xr.DataArray: ...
 
     @abc.abstractmethod
     def position_from_orbit_time(self, orbit_time: xr.DataArray) -> xr.DataArray: ...
@@ -18,14 +27,6 @@ class OrbitInterpolator(abc.ABC):
     @abc.abstractmethod
     def acceleration_from_orbit_time(
         self, orbit_time: xr.DataArray
-    ) -> xr.DataArray: ...
-
-    @abc.abstractmethod
-    def orbit_time_to_azimuth_time(self, orbit_time: xr.DataArray) -> xr.DataArray: ...
-
-    @abc.abstractmethod
-    def azimuth_time_to_orbit_time(
-        self, azimuth_time: xr.DataArray
     ) -> xr.DataArray: ...
 
 

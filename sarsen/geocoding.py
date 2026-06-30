@@ -209,7 +209,7 @@ def backward_geocode(
 
     acquisition = xr.Dataset(
         data_vars={
-            "azimuth_time": orbit_interpolator.orbit_time_to_azimuth_time(orbit_time),
+            "azimuth_time": orbit_interpolator.to_calendar_time(orbit_time),
             "dem_distance": dem_distance,
             "satellite_velocity": satellite_velocity.transpose(*dem_distance.dims),
         }
