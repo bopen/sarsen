@@ -2,7 +2,6 @@ from typing import Any
 
 import attrs
 import numpy as np
-import pandas as pd
 import xarray as xr
 
 from . import datamodel
@@ -82,25 +81,11 @@ class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
     def to_orbit_time(self, calendar_time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
         return to_orbit_time(calendar_time, self.epoch, **kwargs)
 
-    def azimuth_time_range(self, freq_s: float = 0.02) -> xr.DataArray:
-        azimuth_time_values = pd.date_range(
-            start=self.interval[0],
-            end=self.interval[-1],
-            freq=pd.Timedelta(freq_s, "s"),
-        ).values
-        return xr.DataArray(
-            azimuth_time_values,
-            coords={"azimuth_time": azimuth_time_values},
-            name="azimuth_time",
-        )
-
     def position_from_orbit_time(self, orbit_time: xr.DataArray) -> xr.DataArray:
         position = xr.polyval(orbit_time, self.position_coefficients)
         return position.rename("position")
 
-    def position(self, time: xr.DataArray | None = None, **kwargs: Any) -> xr.DataArray:
-        if time is None:
-            time = self.azimuth_time_range(**kwargs)
+    def position(self, time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
 
         position = self.position_from_orbit_time(self.to_orbit_time(time))
@@ -110,9 +95,7 @@ class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
         velocity = xr.polyval(orbit_time, self.velocity_coefficients)
         return velocity.rename("velocity")
 
-    def velocity(self, time: xr.DataArray | None = None, **kwargs: Any) -> xr.DataArray:
-        if time is None:
-            time = self.azimuth_time_range(**kwargs)
+    def velocity(self, time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
 
         velocity = self.velocity_from_orbit_time(self.to_orbit_time(time))
@@ -122,11 +105,7 @@ class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
         velocity = xr.polyval(orbit_time, self.acceleration_coefficients)
         return velocity.rename("acceleration")
 
-    def acceleration(
-        self, time: xr.DataArray | None = None, **kwargs: Any
-    ) -> xr.DataArray:
-        if time is None:
-            time = self.azimuth_time_range(**kwargs)
+    def acceleration(self, time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
         assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
 
         acceleration = self.acceleration_from_orbit_time(self.to_orbit_time(time))
