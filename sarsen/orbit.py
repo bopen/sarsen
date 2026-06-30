@@ -131,7 +131,3 @@ class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
 
         acceleration = self.acceleration_from_orbit_time(self.to_orbit_time(time))
         return acceleration.assign_coords({time.name: time})
-
-
-# keep wrong spelling used elsewhere
-OrbitPolyfitIterpolator = OrbitPolyfitInterpolator
