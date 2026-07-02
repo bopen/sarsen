@@ -186,6 +186,9 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
             beta_nought = beta_nought.persist()
         return beta_nought.drop_vars(["pixel", "line"])
 
+    def geospatial_bounds(self) -> str:
+        return self.product_info()["geospatial_bounds"]
+
     def state_vectors(self) -> xr.DataArray:
         return self.orbit.data_vars["position"]
 

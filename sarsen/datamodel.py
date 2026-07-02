@@ -45,6 +45,11 @@ class SarProduct(abc.ABC):
     def beta_nought(self) -> xr.DataArray: ...
 
     @abc.abstractmethod
+    def geospatial_bounds(self) -> str:
+        """Describe the geospatial extent of the product in OGC's Well-Known Text (WKT)."""
+        ...
+
+    @abc.abstractmethod
     def interp_sar(
         self,
         data: xr.DataArray,
