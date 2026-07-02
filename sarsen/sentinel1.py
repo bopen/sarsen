@@ -6,7 +6,7 @@ import numpy as np
 import xarray as xr
 import xarray_sentinel
 
-import sarsen
+from . import datamodel, orbit
 
 try:
     import dask  # noqa: F401
@@ -73,7 +73,9 @@ def azimuth_slant_range_grid(
 
 
 @attrs.define(slots=False)
-class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProduct):
+class Sentinel1SarProduct(
+    datamodel.GroundRangeSarProduct, datamodel.SlantRangeSarProduct
+):
     product_urlpath: str
     measurement_group: str | None = None
     measurement_chunks: int | dict[str, int] | None = DEFAULT_MEASUREMENT_CHUNKS
@@ -187,7 +189,11 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
         return beta_nought.drop_vars(["pixel", "line"])
 
     def geospatial_bounds(self) -> str:
-        return self.product_info()["geospatial_bounds"]
+        return self.product_info()["geospatial_bounds"]  # type: ignore
+
+    def orbit_interpolator(self, **kwargs: Any) -> datamodel.OrbitInterpolator:
+        state_vectors = self.state_vectors()
+        return orbit.OrbitPolyfitInterpolator.from_position(state_vectors, **kwargs)
 
     def state_vectors(self) -> xr.DataArray:
         return self.orbit.data_vars["position"]
@@ -219,9 +225,9 @@ class Sentinel1SarProduct(sarsen.GroundRangeSarProduct, sarsen.SlantRangeSarProd
 
     def interp_sar(self, *args: Any, **kwargs: Any) -> xr.DataArray:
         if self.product_type == "GRD":
-            return sarsen.GroundRangeSarProduct.interp_sar(self, *args, **kwargs)
+            return datamodel.GroundRangeSarProduct.interp_sar(self, *args, **kwargs)
         else:
-            return sarsen.SlantRangeSarProduct.interp_sar(self, *args, **kwargs)
+            return datamodel.SlantRangeSarProduct.interp_sar(self, *args, **kwargs)
 
     @functools.cache
     def product_info(self, **kwargs: Any) -> dict[str, Any]:

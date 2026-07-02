@@ -39,14 +39,16 @@ class SarProduct(abc.ABC):
     def product_type(self) -> str: ...
 
     @abc.abstractmethod
-    def state_vectors(self) -> xr.DataArray: ...
-
-    @abc.abstractmethod
     def beta_nought(self) -> xr.DataArray: ...
 
     @abc.abstractmethod
     def geospatial_bounds(self) -> str:
         """Describe the geospatial extent of the product in OGC's Well-Known Text (WKT)."""
+        ...
+
+    @abc.abstractmethod
+    def orbit_interpolator(self, **kwargs: Any) -> OrbitInterpolator:
+        """Create the best OrbitInterpolator for the product."""
         ...
 
     @abc.abstractmethod

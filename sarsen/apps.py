@@ -7,7 +7,7 @@ import numpy as np
 import rioxarray
 import xarray as xr
 
-from . import chunking, datamodel, geocoding, orbit, radiometry, scene
+from . import chunking, datamodel, geocoding, radiometry, scene
 
 logger = logging.getLogger(__name__)
 
@@ -142,9 +142,7 @@ def do_terrain_correction(
 
     template_raster = dem_ecef.isel(axis=0).drop_vars(["axis", "spatial_ref"]) * 0.0
 
-    orbit_interpolator = orbit.OrbitPolyfitInterpolator.from_position(
-        product.state_vectors()
-    )
+    orbit_interpolator = product.orbit_interpolator()
 
     acquisition = map_simulate_acquisition(
         dem_ecef,
