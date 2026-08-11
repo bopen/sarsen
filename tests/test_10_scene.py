@@ -35,6 +35,42 @@ def test_transform_dem_3d(dem_raster: xr.DataArray) -> None:
     )
 
 
+def test_upsample_coords(dem_raster: xr.DataArray) -> None:
+    dem_raster_small = dem_raster.isel(x=slice(0, 3), y=slice(0, 2))
+    expected_x = [
+        12.44991,
+        12.45,
+        12.45009,
+        12.45018,
+        12.45028,
+        12.45037,
+        12.45046,
+        12.45056,
+        12.45065,
+    ]
+    expected_y = [
+        41.95017,
+        41.95022,
+        41.95028,
+        41.95033,
+        41.95039,
+        41.95044,
+        41.9505,
+        41.95056,
+        41.95061,
+        41.95067,
+    ]
+    res = scene.upsample_coords(dem_raster_small, x=3, y=5)
+
+    assert res["x"].size == dem_raster_small.x.size * 3
+    assert np.allclose(res["x"][1::3], dem_raster_small.x)
+    assert np.allclose(res["x"], expected_x)
+
+    assert res["y"].size == dem_raster_small.y.size * 5
+    assert np.allclose(res["y"][2::5], dem_raster_small.y)
+    assert np.allclose(res["y"], expected_y)
+
+
 def test_upsample(dem_raster: xr.DataArray) -> None:
     res = scene.upsample(dem_raster, x=2)
 
