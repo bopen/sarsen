@@ -80,24 +80,6 @@ class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
         )
         return self
 
-    def position(self, time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
-        assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
-
-        position = self.position_from_orbit_time(self.to_orbit_time(time))
-        return position.assign_coords({time.name: time})
-
-    def velocity(self, time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
-        assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
-
-        velocity = self.velocity_from_orbit_time(self.to_orbit_time(time))
-        return velocity.assign_coords({time.name: time})
-
-    def acceleration(self, time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
-        assert time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
-
-        acceleration = self.acceleration_from_orbit_time(self.to_orbit_time(time))
-        return acceleration.assign_coords({time.name: time})
-
     #
     # OrbitInterpolator interface
     #
@@ -118,3 +100,23 @@ class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
     def acceleration_from_orbit_time(self, orbit_time: xr.DataArray) -> xr.DataArray:
         velocity = xr.polyval(orbit_time, self.acceleration_coefficients)
         return velocity.rename("acceleration")
+
+    def position(self, calendar_time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
+        assert calendar_time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
+
+        position = self.position_from_orbit_time(self.to_orbit_time(calendar_time))
+        return position.assign_coords({calendar_time.name: calendar_time})
+
+    def velocity(self, calendar_time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
+        assert calendar_time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
+
+        velocity = self.velocity_from_orbit_time(self.to_orbit_time(calendar_time))
+        return velocity.assign_coords({calendar_time.name: calendar_time})
+
+    def acceleration(self, calendar_time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
+        assert calendar_time.dtype.name in ("datetime64[ns]", "timedelta64[ns]")
+
+        acceleration = self.acceleration_from_orbit_time(
+            self.to_orbit_time(calendar_time)
+        )
+        return acceleration.assign_coords({calendar_time.name: calendar_time})

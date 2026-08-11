@@ -29,6 +29,15 @@ class OrbitInterpolator(abc.ABC):
         self, orbit_time: xr.DataArray
     ) -> xr.DataArray: ...
 
+    @abc.abstractmethod
+    def position(self, calendar_time: xr.DataArray) -> xr.DataArray: ...
+
+    @abc.abstractmethod
+    def velocity(self, calendar_time: xr.DataArray) -> xr.DataArray: ...
+
+    @abc.abstractmethod
+    def acceleration(self, calendar_time: xr.DataArray) -> xr.DataArray: ...
+
 
 class SarProduct(abc.ABC):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
