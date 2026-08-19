@@ -18,7 +18,7 @@ DATA_PATHS = [
 GROUPS = ["IW/VV", "IW1/VV"]
 
 
-@pytest.mark.parametrize("data_path,group", zip(DATA_PATHS, GROUPS))
+@pytest.mark.parametrize("data_path,group", list(zip(DATA_PATHS, GROUPS)))
 def test_Sentinel1SarProduct(data_path: str, group: str) -> None:
     res = sentinel1.Sentinel1SarProduct(data_path, group)
 

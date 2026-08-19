@@ -18,10 +18,12 @@ DATA_PATHS = [
 
 GROUPS = ["IW/VV", "IW1/VV"]
 
+DATA_PATH_GROUPS = list(zip(DATA_PATHS, GROUPS))
+
 DEM_RASTER = DATA_FOLDER / "Rome-30m-DEM.tif"
 
 
-@pytest.mark.parametrize("data_path,group", zip(DATA_PATHS, GROUPS))
+@pytest.mark.parametrize("data_path,group", DATA_PATH_GROUPS)
 @pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="too much memory")
 def test_terrain_correction_gtc(
     tmpdir: py.path.local,
@@ -44,7 +46,7 @@ def test_terrain_correction_gtc(
     assert "beta" in res.attrs["long_name"]
 
 
-@pytest.mark.parametrize("data_path,group", zip(DATA_PATHS, GROUPS))
+@pytest.mark.parametrize("data_path,group", DATA_PATH_GROUPS)
 @pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="too much memory")
 def test_terrain_correction_fast_rtc(
     tmpdir: py.path.local, data_path: pathlib.Path, group: str
@@ -67,7 +69,7 @@ def test_terrain_correction_fast_rtc(
     assert "gamma" in res.attrs["long_name"]
 
 
-@pytest.mark.parametrize("data_path,group", zip(DATA_PATHS, GROUPS))
+@pytest.mark.parametrize("data_path,group", DATA_PATH_GROUPS)
 @pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="too much memory")
 def test_terrain_correction_rtc(
     tmpdir: py.path.local, data_path: pathlib.Path, group: str
@@ -89,7 +91,7 @@ def test_terrain_correction_rtc(
     assert "gamma" in res.attrs["long_name"]
 
 
-@pytest.mark.parametrize("data_path,group", zip(DATA_PATHS, GROUPS))
+@pytest.mark.parametrize("data_path,group", DATA_PATH_GROUPS)
 @pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="too much memory")
 def test_terrain_correction_gtc_dask(
     tmpdir: py.path.local, data_path: pathlib.Path, group: str
@@ -112,7 +114,7 @@ def test_terrain_correction_gtc_dask(
     assert "beta" in res.attrs["long_name"]
 
 
-@pytest.mark.parametrize("data_path,group", zip(DATA_PATHS, GROUPS))
+@pytest.mark.parametrize("data_path,group", DATA_PATH_GROUPS)
 @pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="too much memory")
 def test_terrain_correction_fast_rtc_dask(
     tmpdir: py.path.local, data_path: pathlib.Path, group: str
@@ -136,7 +138,7 @@ def test_terrain_correction_fast_rtc_dask(
     assert "gamma" in res.attrs["long_name"]
 
 
-@pytest.mark.parametrize("data_path,group", zip(DATA_PATHS, GROUPS))
+@pytest.mark.parametrize("data_path,group", DATA_PATH_GROUPS)
 @pytest.mark.skipif(os.getenv("GITHUB_ACTIONS") == "true", reason="too much memory")
 def test_terrain_correction_rtc_dask(
     tmpdir: py.path.local, data_path: pathlib.Path, group: str
