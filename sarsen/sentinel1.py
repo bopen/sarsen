@@ -81,6 +81,27 @@ class Sentinel1SarProduct(
     measurement_chunks: int | dict[str, int] | None = DEFAULT_MEASUREMENT_CHUNKS
     kwargs: dict[str, Any] = {}
 
+    @property
+    def burst_id(self) -> int | None:
+        if self.measurement_group is None:
+            return None
+        maybe_burst_id = self.measurement_group.rpartition("/")[2]
+        try:
+            return int(maybe_burst_id)
+        except ValueError:
+            return None
+
+    @property
+    def swath_group(self) -> str | None:
+        if self.measurement_group is None:
+            return None
+        maybe_swath_group, _, maybe_burst_id = self.measurement_group.rpartition("/")
+        try:
+            int(maybe_burst_id)
+            return maybe_swath_group
+        except ValueError:
+            return self.measurement_group
+
     def all_measurement_groups(self) -> list[str]:
         ds, self.kwargs = open_dataset_autodetect(
             self.product_urlpath, check_files_exist=True, **self.kwargs
@@ -98,20 +119,21 @@ class Sentinel1SarProduct(
             **self.kwargs,
         )
         if ds.attrs["product_type"] == "SLC" and ds.attrs["mode"] == "IW":
-            ds = xarray_sentinel.mosaic_slc_iw(ds)
+            if self.burst_id is None:
+                ds = xarray_sentinel.mosaic_slc_iw(ds)
         return ds
 
     @functools.cached_property
     def orbit(self) -> xr.Dataset:
         ds, self.kwargs = open_dataset_autodetect(
-            self.product_urlpath, group=f"{self.measurement_group}/orbit", **self.kwargs
+            self.product_urlpath, group=f"{self.swath_group}/orbit", **self.kwargs
         )
         return ds.compute()
 
     @functools.cached_property
     def gcp(self) -> xr.Dataset:
         ds, self.kwargs = open_dataset_autodetect(
-            self.product_urlpath, group=f"{self.measurement_group}/gcp", **self.kwargs
+            self.product_urlpath, group=f"{self.swath_group}/gcp", **self.kwargs
         )
         return ds.compute()
 
@@ -119,7 +141,7 @@ class Sentinel1SarProduct(
     def calibration(self) -> xr.Dataset:
         ds, self.kwargs = open_dataset_autodetect(
             self.product_urlpath,
-            group=f"{self.measurement_group}/calibration",
+            group=f"{self.swath_group}/calibration",
             **self.kwargs,
         )
         return ds.compute()
@@ -130,7 +152,7 @@ class Sentinel1SarProduct(
         if self.product_type == "GRD":
             ds, self.kwargs = open_dataset_autodetect(
                 self.product_urlpath,
-                group=f"{self.measurement_group}/coordinate_conversion",
+                group=f"{self.swath_group}/coordinate_conversion",
                 **self.kwargs,
             )
             ds = ds.compute()
@@ -142,7 +164,7 @@ class Sentinel1SarProduct(
         if self.product_type == "SLC":
             ds, self.kwargs = open_dataset_autodetect(
                 self.product_urlpath,
-                group=f"{self.measurement_group}/azimuth_fm_rate",
+                group=f"{self.swath_group}/azimuth_fm_rate",
                 **self.kwargs,
             )
             ds = ds.compute()
@@ -154,7 +176,7 @@ class Sentinel1SarProduct(
         if self.product_type == "SLC":
             ds, self.kwargs = open_dataset_autodetect(
                 self.product_urlpath,
-                group=f"{self.measurement_group}/dc_estimate",
+                group=f"{self.swath_group}/dc_estimate",
                 **self.kwargs,
             )
             ds = ds.compute()
@@ -234,7 +256,7 @@ class Sentinel1SarProduct(
         """Get information about the Sentinel-1 product."""
         measurement_groups = self.all_measurement_groups()
 
-        self.measurement_group = self.measurement_group or measurement_groups[0]
+        self.measurement_group = self.swath_group or measurement_groups[0]
         gcp = self.gcp
 
         bbox = [
