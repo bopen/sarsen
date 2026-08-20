@@ -256,7 +256,7 @@ class Sentinel1SarProduct(
         """Get information about the Sentinel-1 product."""
         measurement_groups = self.all_measurement_groups()
 
-        self.measurement_group = self.swath_group or measurement_groups[0]
+        self.measurement_group = self.measurement_group or measurement_groups[0]
         gcp = self.gcp
 
         bbox = [
