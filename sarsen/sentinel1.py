@@ -213,9 +213,18 @@ class Sentinel1SarProduct(
     def geospatial_bounds(self) -> str:
         return self.product_info()["geospatial_bounds"]  # type: ignore
 
-    def orbit_interpolator(self, **kwargs: Any) -> datamodel.OrbitInterpolator:
+    def orbit_interpolator(
+        self, epoch: np.datetime64 | None = None, **kwargs: Any
+    ) -> datamodel.OrbitInterpolator:
         state_vectors = self.state_vectors()
-        return orbit.OrbitPolyfitInterpolator.from_position(state_vectors, **kwargs)
+        if epoch is None:
+            azimuth_time = self.measurement.coords["azimuth_time"]
+            mid_azimuth_time_index = azimuth_time.size // 2
+            epoch = azimuth_time.values[mid_azimuth_time_index]
+        interpolator = orbit.OrbitPolyfitInterpolator.from_position(
+            state_vectors, epoch=epoch, **kwargs
+        )
+        return interpolator
 
     def state_vectors(self) -> xr.DataArray:
         return self.orbit.data_vars["position"]
@@ -290,3 +299,13 @@ class Sentinel1SarProduct(
         )
 
         return product_info
+
+    @functools.cache
+    def stac_item(self, **kwargs: Any) -> dict[str, Any]:
+        ds = xarray_sentinel.sentinel1.open_sentinel1_dataset(
+            self.product_urlpath,
+            group=self.measurement_group,
+            parse_eopf_metadata=True,
+            **self.kwargs,
+        )
+        return ds.attrs["stac_discovery"]
