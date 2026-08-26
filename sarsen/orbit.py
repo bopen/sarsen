@@ -20,15 +20,29 @@ def polyder(coefficients: xr.DataArray) -> xr.DataArray:
 
 
 def to_calendar_time(
-    orbit_time: xr.DataArray, epoch: np.datetime64, name: str = "calendar_time"
+    elapsed_time: xr.DataArray,
+    epoch: np.datetime64 | None = None,
+    epoch_attr_name: str = "epoch",
+    data_var_name: str = "calendar_time",
 ) -> xr.DataArray:
-    calendar_time = orbit_time * np.timedelta64(S_TO_NS, "ns") + epoch
-    return calendar_time.rename(name)
+    if epoch is None:
+        if epoch_attr_name in elapsed_time.attrs:
+            epoch = np.datetime64(elapsed_time.attrs[epoch_attr_name])
+        else:
+            raise ValueError("epoch attribute not found, provide the epoch explicitly")
+    calendar_time = elapsed_time * np.timedelta64(S_TO_NS, "ns") + epoch
+    return calendar_time.rename(data_var_name)
 
 
-def to_orbit_time(calendar_time: xr.DataArray, epoch: np.datetime64) -> xr.DataArray:
-    orbit_time = (calendar_time - epoch) / np.timedelta64(S_TO_NS, "ns")
-    return orbit_time.rename("orbit_time")
+def to_elapsed_time(
+    calendar_time: xr.DataArray,
+    epoch: np.datetime64,
+    epoch_attr_name: str = "epoch",
+    data_var_name: str = "orbit_time",
+) -> xr.DataArray:
+    elapsed_time = (calendar_time - epoch) / np.timedelta64(S_TO_NS, "ns")
+    elapsed_time.attrs[epoch_attr_name] = str(epoch)
+    return elapsed_time.rename(data_var_name)
 
 
 @attrs.define
@@ -63,7 +77,7 @@ class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
         if interval is None:
             interval = (time.values[0], time.values[-1])
 
-        orbit_time = to_orbit_time(time, epoch)
+        orbit_time = to_elapsed_time(time, epoch)
         data = position.assign_coords({dim: orbit_time})
         polyfit_results = data.polyfit(dim=dim, deg=deg)
         # TODO: raise if the fit is not good enough
@@ -84,7 +98,7 @@ class OrbitPolyfitInterpolator(datamodel.OrbitInterpolator):
     # OrbitInterpolator interface
     #
     def to_orbit_time(self, calendar_time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
-        return to_orbit_time(calendar_time, self.epoch, **kwargs)
+        return to_elapsed_time(calendar_time, self.epoch, **kwargs)
 
     def to_calendar_time(self, orbit_time: xr.DataArray, **kwargs: Any) -> xr.DataArray:
         return to_calendar_time(orbit_time, self.epoch, **kwargs)

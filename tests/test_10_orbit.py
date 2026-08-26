@@ -11,6 +11,10 @@ def test_to_calendar_time() -> None:
 
     assert res == epoch
 
+    res = orbit.to_calendar_time(xr.DataArray(0.0, attrs={"epoch": str(epoch)}))
+
+    assert res == epoch
+
     res = orbit.to_calendar_time(xr.DataArray(-120.2), epoch)
 
     assert res == epoch - np.timedelta64(120200, "ms")
@@ -20,12 +24,12 @@ def test_to_calendar_time() -> None:
     assert res == epoch
 
 
-def test_to_orbit_time() -> None:
+def test_to_elapsed_time() -> None:
     epoch = np.datetime64("2025-05-16T08:38:12.123456789", "ns")
     seconds = -120.43256234
     date = orbit.to_calendar_time(xr.DataArray(seconds), epoch)
 
-    res = orbit.to_orbit_time(date, epoch)
+    res = orbit.to_elapsed_time(date, epoch)
 
     assert res == seconds
 
