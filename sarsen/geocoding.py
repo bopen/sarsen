@@ -163,6 +163,8 @@ def backward_geocode_simple(
     else:
         raise TypeError("method must be one of: 'secant', 'newton', 'newton_raphson'")
 
+    orbit_time.attrs["epoch"] = orbit_interpolator.epoch
+
     return orbit_time, dem_distance, satellite_velocity
 
 
