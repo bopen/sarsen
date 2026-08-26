@@ -248,11 +248,10 @@ class Sentinel1SarProduct(
 
     def complex_amplitude(self) -> xr.DataArray:
         measurement = self.measurement.data_vars["measurement"]
-        beta_nought = xarray_sentinel.calibrate_amplitude(
+        amplitude = xarray_sentinel.calibrate_amplitude(
             measurement, self.calibration.betaNought
         )
-        beta_nought = beta_nought.drop_vars(["pixel", "line"])
-        return beta_nought
+        return amplitude.drop_vars(["pixel", "line"])
 
     def interp_sar(self, *args: Any, **kwargs: Any) -> xr.DataArray:
         if self.product_type == "GRD":
@@ -308,4 +307,4 @@ class Sentinel1SarProduct(
             parse_eopf_metadata=True,
             **self.kwargs,
         )
-        return ds.attrs["stac_discovery"]
+        return ds.attrs["stac_discovery"]  # type: ignore
