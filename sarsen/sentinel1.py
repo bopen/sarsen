@@ -229,6 +229,17 @@ class Sentinel1SarProduct(
     def state_vectors(self) -> xr.DataArray:
         return self.orbit.data_vars["position"]
 
+    def slant_range_to_ground_range(
+        self, azimuth_time: xr.DataArray, slant_range: xr.DataArray
+    ) -> xr.DataArray:
+        assert self.coordinate_conversion is not None
+        ground_range = xarray_sentinel.slant_range_to_ground_range(
+            azimuth_time,
+            slant_range,
+            coordinate_conversion=self.coordinate_conversion,
+        )
+        return ground_range
+
     def slant_range_time_to_ground_range(
         self, azimuth_time: xr.DataArray, slant_range_time: xr.DataArray
     ) -> xr.DataArray:

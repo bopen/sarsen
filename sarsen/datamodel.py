@@ -80,6 +80,11 @@ class SarProduct(abc.ABC):
 
 class GroundRangeSarProduct(SarProduct):
     @abc.abstractmethod
+    def slant_range_to_ground_range(
+        self, azimuth_time: xr.DataArray, slant_range: xr.DataArray
+    ) -> xr.DataArray: ...
+
+    @abc.abstractmethod
     def slant_range_time_to_ground_range(
         self, azimuth_time: xr.DataArray, slant_range_time: xr.DataArray
     ) -> xr.DataArray: ...

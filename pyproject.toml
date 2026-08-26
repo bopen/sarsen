@@ -126,3 +126,6 @@ __version__ = "{version}"
 # regressions and supply-chain attacks
 exclude-newer = "7 days"
 exclude-newer-package = {"xarray-sentinel" = false}
+
+[tool.uv.sources]
+xarray-sentinel = {git = "https://github.com/bopen/xarray-sentinel"}

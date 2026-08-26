@@ -4058,7 +4058,7 @@ requires-dist = [
   {name = "scipy", specifier = ">=1.13"},
   {name = "typer", specifier = ">=0.16"},
   {name = "xarray", specifier = ">=2023.12.0"},
-  {name = "xarray-sentinel", specifier = ">=0.9.6"}
+  {name = "xarray-sentinel", git = "https://github.com/bopen/xarray-sentinel"}
 ]
 
 [package.metadata.requires-dev]
@@ -4831,6 +4831,7 @@ wheels = [
 [[package]]
 dependencies = [
   {name = "dask"},
+  {name = "distributed"},
   {name = "fsspec"},
   {name = "numpy", version = "2.4.6", source = {registry = "https://pypi.org/simple"}, marker = "python_full_version < '3.12'"},
   {name = "numpy", version = "2.5.2", source = {registry = "https://pypi.org/simple"}, marker = "python_full_version >= '3.12'"},
@@ -4839,16 +4840,13 @@ dependencies = [
   {name = "rioxarray", version = "0.23.0", source = {registry = "https://pypi.org/simple"}, marker = "python_full_version >= '3.12'"},
   {name = "scipy", version = "1.17.1", source = {registry = "https://pypi.org/simple"}, marker = "python_full_version < '3.12'"},
   {name = "scipy", version = "1.18.0", source = {registry = "https://pypi.org/simple"}, marker = "python_full_version >= '3.12'"},
+  {name = "typer"},
   {name = "xarray"},
   {name = "xmlschema"}
 ]
 name = "xarray-sentinel"
-sdist = {url = "https://files.pythonhosted.org/packages/f4/f1/8b6296d143c3176550471496abbc288d6206c343555412be25da8b1f97d6/xarray_sentinel-0.9.6.tar.gz", hash = "sha256:6067627bd53dc091c7e4078504959578c4ef96e605b1b411cf2c124a3f241630", size = 4880340, upload-time = "2026-06-22T22:50:03.76Z"}
-source = {registry = "https://pypi.org/simple"}
-version = "0.9.6"
-wheels = [
-  {url = "https://files.pythonhosted.org/packages/5b/8f/af6dd5aa278fd2226bde016226b05be742c651ff3ab04b8b16238093a7b2/xarray_sentinel-0.9.6-py3-none-any.whl", hash = "sha256:c524cf632bdee9785086dd86edee5accdac3e4f196620e116fa6e6c9e851f34a", size = 74723, upload-time = "2026-06-22T22:50:01.8Z"}
-]
+source = {git = "https://github.com/bopen/xarray-sentinel#eb18c69b5b3473aedac324428d850de096aab8e6"}
+version = "0.9.7.dev22+geb18c69b5"
 
 [[package]]
 dependencies = [
