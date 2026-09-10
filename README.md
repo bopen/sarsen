@@ -19,8 +19,8 @@ This Open Source project is sponsored by B-Open - https://www.bopen.eu.
   - supports most Sentinel-1 data products as [distributed by ESA](https://browser.dataspace.copernicus.eu/):
     - Sentinel-1 Single Look Complex (SLC) SM/IW/EW
     - Sentinel-1 Ground Range Detected (GRD) SM/IW/EW
-  - reads uncompressed and compressed SAFE data products on the local computer or
-    on a network via [*fsspec*](https://filesystem-spec.readthedocs.io) - *depends on rasterio>=1.3*
+  - reads uncompressed and compressed SAFE data products on the local computer and
+    only uncompressed ones on a network via [*fsspec*](https://filesystem-spec.readthedocs.io)
 - accesses DEM data via [*rioxarray*](https://corteva.github.io/rioxarray):
   - reads local and remote data in virtually any raster format via
     [*rasterio*](https://rasterio.readthedocs.io) / [*GDAL*](https://gdal.org)
@@ -103,7 +103,7 @@ The python API has entry points to the same commands and it also gives access to
 algorithms, but internal APIs should not be considered stable:
 
 The following code applies the geometric terrain correction to the VV polarization of
-"S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE" product:
+"S1B_IW_GRDH_1SDV_20211223T051122_20211223T051147_030148_039993_5371.SAFE" product:
 
 ```python
 >>> import sarsen
