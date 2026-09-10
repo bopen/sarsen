@@ -12,8 +12,6 @@ This Open Source project is sponsored by B-Open - https://www.bopen.eu.
 
 - provides algorithms to terrain-correct satellite SAR data
   - geometric terrain correction (geocoding)
-    - *fast mode*: to terrain-correct images
-    - *accurate mode*: for interferometric processing
   - radiometric terrain correction (gamma flattening)
 - accesses SAR data via [*xarray-sentinel*](https://github.com/bopen/xarray-sentinel):
   - supports most Sentinel-1 data products as [distributed by ESA](https://browser.dataspace.copernicus.eu/):
@@ -78,20 +76,36 @@ The software can do it automatically setting the the environment variable `PROJ_
 ## Command line usage
 
 The `sarsen` command line tool corrects SAR data based on a selected DEM and may produce
-geometrically terrain-corrected images (GTC) or radiometrically terrain-corrected images (RTC).
+geometrically terrain-corrected images (GTC), simulated terrain-corrected images (STC) or
+radiometrically terrain-corrected images (RTC).
 Terrain-corrected images will have the same pixels as the input DEM, that should be resampled
 to the target projection and spacing in advance, for example using
 [`gdalwarp`](https://gdal.org/programs/gdalwarp.html).
 
-The following command performs a geometric terrain correction:
+The `info` command prints general information about a product (product type, mode, swaths,
+polarizations, orbit numbers, measurement groups and geospatial bounds):
+
+```shell
+  sarsen info S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE
+```
+
+The `gtc` command performs a geometric terrain correction:
 
 ```shell
   sarsen gtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
 ```
 
-Performing geometric and radiometric terrain correction is more demanding,
-but it is possible to produce the RTC of a full GRD product at a 10m resolution
-in one go (and it takes approx 25 minutes on a 32Gb MacBook Pro):
+Producing the STC and the RTC is more demanding than the GTC, but it is possible to produce
+either of them for a full GRD product at a 10m resolution in one go (and it takes approx
+25 minutes on a 32Gb MacBook Pro):
+
+The `stc` command writes the simulated terrain-corrected image:
+
+```shell
+  sarsen stc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
+```
+
+Finally the `rtc` command writes the radiometrically terrain-corrected gamma nought image:
 
 ```shell
   sarsen rtc S1B_IW_GRDH_1SDV_20211217T141304_20211217T141329_030066_039705_9048.SAFE IW/VV South-of-Redmond-10m_UTM.tif
