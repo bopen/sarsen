@@ -242,8 +242,8 @@ def terrain_correction(
     'gamma_nearest' significantly reduces the processing time
     :param interp_method: interpolation method for product resampling.
     The interpolation methods are the methods supported by ``xarray.DataArray.interp``
-    :param grouping_area_factor: is a tuple of floats greater than 1. The default is `(1, 1)`.
-    The `grouping_area_factor`  can be increased (i) to speed up the processing or
+    :param grouping_area_factor: is a tuple of floats greater than 1. The default is `(3.0, 3.0)`.
+    The `grouping_area_factor` can be increased (i) to speed up the processing or
     (ii) when the input DEM resolution is low.
     The Gamma Flattening usually works properly if the pixel size of the input DEM is much smaller
     than the pixel size of the input Sentinel-1 product.
