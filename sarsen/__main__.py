@@ -76,6 +76,7 @@ def stc(
     apps.terrain_correction(
         product,
         dem_urlpath,
+        output_urlpath=None,
         correct_radiometry="gamma_bilinear",
         simulated_urlpath=simulated_urlpath,
         grouping_area_factor=grouping_area_factor,
