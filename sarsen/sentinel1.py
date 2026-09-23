@@ -80,14 +80,15 @@ class Sentinel1SarProduct(
     measurement_group: str | None = None
     measurement_chunks: int | dict[str, int] | None = DEFAULT_MEASUREMENT_CHUNKS
     kwargs: dict[str, Any] = {}
+    burst_id: int | None = None
 
     @property
-    def burst_id(self) -> int | None:
+    def burst_index(self) -> int | None:
         if self.measurement_group is None:
             return None
-        maybe_burst_id = self.measurement_group.rpartition("/")[2]
+        maybe_burst_index = self.measurement_group.rpartition("/")[2]
         try:
-            return int(maybe_burst_id)
+            return int(maybe_burst_index)
         except ValueError:
             return None
 
@@ -119,7 +120,11 @@ class Sentinel1SarProduct(
             **self.kwargs,
         )
         if ds.attrs["product_type"] == "SLC" and ds.attrs["mode"] == "IW":
-            if self.burst_id is None:
+            if self.burst_id is not None:
+                ds = xarray_sentinel.crop_burst_dataset(
+                    ds, gcp=self.gcp, burst_id=self.burst_id
+                )
+            elif self.burst_index is None:
                 ds = xarray_sentinel.mosaic_slc_iw(ds)
         return ds
 
@@ -307,6 +312,18 @@ class Sentinel1SarProduct(
                 "geospatial_bbox": bbox,
             }
         )
+        if self.burst_index is not None or self.burst_id is not None:
+            product_info["burst_id"] = self.measurement.attrs["burst_id"]
+            product_info["geospatial_bounds"] = self.measurement.attrs[
+                "geospatial_bounds"
+            ]
+            bbox = [
+                self.measurement.attrs["geospatial_lon_min"],
+                self.measurement.attrs["geospatial_lat_min"],
+                self.measurement.attrs["geospatial_lon_max"],
+                self.measurement.attrs["geospatial_lat_max"],
+            ]
+            product_info["geospatial_bbox"] = bbox
 
         return product_info
 
