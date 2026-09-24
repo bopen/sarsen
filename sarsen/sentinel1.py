@@ -124,6 +124,8 @@ class Sentinel1SarProduct(
                 ds = xarray_sentinel.crop_burst_dataset(
                     ds, gcp=self.gcp, burst_id=self.burst_id
                 )
+                # bursts are small and ESA SLC GeoTIFF are chunked with line=1
+                ds = ds.chunk(azimuth_time=-1)
             elif self.burst_index is None:
                 ds = xarray_sentinel.mosaic_slc_iw(ds)
         return ds
