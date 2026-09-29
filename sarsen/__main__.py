@@ -1,3 +1,4 @@
+import importlib.metadata
 import json
 import logging
 
@@ -5,7 +6,30 @@ import typer
 
 from . import apps, sentinel1
 
-app = typer.Typer()
+app = typer.Typer(
+    add_completion=False,
+    no_args_is_help=True,
+)
+
+
+def version_callback(value: bool) -> None:
+    if value:
+        version = importlib.metadata.version("sarsen")
+        typer.echo(f"sarsen, version {version}")
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        callback=version_callback,
+        is_eager=True,
+        help="Show the version and exit.",
+    ),
+) -> None:
+    pass
 
 
 @app.command()
