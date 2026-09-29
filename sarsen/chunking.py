@@ -1,6 +1,7 @@
 import itertools
 import math
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 import dask
 import xarray as xr

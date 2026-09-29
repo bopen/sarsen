@@ -1,3 +1,4 @@
+import contextlib
 import functools
 from typing import Any
 
@@ -79,7 +80,7 @@ class Sentinel1SarProduct(
     product_urlpath: str
     measurement_group: str | None = None
     measurement_chunks: int | dict[str, int] | None = DEFAULT_MEASUREMENT_CHUNKS
-    kwargs: dict[str, Any] = {}
+    kwargs: dict[str, Any] = attrs.field(factory=dict)
     burst_id: int | None = None
 
     @property
@@ -303,10 +304,8 @@ class Sentinel1SarProduct(
         ]
         product_info = {}
         for attr_name in product_attrs:
-            try:
+            with contextlib.suppress(KeyError):
                 product_info[attr_name] = gcp.attrs[attr_name]
-            except KeyError:
-                pass
         product_info.update(
             {
                 "measurement_groups": measurement_groups,

@@ -4,7 +4,8 @@ See: https://sentinel.esa.int/documents/247904/0/Guide-to-Sentinel-1-Geocoding.p
 """
 
 import functools
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 import numpy as np
 import numpy.typing as npt
@@ -33,7 +34,7 @@ def secant_method(
         f_curr, payload_curr = ufunc(t_curr)
 
         # the `not np.any` construct let us accept `np.nan` as good values
-        if not np.any((np.abs(f_curr) > diff_ufunc)):
+        if not np.any(np.abs(f_curr) > diff_ufunc):
             break
 
         t_diff = t_curr - t_prev  # type: ignore
@@ -68,7 +69,7 @@ def newton_raphson_method(
         f_curr, payload_curr = ufunc(t_curr)
 
         # the `not np.any` construct let us accept `np.nan` as good values
-        if not np.any((np.abs(f_curr) > diff_ufunc)):
+        if not np.any(np.abs(f_curr) > diff_ufunc):
             break
 
         fp_curr = ufunc_prime(t_curr, payload_curr)

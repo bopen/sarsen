@@ -25,10 +25,10 @@ from .datamodel import GroundRangeSarProduct, SarProduct, SlantRangeSarProduct
 from .sentinel1 import Sentinel1SarProduct
 
 __all__ = [
-    "__version__",
     "GroundRangeSarProduct",
     "SarProduct",
     "Sentinel1SarProduct",
     "SlantRangeSarProduct",
+    "__version__",
     "terrain_correction",
 ]

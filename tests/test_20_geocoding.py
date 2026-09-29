@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import numpy as np
 import numpy.typing as npt
 import xarray as xr
@@ -10,7 +8,7 @@ from sarsen import geocoding, orbit
 def test_secant_method() -> None:
     def ufunc(
         t: npt.ArrayLike,
-    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         retval = 1.0 + 0.015 * t - 0.0001 * t**2 + 0.00003 * t**3  # type: ignore
         return retval, retval  # type: ignore
 
