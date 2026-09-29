@@ -18,7 +18,7 @@ def compute_chunks_1d(
 
     # -bound is needed to avoid to incorporate the last chunk, if smaller of bound in the previous chunk
     if dim_size > bound:
-        number_of_chunks = int(math.ceil((dim_size - bound) / chunks))
+        number_of_chunks = math.ceil((dim_size - bound) / chunks)
     else:
         number_of_chunks = 1
     for n in range(number_of_chunks):

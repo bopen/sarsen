@@ -197,7 +197,8 @@ class Sentinel1SarProduct(
             self.product_urlpath,
             self.measurement_group,
             repr(self.measurement_chunks),
-        ) + tuple(repr(self.kwargs))
+            repr(self.kwargs),
+        )
         return hash(id)
 
     # SarProduct interaface
