@@ -1,6 +1,6 @@
 [build-system]
 build-backend = "setuptools.build_meta"
-requires = ["setuptools>=64", "setuptools_scm>=8"]
+requires = ["setuptools>=77", "setuptools_scm>=8"]
 
 [dependency-groups]
 dev = [
@@ -22,7 +22,6 @@ dev = [
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: Apache Software License",
   "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
@@ -51,7 +50,8 @@ dependencies = [
 ]
 description = "Algorithms and utilities for Synthetic Aperture Radar (SAR) sensors"
 dynamic = ["version"]
-license = {file = "LICENSE"}
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 name = "sarsen"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -83,6 +83,7 @@ module = ["distributed", "py", "rasterio"]
 # Same as Black.
 indent-width = 4
 line-length = 88
+target-version = "py311"
 
 [tool.ruff.format]
 exclude = ["*.ipynb"]
@@ -91,19 +92,29 @@ exclude = ["*.ipynb"]
 exclude = ["*.ipynb"]
 ignore = [
   # pydocstyle: Missing Docstrings
-  "D1"
+  "D1",
+  # flake8-bugbear: Mutable argument defaults are safe if not mutated
+  "B006",
+  # flake8-bugbear: loop control variables used after the loop are not unused
+  "B007",
+  # flake8-bugbear: caching on hashed instances is deliberate, see __hash__
+  "B019",
+  # flake8-bugbear: the no-op __init__ accepts the attrs-generated call
+  "B027",
+  # flake8-bugbear: stacklevel is not wanted on warnings
+  "B028",
+  # flake8-bugbear: exception chaining is not wanted
+  "B904",
+  # flake8-bugbear: zip() is used on parallel sequences of equal length
+  "B905",
+  # flake8-simplify: nested if statements are kept
+  "SIM102",
+  # flake8-simplify: explicit if/else blocks are kept
+  "SIM108",
+  # ruff: unused unpacked variables keep their descriptive name
+  "RUF059"
 ]
-select = [
-  # pyflakes
-  "F",
-  # pycodestyle
-  "E",
-  "W",
-  # isort
-  "I",
-  # pydocstyle
-  "D"
-]
+select = ["F", "E", "W", "I", "D", "B", "C4", "SIM", "UP", "RUF"]
 
 [tool.ruff.lint.pycodestyle]
 max-line-length = 110

@@ -1,5 +1,6 @@
 import logging
-from typing import Any, Container
+from collections.abc import Container
+from typing import Any
 from unittest import mock
 
 import dask

@@ -1,12 +1,35 @@
+import importlib.metadata
 import json
 import logging
-from typing import Tuple
 
 import typer
 
 from . import apps, sentinel1
 
-app = typer.Typer()
+app = typer.Typer(
+    add_completion=False,
+    no_args_is_help=True,
+)
+
+
+def version_callback(value: bool) -> None:
+    if value:
+        version = importlib.metadata.version("sarsen")
+        typer.echo(f"sarsen, version {version}")
+        raise typer.Exit()
+
+
+@app.callback()
+def main(
+    version: bool = typer.Option(
+        False,
+        "--version",
+        callback=version_callback,
+        is_eager=True,
+        help="Show the version and exit.",
+    ),
+) -> None:
+    pass
 
 
 @app.command()
@@ -61,7 +84,7 @@ def stc(
     enable_dask_distributed: bool = False,
     client_kwargs_json: str = '{"processes": false}',
     chunks: int = 1024,
-    grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
+    grouping_area_factor: tuple[float, float] = (3.0, 3.0),
     seed_step: int | None = None,
 ) -> None:
     """Generate a simulated terrain corrected image from a Sentinel-1 product."""
@@ -96,7 +119,7 @@ def rtc(
     enable_dask_distributed: bool = False,
     client_kwargs_json: str = '{"processes": false}',
     chunks: int = 1024,
-    grouping_area_factor: Tuple[float, float] = (3.0, 3.0),
+    grouping_area_factor: tuple[float, float] = (3.0, 3.0),
     seed_step: int | None = None,
 ) -> None:
     """Generate a radiometrically terrain corrected (RTC) image from Sentinel-1 product."""

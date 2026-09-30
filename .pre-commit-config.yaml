@@ -16,7 +16,7 @@ repos:
   hooks:
   - id: blackdoc
 - repo: https://github.com/astral-sh/ruff-pre-commit
-  rev: v0.15.15
+  rev: v0.16.9
   hooks:
   - id: ruff
     args: [--fix, --show-fixes]
@@ -32,6 +32,10 @@ repos:
     args: [--autofix, --preserve-quotes]
   - id: pretty-format-toml
     args: [--autofix]
+    # toml-sort 0.25 rewrites inline tables as `{ key = value }`, which fights
+    # uv's `{key = value}` style in uv.lock; pin it and the tomlkit parser that
+    # 0.24 uses until that is reconciled upstream.
+    additional_dependencies: [toml-sort==0.24.2, tomlkit==0.15.1]
 # - repo: https://github.com/gitleaks/gitleaks
 #   rev: v8.30.0
 #   hooks:
