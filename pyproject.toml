@@ -139,8 +139,8 @@ __version__ = "{version}"
 [tool.uv]
 # Wait before upgrading to the newest versions to avoid
 # regressions and supply-chain attacks
-exclude-newer = "7 days"
-exclude-newer-package = {"xarray-sentinel" = false}
+exclude-newer = "1 week"
+exclude-newer-package = {certifi = false, "xarray-sentinel" = false}
 
 [tool.uv.sources]
 xarray-sentinel = {git = "https://github.com/bopen/xarray-sentinel"}
