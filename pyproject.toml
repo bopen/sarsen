@@ -76,7 +76,6 @@ branch = true
 extend_exclude = ["notebooks/gamma_wrt_incidence_angle-S1-GRD-IW-RTC-South-of-Redmond.ipynb"]
 
 [tool.deptry.per_rule_ignores]
-# used by xarray, dask, jupyter or fsspec without being imported
 DEP002 = ["distributed", "jupyterlab", "jupyterlab-execute-time", "numcodecs", "pandas", "s3fs", "scipy", "zarr"]
 
 [tool.mypy]
