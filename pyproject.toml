@@ -5,6 +5,7 @@ requires = ["setuptools>=77", "setuptools_scm>=8"]
 [dependency-groups]
 dev = [
   "cfchecker>=4.1.0",
+  "deptry>=0.25.1",
   "mypy>=1.15.0",
   "myst-parser>=4.0.1",
   "pandas-stubs>=1.4.0",
@@ -58,7 +59,6 @@ requires-python = ">=3.11"
 
 [project.optional-dependencies]
 lab = [
-  "bokeh>=3.9.0",
   "distributed>=2024.6",
   "jupyterlab>=4.5.7",
   "jupyterlab-execute-time>=3.3.0",
@@ -71,6 +71,13 @@ sarsen = "sarsen.__main__:app"
 
 [tool.coverage.run]
 branch = true
+
+[tool.deptry]
+extend_exclude = ["notebooks/gamma_wrt_incidence_angle-S1-GRD-IW-RTC-South-of-Redmond.ipynb"]
+
+[tool.deptry.per_rule_ignores]
+# used by xarray, dask, jupyter or fsspec without being imported
+DEP002 = ["distributed", "jupyterlab", "jupyterlab-execute-time", "numcodecs", "pandas", "s3fs", "scipy", "zarr"]
 
 [tool.mypy]
 strict = true
