@@ -331,6 +331,8 @@ class Sentinel1SarProduct(
 
     @functools.cache
     def stac_item(self, **kwargs: Any) -> dict[str, Any]:
+        # xarray-sentinel doesent report the stac-item yet
+        raise NotImplementedError("stac_item is not supported yet")
         ds = xarray_sentinel.sentinel1.open_sentinel1_dataset(
             self.product_urlpath,
             group=self.measurement_group,
