@@ -27,4 +27,4 @@ integration-tests:
 	cp $^ $@
 
 lab: .env
-	$(PYTHON) --extra lab --env-file .env -m jupyter lab
+	$(PYTHON) --group lab --env-file .env -m jupyter lab

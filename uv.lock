@@ -4737,23 +4737,24 @@ dev = [
   {name = "shapely"},
   {name = "sphinx-autoapi"}
 ]
+lab = [
+  {name = "distributed"},
+  {name = "jupyterlab"},
+  {name = "jupyterlab-execute-time"},
+  {name = "matplotlib"},
+  {name = "s3fs"}
+]
 
 [package.metadata]
-provides-extras = ["lab"]
 requires-dist = [
   {name = "attrs", specifier = ">=24.0"},
   {name = "dask", specifier = ">=2024.6"},
-  {name = "distributed", marker = "extra == 'lab'", specifier = ">=2024.6"},
   {name = "flox", specifier = ">=0.10"},
-  {name = "jupyterlab", marker = "extra == 'lab'", specifier = ">=4.5.7"},
-  {name = "jupyterlab-execute-time", marker = "extra == 'lab'", specifier = ">=3.3.0"},
-  {name = "matplotlib", marker = "extra == 'lab'", specifier = ">=3.10.9"},
   {name = "numcodecs", specifier = ">=0.15.1"},
   {name = "numpy", specifier = ">=1.24"},
   {name = "pandas", specifier = ">=2.1"},
   {name = "rasterio", specifier = ">=1.3.5"},
   {name = "rioxarray", specifier = ">=0.18"},
-  {name = "s3fs", marker = "extra == 'lab'", specifier = ">=2026.4.0"},
   {name = "scipy", specifier = ">=1.10"},
   {name = "typer", specifier = ">=0.26.7"},
   {name = "xarray", specifier = ">=2024.10"},
@@ -4777,14 +4778,12 @@ dev = [
   {name = "shapely", specifier = ">=2.1"},
   {name = "sphinx-autoapi", specifier = ">=3.6.0"}
 ]
-
-[package.optional-dependencies]
 lab = [
-  {name = "distributed"},
-  {name = "jupyterlab"},
-  {name = "jupyterlab-execute-time"},
-  {name = "matplotlib"},
-  {name = "s3fs"}
+  {name = "distributed", specifier = ">=2024.6"},
+  {name = "jupyterlab", specifier = ">=4.5.7"},
+  {name = "jupyterlab-execute-time", specifier = ">=3.3.0"},
+  {name = "matplotlib", specifier = ">=3.10.9"},
+  {name = "s3fs", specifier = ">=2026.4.0"}
 ]
 
 [[package]]
