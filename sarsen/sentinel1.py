@@ -334,7 +334,6 @@ class Sentinel1SarProduct(
         ds = xarray_sentinel.sentinel1.open_sentinel1_dataset(
             self.product_urlpath,
             group=self.measurement_group,
-            parse_eopf_metadata=True,
             **self.kwargs,
         )
         return ds.attrs["stac_discovery"]  # type: ignore
