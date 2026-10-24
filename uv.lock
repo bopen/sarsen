@@ -5668,8 +5668,8 @@ dependencies = [
   {name = "zarr", version = "3.4.1", source = {registry = "https://pypi.org/simple"}, marker = "python_full_version >= '3.12'"}
 ]
 name = "xarray-sentinel"
-source = {git = "https://github.com/bopen/xarray-sentinel#6391a409df5a18b425d754cc0f3d423ec4b262f1"}
-version = "0.9.7.dev76+g6391a409d"
+source = {git = "https://github.com/bopen/xarray-sentinel#314b43af6aa999e2fec6f41c5796854a93a0aaa4"}
+version = "0.9.7.dev87+g314b43af6"
 
 [[package]]
 dependencies = [

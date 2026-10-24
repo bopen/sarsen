@@ -331,11 +331,13 @@ class Sentinel1SarProduct(
 
     @functools.cache
     def stac_item(self, **kwargs: Any) -> dict[str, Any]:
-        # xarray-sentinel doesent report the stac-item yet
-        raise NotImplementedError("stac_item is not supported yet")
-        ds = xarray_sentinel.sentinel1.open_sentinel1_dataset(
-            self.product_urlpath,
-            group=self.measurement_group,
-            **self.kwargs,
-        )
-        return ds.attrs["stac_discovery"]  # type: ignore
+        measurement_attrs = self.measurement.attrs
+        dt = xr.open_datatree(self.product_urlpath, **self.kwargs)
+        stac_discovery: dict[str, Any] = dt.attrs["stac_discovery"]
+        if self.burst_index is not None:
+            # the datatree has a node per burst, named after the swath and the burst id
+            swath = self.measurement_group.partition("/")[0]  # type: ignore
+            burst_id = measurement_attrs.get("burst_id", self.burst_index)
+            node_name = f"{stac_discovery['id']}_{swath}_{burst_id}"
+            stac_discovery = dt[node_name].attrs["stac_discovery"]
+        return stac_discovery
