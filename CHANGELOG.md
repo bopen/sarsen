@@ -16,8 +16,3 @@
 - Remove the misspelled `OrbitPolyfitIterpolator` alias.
 - Add `zarr` and `numcodecs` to the required dependencies.
 - Remove the `lab` extra: `pip install sarsen[lab]` no longer works.
-
-### Bug fixes
-
-- `sarsen stc` no longer writes a stray `GTC.tif`.
-- Fix the `grouping_area_factor` default in the `terrain_correction` docstring.
