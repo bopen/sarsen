@@ -23,7 +23,7 @@ integration-tests:
 	$(PYTHON) -m pytest -vv --cov=. --cov-report=$(COV_REPORT) --log-cli-level=INFO tests/integration*.py
 
 .env: .env.in
-	-mv $@ $@.bck
+	-mv $@ $@~
 	cp $^ $@
 
 lab: .env
