@@ -23,7 +23,7 @@ lab = [
   "jupyterlab>=4.5.7",
   "jupyterlab-execute-time>=3.3.0",
   "matplotlib>=3.10.9",
-  "s3fs>=2026.4.0"
+  "xarray-sentinel[s3,zarr]"
 ]
 
 [project]
@@ -45,7 +45,6 @@ dependencies = [
   "attrs>=24.0",
   "dask>=2024.6",
   "flox>=0.10",
-  "numcodecs>=0.15.1",
   "numpy>=1.24",
   "pandas>=2.1",
   "rasterio>=1.3.5",
@@ -53,8 +52,7 @@ dependencies = [
   "scipy>=1.10",
   "typer>=0.26.7",
   "xarray>=2024.10",
-  "xarray-sentinel>=0.9.6",
-  "zarr>=2.18.7"
+  "xarray-sentinel>=0.9.7"
 ]
 description = "Algorithms and utilities for Synthetic Aperture Radar (SAR) sensors"
 dynamic = ["version"]
@@ -74,7 +72,7 @@ branch = true
 extend_exclude = ["notebooks"]
 
 [tool.deptry.per_rule_ignores]
-DEP002 = ["numcodecs", "pandas", "scipy", "zarr"]
+DEP002 = ["pandas", "scipy"]
 
 [tool.mypy]
 strict = true
