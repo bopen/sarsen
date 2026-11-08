@@ -15,58 +15,47 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  pre-commit:
+  check-code:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v7
-    - name: Install uv and set the python version
+    - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
         version: 0.13.4
         enable-cache: true
-        python-version: '3.14'
     - name: Run pre-commit and deptry
-      run: make qa
+      run: make check-code
 
-  unit-tests:
+  run-unit-tests:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version:
-        - '3.11'
-        - '3.12'
-        - '3.13'
-        - '3.14'
 
     steps:
     - uses: actions/checkout@v7
-    - name: Install uv and set the python version
+    - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
         version: 0.13.4
         enable-cache: true
-        python-version: ${{ matrix.python-version }}
     - name: Run unit tests
       run: make unit-tests COV_REPORT=xml
 
   check-typing:
-    needs: [unit-tests]
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v7
-    - name: Install uv and set the python version
+    - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
         version: 0.13.4
         enable-cache: true
-        python-version: '3.14'
     - name: Run type checks
       run: make check-typing
 
-  docs-build:
-    needs: [unit-tests]
+  test-minimum-python:
+    needs: [check-code, run-unit-tests, check-typing]
     runs-on: ubuntu-latest
 
     steps:
@@ -76,12 +65,12 @@ jobs:
       with:
         version: 0.13.4
         enable-cache: true
-        python-version: '3.14'
-    - name: Build documentation
-      run: make docs-build
+        python-version: '3.11'
+    - name: Run unit tests with the minimum supported python version
+      run: make unit-tests COV_REPORT=xml
 
-  minver-tests:
-    needs: [unit-tests]
+  test-minimum-versions:
+    needs: [check-code, run-unit-tests, check-typing]
     runs-on: ubuntu-latest
 
     steps:
@@ -93,42 +82,47 @@ jobs:
         enable-cache: true
         python-version: '3.11'
     - name: Run tests with the minimum supported versions
-      run: make minver-tests
+      run: make test-minimum-versions
 
-  distribution:
-    needs: [unit-tests, check-typing, docs-build, minver-tests]
+  build-docs:
+    needs: [test-minimum-python, test-minimum-versions]
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v7
-    - uses: actions/setup-python@v7
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
       with:
-        python-version-file: .python-version
-    - name: Install package
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install build twine
+        version: 0.13.4
+        enable-cache: true
+    - name: Build documentation
+      run: make build-docs
+
+  build-distribution:
+    needs: [test-minimum-python, test-minimum-versions]
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+      with:
+        version: 0.13.4
+        enable-cache: true
     - name: Build distribution
+      run: uv build
+    - name: Check distribution
       run: |
-        python -m build
-    - name: Check wheels
-      working-directory: dist
-      run: |
-        python -m pip install sarsen*.whl
-        python -m twine check --strict *
-        python -c "import sarsen"
+        uvx twine check --strict dist/*
+        uv run --isolated --no-project --with dist/sarsen-*.whl python -c "import sarsen"
     - uses: actions/upload-artifact@v7
       with:
         name: distribution
         path: dist
 
   upload-to-pypi:
-    needs: [distribution]
-    if: |
-      always() &&
-      needs.distribution.result == 'success' &&
-      github.event_name == 'push' &&
-      startsWith(github.ref, 'refs/tags')
+    needs: [build-docs, build-distribution]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
     runs-on: ubuntu-latest
     environment:
       name: pypi

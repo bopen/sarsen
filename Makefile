@@ -3,9 +3,11 @@ PYTHON := uv run --frozen
 
 default: qa unit-tests check-typing
 
-qa:
+check-code:
 	$(PYTHON) -m pre_commit run --all-files
 	$(PYTHON) -m deptry .
+
+qa: check-code
 
 unit-tests:
 	$(PYTHON) -m pytest -vv --cov=. --cov-report=$(COV_REPORT)
@@ -13,15 +15,17 @@ unit-tests:
 check-typing:
 	$(PYTHON) -m mypy .
 
-docs-build:
+build-docs:
 	cp README.md docs/. && rm -fr docs/_api docs/_build
 	$(PYTHON) -m sphinx -b html docs docs/_build/html
 
 doc-tests:
 	$(PYTHON) -m pytest -vv --doctest-glob="*.md" --doctest-glob="*.rst" README.md
 
-minver-tests:
+test-minimum-versions:
 	uv run --isolated --resolution lowest-direct -p python3.11 -m pytest .
+
+minver-tests: test-minimum-versions
 
 .env: .env.in
 	-mv $@ $@~
