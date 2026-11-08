@@ -14,61 +14,8 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-defaults:
-  run:
-    shell: bash -l {0}
-
 jobs:
-  pre-commit:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v7
-    - name: Install uv and set the python version
-      uses: astral-sh/setup-uv@v7
-      with:
-        version: "0.13.4"
-        enable-cache: true
-        python-version: "3.14"
-    - name: Run pre-commit and deptry
-      run: make qa
-
-  unit-tests:
-    name: unit-tests
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version:
-        - "3.14"
-
-    steps:
-    - uses: actions/checkout@v7
-    - name: Install uv and set the python version
-      uses: astral-sh/setup-uv@v7
-      with:
-        version: "0.13.4"
-        enable-cache: true
-        python-version: ${{ matrix.python-version }}
-
-    - name: Run unit tests
-      run: make unit-tests COV_REPORT=xml
-
-  check-typing:
-    needs: [unit-tests]
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v7
-    - name: Install uv and set the python version
-      uses: astral-sh/setup-uv@v7
-      with:
-        version: "0.13.4"
-        enable-cache: true
-        python-version: "3.14"
-    - name: Run type checks
-      run: make check-typing
-
-  docs-build:
-    needs: [unit-tests]
+  check-code:
     runs-on: ubuntu-latest
 
     steps:
@@ -76,97 +23,107 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
-        version: "0.13.4"
+        version: 0.13.7
         enable-cache: true
-        python-version: "3.14"
-    - name: Build documentation
-      run: uv run --frozen make docs-build
+    - name: Run pre-commit and deptry
+      run: make check-code
 
-  integration-tests:
-    needs: [unit-tests]
-    if: |
-      success() && true
+  run-unit-tests:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version:
-        - "3.11"
-        - "3.12"
-        - "3.13"
 
     steps:
     - uses: actions/checkout@v7
-
-    - name: Install uv and set the python version
+    - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
-        version: "0.13.4"
+        version: 0.13.7
         enable-cache: true
-        python-version: ${{ matrix.python-version }}
-
     - name: Run unit tests
-      run: uv run --frozen -m pytest .
+      run: make unit-tests COV_REPORT=xml
 
-  minver-tests:
-    needs: [unit-tests]
-    if: |
-      success() && true
+  check-typing:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v7
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+      with:
+        version: 0.13.7
+        enable-cache: true
+    - name: Run type checks
+      run: make check-typing
 
+  test-minimum-python:
+    needs: [check-code, run-unit-tests, check-typing]
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v7
     - name: Install uv and set the python version
       uses: astral-sh/setup-uv@v7
       with:
-        version: "0.13.4"
+        version: 0.13.7
         enable-cache: true
-        python-version: "3.14"
-    - name: Run tests
-      run: uv run --resolution lowest-direct -p python3.11 -m pytest .
+        python-version: '3.11'
+    - name: Run unit tests with the minimum supported python version
+      run: make unit-tests COV_REPORT=xml
 
-  distribution:
+  test-minimum-versions:
+    needs: [check-code, run-unit-tests, check-typing]
     runs-on: ubuntu-latest
-    needs: [unit-tests, check-typing, docs-build, integration-tests]
-    if: |
-      always() &&
-      needs.unit-tests.result == 'success' &&
-      needs.check-typing.result == 'success' &&
-      needs.docs-build.result == 'success' &&
-      (needs.integration-tests.result == 'success' || needs.integration-tests.result == 'skipped')
 
     steps:
     - uses: actions/checkout@v7
-    - uses: actions/setup-python@v7
+    - name: Install uv and set the python version
+      uses: astral-sh/setup-uv@v7
       with:
+        version: 0.13.7
+        enable-cache: true
         python-version: '3.11'
-    - name: Install package
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install build twine
+    - name: Run tests with the minimum supported versions
+      run: make test-minimum-versions
+
+  build-docs:
+    needs: [test-minimum-python, test-minimum-versions]
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+      with:
+        version: 0.13.7
+        enable-cache: true
+    - name: Build documentation
+      run: make build-docs
+
+  build-distribution:
+    needs: [test-minimum-python, test-minimum-versions]
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v7
+    - name: Install uv
+      uses: astral-sh/setup-uv@v7
+      with:
+        version: 0.13.7
+        enable-cache: true
     - name: Build distribution
+      run: uv build
+    - name: Check distribution
       run: |
-        python -m build
-    - name: Check wheels
-      run: |
-        cd dist || exit
-        python -m pip install sarsen*.whl || exit
-        python -m twine check --strict * || exit
-        python -c "import sarsen" || exit
-        cd ..
+        uvx twine check --strict dist/*
+        uv run --isolated --no-project --with dist/sarsen-*.whl python -c "import sarsen"
     - uses: actions/upload-artifact@v7
       with:
         name: distribution
         path: dist
 
   upload-to-pypi:
+    needs: [build-docs, build-distribution]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags')
     runs-on: ubuntu-latest
-    needs: distribution
-    if: |
-      always() && true &&
-      needs.distribution.result == 'success' &&
-      github.event_name == 'push' &&
-      startsWith(github.ref, 'refs/tags')
     environment:
       name: pypi
       url: https://pypi.org/p/sarsen
