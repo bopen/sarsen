@@ -14,5 +14,4 @@
 - `OrbitPolyfitInterpolator.position()`, `velocity()` and `acceleration()` need
   an explicit time; `azimuth_time_range()` is removed.
 - Remove the misspelled `OrbitPolyfitIterpolator` alias.
-- Add `zarr` and `numcodecs` to the required dependencies.
 - Remove the `lab` extra: `pip install sarsen[lab]` no longer works.
