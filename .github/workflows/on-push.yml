@@ -14,41 +14,39 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-defaults:
-  run:
-    shell: bash -l {0}
-
 jobs:
   pre-commit:
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v7
     - name: Install uv and set the python version
       uses: astral-sh/setup-uv@v7
       with:
-        version: "0.13.4"
+        version: 0.13.4
         enable-cache: true
-        python-version: "3.14"
+        python-version: '3.14'
     - name: Run pre-commit and deptry
       run: make qa
 
   unit-tests:
-    name: unit-tests
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version:
-        - "3.14"
+        - '3.11'
+        - '3.12'
+        - '3.13'
+        - '3.14'
 
     steps:
     - uses: actions/checkout@v7
     - name: Install uv and set the python version
       uses: astral-sh/setup-uv@v7
       with:
-        version: "0.13.4"
+        version: 0.13.4
         enable-cache: true
         python-version: ${{ matrix.python-version }}
-
     - name: Run unit tests
       run: make unit-tests COV_REPORT=xml
 
@@ -61,9 +59,9 @@ jobs:
     - name: Install uv and set the python version
       uses: astral-sh/setup-uv@v7
       with:
-        version: "0.13.4"
+        version: 0.13.4
         enable-cache: true
-        python-version: "3.14"
+        python-version: '3.14'
     - name: Run type checks
       run: make check-typing
 
@@ -73,73 +71,39 @@ jobs:
 
     steps:
     - uses: actions/checkout@v7
-    - name: Install uv
-      uses: astral-sh/setup-uv@v7
-      with:
-        version: "0.13.4"
-        enable-cache: true
-        python-version: "3.14"
-    - name: Build documentation
-      run: uv run --frozen make docs-build
-
-  integration-tests:
-    needs: [unit-tests]
-    if: |
-      success() && true
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version:
-        - "3.11"
-        - "3.12"
-        - "3.13"
-
-    steps:
-    - uses: actions/checkout@v7
-
     - name: Install uv and set the python version
       uses: astral-sh/setup-uv@v7
       with:
-        version: "0.13.4"
+        version: 0.13.4
         enable-cache: true
-        python-version: ${{ matrix.python-version }}
-
-    - name: Run unit tests
-      run: uv run --frozen -m pytest .
+        python-version: '3.14'
+    - name: Build documentation
+      run: make docs-build
 
   minver-tests:
     needs: [unit-tests]
-    if: |
-      success() && true
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v7
-
     - name: Install uv and set the python version
       uses: astral-sh/setup-uv@v7
       with:
-        version: "0.13.4"
+        version: 0.13.4
         enable-cache: true
-        python-version: "3.14"
-    - name: Run tests
-      run: uv run --resolution lowest-direct -p python3.11 -m pytest .
+        python-version: '3.11'
+    - name: Run tests with the minimum supported versions
+      run: make minver-tests
 
   distribution:
+    needs: [unit-tests, check-typing, docs-build, minver-tests]
     runs-on: ubuntu-latest
-    needs: [unit-tests, check-typing, docs-build, integration-tests]
-    if: |
-      always() &&
-      needs.unit-tests.result == 'success' &&
-      needs.check-typing.result == 'success' &&
-      needs.docs-build.result == 'success' &&
-      (needs.integration-tests.result == 'success' || needs.integration-tests.result == 'skipped')
 
     steps:
     - uses: actions/checkout@v7
     - uses: actions/setup-python@v7
       with:
-        python-version: '3.11'
+        python-version-file: .python-version
     - name: Install package
       run: |
         python -m pip install --upgrade pip
@@ -148,25 +112,24 @@ jobs:
       run: |
         python -m build
     - name: Check wheels
+      working-directory: dist
       run: |
-        cd dist || exit
-        python -m pip install sarsen*.whl || exit
-        python -m twine check --strict * || exit
-        python -c "import sarsen" || exit
-        cd ..
+        python -m pip install sarsen*.whl
+        python -m twine check --strict *
+        python -c "import sarsen"
     - uses: actions/upload-artifact@v7
       with:
         name: distribution
         path: dist
 
   upload-to-pypi:
-    runs-on: ubuntu-latest
-    needs: distribution
+    needs: [distribution]
     if: |
-      always() && true &&
+      always() &&
       needs.distribution.result == 'success' &&
       github.event_name == 'push' &&
       startsWith(github.ref, 'refs/tags')
+    runs-on: ubuntu-latest
     environment:
       name: pypi
       url: https://pypi.org/p/sarsen
