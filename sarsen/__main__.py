@@ -1,42 +1,55 @@
-import importlib.metadata
 import json
 import logging
 
-import typer
+import click
 
 from . import apps, sentinel1
 
-app = typer.Typer(
-    add_completion=False,
-    no_args_is_help=True,
+# the options shared by the terrain correction commands
+enable_dask_distributed_option = click.option(
+    "--enable-dask-distributed/--no-enable-dask-distributed",
+    default=False,
+    help="Run on a dask distributed client.",
+)
+client_kwargs_json_option = click.option(
+    "--client-kwargs-json",
+    default='{"processes": false}',
+    help="Keyword arguments of the dask distributed client, as JSON.",
+)
+chunks_option = click.option(
+    "--chunks",
+    default=1024,
+    help="Chunk size of the processing, 0 or less for no chunking.",
+)
+grouping_area_factor_option = click.option(
+    "--grouping-area-factor",
+    type=(float, float),
+    default=(3.0, 3.0),
+    help="Size of the radiometric grouping area relative to the product pixel, "
+    "in azimuth and range, increase it for low resolution DEMs.",
+)
+seed_step_option = click.option(
+    "--seed-step",
+    type=int,
+    help="Seed the geocoding with a first pass on every SEED_STEP pixel of the DEM.",
 )
 
 
-def version_callback(value: bool) -> None:
-    if value:
-        version = importlib.metadata.version("sarsen")
-        typer.echo(f"sarsen, version {version}")
-        raise typer.Exit()
-
-
-@app.callback()
-def main(
-    version: bool = typer.Option(
-        False,
-        "--version",
-        callback=version_callback,
-        is_eager=True,
-        help="Show the version and exit.",
-    ),
-) -> None:
+@click.group("sarsen", context_settings={"show_default": True})
+@click.version_option(package_name="sarsen", prog_name="sarsen")
+def app() -> None:
     pass
 
 
 @app.command()
-def info(
-    product_urlpath: str,
-) -> None:
-    """Print information about the Sentinel-1 product."""
+@click.argument("product_urlpath")
+def info(product_urlpath: str) -> None:
+    """Print information about a Sentinel-1 product.
+
+    \b
+    Arguments:
+      PRODUCT_URLPATH  Path or URL of the Sentinel-1 SAFE product.
+    """  # noqa: D301 click needs the backspace in "\b" to keep the lines
     logging.basicConfig(level=logging.INFO)
     product = sentinel1.Sentinel1SarProduct(product_urlpath)
     product_info = product.product_info()
@@ -45,17 +58,34 @@ def info(
 
 
 @app.command()
+@click.argument("product_urlpath")
+@click.argument("measurement_group")
+@click.argument("dem_urlpath")
+@click.option("--output-urlpath", default="GTC.tif", help="Path of the output GTC.")
+@enable_dask_distributed_option
+@client_kwargs_json_option
+@chunks_option
+@seed_step_option
 def gtc(
     product_urlpath: str,
     measurement_group: str,
     dem_urlpath: str,
-    output_urlpath: str = "GTC.tif",
-    enable_dask_distributed: bool = False,
-    client_kwargs_json: str = '{"processes": false}',
-    chunks: int = 1024,
-    seed_step: int | None = None,
+    output_urlpath: str,
+    enable_dask_distributed: bool,
+    client_kwargs_json: str,
+    chunks: int,
+    seed_step: int | None,
 ) -> None:
-    """Generate a geometrically terrain corrected (GTC) image from Sentinel-1 product."""
+    """Compute the geometric terrain correction.
+
+    Generate a geometrically terrain corrected (GTC) image from a Sentinel-1 product.
+
+    \b
+    Arguments:
+      PRODUCT_URLPATH    Path or URL of the Sentinel-1 SAFE product.
+      MEASUREMENT_GROUP  Measurement group, e.g. IW/VV, see the info command.
+      DEM_URLPATH        Path or URL of the DEM, in the output projection and spacing.
+    """  # noqa: D301 click needs the backspace in "\b" to keep the lines
     client_kwargs = json.loads(client_kwargs_json)
     real_chunks = chunks if chunks > 0 else None
     real_seed_step = (seed_step, seed_step) if seed_step is not None else None
@@ -76,18 +106,38 @@ def gtc(
 
 
 @app.command()
+@click.argument("product_urlpath")
+@click.argument("measurement_group")
+@click.argument("dem_urlpath")
+@click.option(
+    "--simulated-urlpath", default="STC.tif", help="Path of the output simulated image."
+)
+@enable_dask_distributed_option
+@client_kwargs_json_option
+@chunks_option
+@grouping_area_factor_option
+@seed_step_option
 def stc(
     product_urlpath: str,
     measurement_group: str,
     dem_urlpath: str,
-    simulated_urlpath: str = "STC.tif",
-    enable_dask_distributed: bool = False,
-    client_kwargs_json: str = '{"processes": false}',
-    chunks: int = 1024,
-    grouping_area_factor: tuple[float, float] = (3.0, 3.0),
-    seed_step: int | None = None,
+    simulated_urlpath: str,
+    enable_dask_distributed: bool,
+    client_kwargs_json: str,
+    chunks: int,
+    grouping_area_factor: tuple[float, float],
+    seed_step: int | None,
 ) -> None:
-    """Generate a simulated terrain corrected image from a Sentinel-1 product."""
+    """Compute the simulated terrain correction.
+
+    Generate a simulated terrain corrected image from a Sentinel-1 product.
+
+    \b
+    Arguments:
+      PRODUCT_URLPATH    Path or URL of the Sentinel-1 SAFE product.
+      MEASUREMENT_GROUP  Measurement group, e.g. IW/VV, see the info command.
+      DEM_URLPATH        Path or URL of the DEM, in the output projection and spacing.
+    """  # noqa: D301 click needs the backspace in "\b" to keep the lines
     client_kwargs = json.loads(client_kwargs_json)
     real_chunks = chunks if chunks > 0 else None
     real_seed_step = (seed_step, seed_step) if seed_step is not None else None
@@ -111,18 +161,36 @@ def stc(
 
 
 @app.command()
+@click.argument("product_urlpath")
+@click.argument("measurement_group")
+@click.argument("dem_urlpath")
+@click.option("--output-urlpath", default="RTC.tif", help="Path of the output RTC.")
+@enable_dask_distributed_option
+@client_kwargs_json_option
+@chunks_option
+@grouping_area_factor_option
+@seed_step_option
 def rtc(
     product_urlpath: str,
     measurement_group: str,
     dem_urlpath: str,
-    output_urlpath: str = "RTC.tif",
-    enable_dask_distributed: bool = False,
-    client_kwargs_json: str = '{"processes": false}',
-    chunks: int = 1024,
-    grouping_area_factor: tuple[float, float] = (3.0, 3.0),
-    seed_step: int | None = None,
+    output_urlpath: str,
+    enable_dask_distributed: bool,
+    client_kwargs_json: str,
+    chunks: int,
+    grouping_area_factor: tuple[float, float],
+    seed_step: int | None,
 ) -> None:
-    """Generate a radiometrically terrain corrected (RTC) image from Sentinel-1 product."""
+    """Compute the radiometric terrain correction.
+
+    Generate a radiometrically terrain corrected (RTC) image from a Sentinel-1 product.
+
+    \b
+    Arguments:
+      PRODUCT_URLPATH    Path or URL of the Sentinel-1 SAFE product.
+      MEASUREMENT_GROUP  Measurement group, e.g. IW/VV, see the info command.
+      DEM_URLPATH        Path or URL of the DEM, in the output projection and spacing.
+    """  # noqa: D301 click needs the backspace in "\b" to keep the lines
     client_kwargs = json.loads(client_kwargs_json)
     real_chunks = chunks if chunks > 0 else None
     real_seed_step = (seed_step, seed_step) if seed_step is not None else None

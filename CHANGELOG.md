@@ -15,3 +15,6 @@
   an explicit time; `azimuth_time_range()` is removed.
 - Remove the misspelled `OrbitPolyfitIterpolator` alias.
 - Remove the `lab` extra: `pip install sarsen[lab]` no longer works.
+- Replace `typer` with `click`, already required by `dask` and `rasterio`, for the
+  `sarsen` command: the commands, arguments and options are the same, the help, now
+  documenting the arguments and the options, and the errors are plain text.
