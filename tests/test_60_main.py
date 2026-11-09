@@ -39,6 +39,15 @@ def test_main() -> None:
     assert res.exit_code == 0
 
 
+def test_help_command_order() -> None:
+    res = runner.invoke(__main__.app, ["--help"])
+
+    assert res.exit_code == 0
+    lines = res.output.partition("Commands:")[2].splitlines()
+    commands = [line.split()[0] for line in lines if line.strip()]
+    assert commands == ["info", "gtc", "stc", "rtc"]
+
+
 def test_gtc(calls: dict[str, Any]) -> None:
     res = runner.invoke(__main__.app, ["gtc", *ARGS])
 

@@ -35,7 +35,14 @@ seed_step_option = click.option(
 )
 
 
-@click.group("sarsen", context_settings={"show_default": True})
+class OrderedGroup(click.Group):
+    """List the commands in the order they are defined, not alphabetically."""
+
+    def list_commands(self, ctx: click.Context) -> list[str]:
+        return list(self.commands)
+
+
+@click.group("sarsen", cls=OrderedGroup, context_settings={"show_default": True})
 @click.version_option(package_name="sarsen", prog_name="sarsen")
 def app() -> None:
     pass
