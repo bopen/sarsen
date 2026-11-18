@@ -3,18 +3,12 @@ import functools
 from typing import Any
 
 import attrs
+import dask  # noqa: F401
 import numpy as np
 import xarray as xr
 import xarray_sentinel
 
 from . import datamodel, orbit
-
-try:
-    import dask  # noqa: F401
-
-    DEFAULT_MEASUREMENT_CHUNKS: int | None = 2048
-except ModuleNotFoundError:
-    DEFAULT_MEASUREMENT_CHUNKS = None
 
 SPEED_OF_LIGHT = 299_792_458.0  # m / s
 
@@ -79,7 +73,7 @@ class Sentinel1SarProduct(
 ):
     product_urlpath: str
     measurement_group: str | None = None
-    measurement_chunks: int | dict[str, int] | None = DEFAULT_MEASUREMENT_CHUNKS
+    measurement_chunks: int | dict[str, int] | None = 2048
     kwargs: dict[str, Any] = attrs.field(factory=dict)
     burst_id: int | None = None
 
