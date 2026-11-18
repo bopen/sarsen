@@ -66,7 +66,7 @@ def transform_dem_3d(
         )
     except Exception:
         # HACK: the very first call to warp.transform sometimes fails
-        LOGGER.warn("rasterio.warp.transform failed, retrying...")
+        LOGGER.warning("rasterio.warp.transform failed, retrying...")
         x, y, z = warp.transform(
             source_crs,
             target_crs,
